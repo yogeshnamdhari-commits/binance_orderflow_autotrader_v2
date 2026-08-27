@@ -1,0 +1,161 @@
+{
+ "generated_at": "2026-08-18T21:11:36.703869+00:00",
+ "model_path": "data/research/v5_model.json",
+ "feature_path": "data/research/v5_features.parquet",
+ "primary_horizon_ms": 500,
+ "measured_gate_bps": 4.6658,
+ "cost_calibration": "data/hist/research/execution_calibration.json",
+ "scoreboard": {
+  "horizon_ms": 500,
+  "gate_bps": 4.6658,
+  "oos_rows": 3889,
+  "executed_rows": 0,
+  "no_trade_rows": 3889,
+  "gross_dir_n": 3889,
+  "gross_expectancy_bps": 0.06407983716249906,
+  "gross_std_bps": 0.3781042935014144,
+  "gated_expectancy_bps": 0.0,
+  "gated_std_bps": 0.0,
+  "per_direction": {
+   "LONG": {
+    "n": 0,
+    "realized_move_bps": 0.0,
+    "net_bps": 0.0,
+    "win_rate": 0.0
+   },
+   "SHORT": {
+    "n": 0,
+    "realized_move_bps": 0.0,
+    "net_bps": 0.0,
+    "win_rate": 0.0
+   }
+  },
+  "per_session": {
+   "20260818-194920": {
+    "rows": 1574,
+    "executed_rows": 0,
+    "gross_bps": 0.0009231541188414659,
+    "net_bps": 0.0
+   },
+   "20260818-195221": {
+    "rows": 2315,
+    "executed_rows": 0,
+    "gross_bps": 0.10715116260041804,
+    "net_bps": 0.0
+   }
+  },
+  "largest_session_share": 0.0,
+  "pf": 0.0,
+  "sharpe": 0.0,
+  "max_drawdown_bps": 0.0,
+  "net_trail_n": 0
+ },
+ "robustness": {
+  "cells": [
+   {
+    "cell": "half:first",
+    "n": 1944,
+    "executed_n": 0,
+    "net_bps": 0.0,
+    "gross_bps": -0.006198858693377151
+   },
+   {
+    "cell": "half:second",
+    "n": 1945,
+    "executed_n": 0,
+    "net_bps": 0.0,
+    "gross_bps": 0.13457611412009624
+   },
+   {
+    "cell": "regime:high_impact",
+    "n": 1383,
+    "executed_n": 0,
+    "net_bps": 0.0,
+    "gross_bps": 0.0019730070390307193
+   },
+   {
+    "cell": "regime:normal",
+    "n": 2506,
+    "executed_n": 0,
+    "net_bps": 0.0,
+    "gross_bps": 0.09833540293803314
+   },
+   {
+    "cell": "vol_tercile:hi",
+    "n": 140,
+    "executed_n": 0,
+    "net_bps": 0.0,
+    "gross_bps": 0.04673505078314111
+   },
+   {
+    "cell": "vol_tercile:lo",
+    "n": 3746,
+    "executed_n": 0,
+    "net_bps": 0.0,
+    "gross_bps": 0.06453247314250164
+   },
+   {
+    "cell": "vol_tercile:nan",
+    "n": 3,
+    "executed_n": 0,
+    "net_bps": 0.0,
+    "gross_bps": 0.30936789178929885
+   }
+  ],
+  "n_cells": 7
+ },
+ "cost_sensitivity": {
+  "gate_minus_1": {
+   "gate_bps": 3.6658,
+   "gated_expectancy_bps": 0.0,
+   "executed_rows": 0
+  },
+  "gate_minus_half": {
+   "gate_bps": 4.1658,
+   "gated_expectancy_bps": 0.0,
+   "executed_rows": 0
+  },
+  "gate": {
+   "gate_bps": 4.6658,
+   "gated_expectancy_bps": 0.0,
+   "executed_rows": 0
+  },
+  "gate_plus_half": {
+   "gate_bps": 5.1658,
+   "gated_expectancy_bps": 0.0,
+   "executed_rows": 0
+  },
+  "gate_plus_1": {
+   "gate_bps": 5.6658,
+   "gated_expectancy_bps": 0.0,
+   "executed_rows": 0
+  }
+ },
+ "oos_input": {
+  "oos_periods": 2,
+  "long": {
+   "n": 0
+  },
+  "short": {
+   "n": 0
+  },
+  "net_expectancy_taker_bps": 0.0,
+  "net_expectancy_maker_bps": 0.06407983716249906
+ },
+ "verdict": {
+  "verdict": "CONDITIONAL PASS",
+  "reasons": [
+   "OOS directional sample too small to measure an edge: long=0 short=0 (need >=200 each)",
+   "predictive economics neither proven nor refuted; observed net taker 0.0000 bps, maker 0.0641 bps"
+  ],
+  "criteria": {
+   "directional_sample_ok": false,
+   "periods_ok": false,
+   "net_taker_positive": false,
+   "net_maker_positive": true,
+   "robustness_positive_fraction": 0.0,
+   "min_oos_periods": 3,
+   "min_signals_per_direction": 200
+  }
+ }
+}

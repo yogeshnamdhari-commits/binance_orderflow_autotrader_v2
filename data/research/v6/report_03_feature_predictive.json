@@ -1,0 +1,7 @@
+{
+  "title": "Feature-by-Feature Predictive Report",
+  "generated_at": "2026-08-19T20:29:02.258263+00:00",
+  "horizon_ms": 500,
+  "features": {},
+  "note": "Correlation with forward return r_500 on OOS data. HAC-robust inference would require time-series decomposition."
+}

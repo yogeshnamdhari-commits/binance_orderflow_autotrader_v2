@@ -1,0 +1,1 @@
+"""Historical data audit + replay (authentic Binance public archives)."""

@@ -1,0 +1,93 @@
+{
+  "generated_at": "2026-08-20T00:27:40+05:30",
+  "protocol": "Q2: contemporaneous execution cost measurement. Frozen V5 model is read-only; no re-fitting, no threshold changes.",
+  "governance": {
+    "ORDERFLOW_BASELINE_V5_NO_LIVE_TRADE": true,
+    "note": "Live trading is blocked until Q2 cost is measured and compared."
+  },
+  "measurement": {
+    "sample_start_utc": "2026-08-19T18:15:58+00:00",
+    "sample_end_utc": "2026-08-19T18:46:17+00:00",
+    "duration_seconds": 1797.2,
+    "duration_minutes": 29.95,
+    "total_observations": 1764,
+    "instrument": "BTCUSDT",
+    "notional_usd": 1000.0,
+    "sampling_cadence_s": 1.0
+  },
+  "cost_components_bps": {
+    "spread": {
+      "p50": 0.0146,
+      "p90": 0.0147,
+      "p95": 0.0147,
+      "p99": 0.0147,
+      "max": 0.6738
+    },
+    "slippage_buy_1000usd": {
+      "p50": 0.0073,
+      "p90": 0.0073,
+      "p95": 0.0073,
+      "p99": 0.0073
+    },
+    "slippage_sell_1000usd": {
+      "p50": -0.0073,
+      "p90": -0.0073,
+      "p95": -0.0073,
+      "p99": -0.0073
+    },
+    "fee_taker_roundtrip": 4.0,
+    "fee_maker_roundtrip": 2.0,
+    "impact_allowance": 0.10,
+    "latency": 0.05,
+    "safety_margin": 0.50
+  },
+  "final_gates_bps": {
+    "taker_contemporaneous": {
+      "total_bps": 4.1646,
+      "gate_bps": 4.6646
+    },
+    "maker_contemporaneous": {
+      "total_bps": 2.9396,
+      "gate_bps": 3.4396,
+      "components": {
+        "maker_fee_rt_bps": 2.0,
+        "adverse_selection_bps": 0.768,
+        "p_fill": 0.7568,
+        "non_fill_reprice_bps": 0.5,
+        "reprice_component_bps": 0.1216,
+        "latency_bps": 0.05,
+        "safety_margin_bps": 0.50
+      }
+    },
+    "taker_historical": {
+      "total_bps": 4.1658,
+      "gate_bps": 4.6658
+    }
+  },
+  "comparison": {
+    "historical_gate_bps": 4.6658,
+    "contemporaneous_gate_bps": 4.6646,
+    "gate_difference_bps": -0.0012,
+    "gate_verdict": "CONTEMPORANEOUS_COST_SIMILAR",
+    "historical_total_bps": 4.1658,
+    "contemporaneous_total_bps": 4.1646,
+    "total_difference_bps": -0.0012
+  },
+  "signal_viability": {
+    "signal_gross_low_bps": 0.0685,
+    "signal_gross_high_bps": 0.0801,
+    "taker_net_at_low_signal_bps": -4.5961,
+    "taker_net_at_high_signal_bps": -4.5845,
+    "maker_net_at_low_signal_bps": -3.3711,
+    "maker_net_at_high_signal_bps": -3.3595,
+    "cost_to_signal_ratio_low": 68.1,
+    "cost_to_signal_ratio_high": 58.2,
+    "verdict": "FAIL — net negative at all signal levels"
+  },
+  "interpretation": "The contemporaneous execution cost is essentially identical to the historical cost. The frozen V5 signal's gross expectancy (~0.07–0.08 bps) is completely overwhelmed by execution costs. The cost-to-signal ratio remains extreme (58–68×). The historical 4.6658 bps gate was not optimistic; it accurately reflects current execution costs.",
+  "decision": {
+    "verdict": "FAIL",
+    "orderflow_baseline_v5_status": "FROZEN — NO LIVE TRADING",
+    "next_step": "Repository-wide forensic audit and V6 design with pre-specified economic rationale and out-of-sample validation. V5 remains immutable baseline. Live trading remains blocked until all deployment gates pass."
+  }
+}

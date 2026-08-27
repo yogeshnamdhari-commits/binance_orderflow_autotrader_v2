@@ -1,0 +1,38 @@
+{
+ "features": [
+  "ofi_l1",
+  "ofi_norm_l1",
+  "qi_l1",
+  "di_l5",
+  "di_l10",
+  "mpd_bps",
+  "spread_bps",
+  "bid_cancel_bps",
+  "ask_add_bps",
+  "cancel_pressure",
+  "tfi_500",
+  "liq_depletion",
+  "log_depth1",
+  "log_depth5",
+  "log_event_rate",
+  "depth_slope_bps",
+  "vol_500"
+ ],
+ "horizons": [
+  250,
+  500,
+  1000
+ ],
+ "250": {
+  "r2_train": 0.2635872265924303,
+  "n_train": 18118
+ },
+ "500": {
+  "r2_train": 0.2609892093533043,
+  "n_train": 18118
+ },
+ "1000": {
+  "r2_train": 0.2586634650120011,
+  "n_train": 18118
+ }
+}

@@ -1,0 +1,18 @@
+{
+  "verdict": "NEGATIVE_EDGE",
+  "oos_signals": 3924,
+  "gross_expectancy_bps": 0.1332442959034813,
+  "gross_ci_95": {
+    "low": 0.10067150505797182,
+    "high": 0.16946009016376165
+  },
+  "maker_fee_bps": 2.0,
+  "net_expectancy_bps": -1.8667557040965186,
+  "net_ci_95": {
+    "low": -1.899801079475486,
+    "high": -1.8334449659119707
+  },
+  "pct_above_gate": 9.98980632008155,
+  "deployable_edge": false,
+  "live_trading": "HARD_BLOCKED"
+}

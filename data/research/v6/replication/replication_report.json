@@ -1,0 +1,104 @@
+{
+  "generated_at": "2026-08-19T21:59:33.436744+00:00",
+  "protocol": "Independent replication: V6 model evaluated on untouched data. No refitting, no parameter changes, same cost model.",
+  "replication_data": {
+    "sessions": [
+      "20260818-212451",
+      "20260818-212752",
+      "20260818-213053",
+      "20260818-213354",
+      "20260818-213655",
+      "20260818-213956",
+      "20260818-214257",
+      "20260818-214558",
+      "20260818-214859",
+      "20260818-215200"
+    ],
+    "rows": 23981,
+    "start_ts_ms": 1787088292469,
+    "end_ts_ms": 1787090100637
+  },
+  "cost_calibration": {
+    "taker_gate_bps": 4.672,
+    "contemporaneous_gate_bps": 4.6646,
+    "maker_gate_bps": 3.4396
+  },
+  "v5_scoreboard": null,
+  "v6_scoreboard": {
+    "horizon_ms": 500,
+    "gate_bps": 4.672,
+    "oos_rows": 23981,
+    "executed_rows": 211,
+    "gross_expectancy_bps": 0.116528,
+    "gross_hac_se_bps": 0.005563,
+    "gross_hac_p": 0.0,
+    "gross_hac_ci95": [
+      0.105624,
+      0.127431
+    ],
+    "net_expectancy_bps": -2.215296,
+    "net_hac_se_bps": 0.085834,
+    "net_hac_z": -25.8092,
+    "net_hac_p": 0.0,
+    "net_hac_ci95": [
+      -2.38353,
+      -2.047061
+    ],
+    "hac_max_lag": 1,
+    "per_direction": {
+      "LONG": {
+        "n": 210,
+        "gross_bps": 2.459628,
+        "net_bps": -2.212372
+      },
+      "SHORT": {
+        "n": 1,
+        "gross_bps": 1.842737,
+        "net_bps": -2.829263
+      }
+    }
+  },
+  "v6_scoreboard_contemporaneous": {
+    "horizon_ms": 500,
+    "gate_bps": 4.6646,
+    "oos_rows": 23981,
+    "executed_rows": 211,
+    "gross_expectancy_bps": 0.116528,
+    "gross_hac_se_bps": 0.005563,
+    "gross_hac_p": 0.0,
+    "gross_hac_ci95": [
+      0.105624,
+      0.127431
+    ],
+    "net_expectancy_bps": -2.207896,
+    "net_hac_se_bps": 0.085834,
+    "net_hac_z": -25.7229,
+    "net_hac_p": 0.0,
+    "net_hac_ci95": [
+      -2.37613,
+      -2.039661
+    ],
+    "hac_max_lag": 1,
+    "per_direction": {
+      "LONG": {
+        "n": 210,
+        "gross_bps": 2.459628,
+        "net_bps": -2.204972
+      },
+      "SHORT": {
+        "n": 1,
+        "gross_bps": 1.842737,
+        "net_bps": -2.821863
+      }
+    }
+  },
+  "original_oos_v6_gross": 0.071924,
+  "original_oos_v6_net": 0.0,
+  "replication_gates": {
+    "passes_net_positive": false,
+    "passes_gross_significant": true,
+    "passes_net_significant": false,
+    "passes_long_short_symmetry": true
+  },
+  "verdict": "REPLICATION_FAIL \u2014 no deployable edge"
+}

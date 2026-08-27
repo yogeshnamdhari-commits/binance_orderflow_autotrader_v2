@@ -1,0 +1,106 @@
+{
+ "generated_at": "2026-08-19T06:57:13.491948+00:00",
+ "model": "/Users/targetmobile/Downloads/binance_orderflow_autotrader_v2/data/research/v5_model.json",
+ "cost_calibration": "/Users/targetmobile/Downloads/binance_orderflow_autotrader_v2/data/hist/research/execution_calibration.json",
+ "style": "taker",
+ "notional_usd": 1000.0,
+ "horizon_ms": 500,
+ "gate_bps": 4.6658,
+ "cost_model": {
+  "notional_usd": 1000.0,
+  "safety_margin_bps": 0.5,
+  "taker": {
+   "total_bps": 4.1658,
+   "margin_bps": 0.5,
+   "gate_bps": 4.6658,
+   "components": {
+    "basis": "effective_taker_roundtrip.p90 + impact + latency",
+    "spread_bps": 0.0158,
+    "slippage_bps": 0.0079
+   }
+  },
+  "maker": {
+   "total_bps": 2.98605,
+   "margin_bps": 0.5,
+   "gate_bps": 3.48605,
+   "components": {
+    "adverse_selection_bps": 0.821,
+    "p_fill": 0.7699,
+    "maker_fee_rt_bps": 2.0
+   }
+  }
+ },
+ "split_fractions": [
+  0.7,
+  0.15,
+  0.15
+ ],
+ "days": {
+  "train": {
+   "lo_ms": 1787080068417,
+   "hi_ms": 1787082331201,
+   "rows": 18145
+  },
+  "validation": {
+   "lo_ms": 1787082331303,
+   "hi_ms": 1787082620783,
+   "rows": 3888
+  },
+  "oos": {
+   "lo_ms": 1787082620885,
+   "hi_ms": 1787082921993,
+   "rows": 3889
+  }
+ },
+ "scoreboard": {
+  "horizon_ms": 500,
+  "gate_bps": 4.6658,
+  "oos_rows": 3889,
+  "executed_rows": 0,
+  "no_trade_rows": 3889,
+  "gross_dir_n": 3889,
+  "gross_expectancy_bps": 0.06407983716249906,
+  "gross_std_bps": 0.3781042935014144,
+  "gated_expectancy_bps": 0.0,
+  "gated_std_bps": 0.0,
+  "per_direction": {
+   "LONG": {
+    "n": 0,
+    "realized_move_bps": 0.0,
+    "net_bps": 0.0,
+    "win_rate": 0.0
+   },
+   "SHORT": {
+    "n": 0,
+    "realized_move_bps": 0.0,
+    "net_bps": 0.0,
+    "win_rate": 0.0
+   }
+  },
+  "per_session": {
+   "20260818-194920": {
+    "rows": 1574,
+    "executed_rows": 0,
+    "gross_bps": 0.0009231541188414659,
+    "net_bps": 0.0
+   },
+   "20260818-195221": {
+    "rows": 2315,
+    "executed_rows": 0,
+    "gross_bps": 0.10715116260041804,
+    "net_bps": 0.0
+   }
+  },
+  "per_regime": {},
+  "largest_session_share": 0.0,
+  "pf": 0.0,
+  "sharpe": 0.0,
+  "max_drawdown_bps": 0.0,
+  "net_trail_n": 0,
+  "gated_ci_95_low": 0.0,
+  "gated_ci_95_high": 0.0,
+  "gated_t_stat": 0.0,
+  "gated_p_value": 1.0
+ },
+ "verdict": "INSUFFICIENT"
+}

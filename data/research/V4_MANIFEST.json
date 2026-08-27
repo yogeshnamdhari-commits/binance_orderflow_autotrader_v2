@@ -1,0 +1,46 @@
+{
+ "freeze_id": "36e044251f2eb513caf4c21cb3cc63c5e85f4355ea9729a5c21606c18c767ee7",
+ "run_kind": "freeze",
+ "frozen_at": "2026-08-18T20:54:51.154688+00:00",
+ "body": {
+  "modules": {
+   "app/v4_replay.py": "31e18b81ec085a72dd7e40c79199c375dcaa73aa897e5c84a9be3c55390da3c5",
+   "app/v4_fill.py": "4645b527bfb6430bdef6aed28e8a9a617a9bd7a7ecfee49e38d2e5b86547c640",
+   "app/v4_signal.py": "221082ce0693a9545366cb3fdcf199ca71abe546ee42abc6ca4282627d386b2a",
+   "app/v4_validation.py": "775634e9bef1698aa800546e4d0d75be034c7ff55d84ba93cf093b59a65e41c8",
+   "app/v4_verdict.py": "4e3bda92ed3e5ff2058e40d226be749bdb239bdb8c4c2d333fbf75ace9988315",
+   "app/v4_report.py": "92baa6e4fa53ac318a7f3513853f3196dc46e9ef89b74648cb872a90a696c539",
+   "app/v3_replay.py": "0c1e2c39ddf3b5dc8dad365d564e20628c4aa5a31465508c5717e39c8146696a",
+   "app/v3_features.py": "1754a8603659b7eaed30534ceb98b99dd6a296ea07b7a2fbd38bd454b16a5f99",
+   "app/v3_model.py": "1ef9be0e4a770c46a2ffb3b90f5f0166cded8afd1c32a8528e358c384f867623"
+  },
+  "frozen_artifacts": {
+   "data/research/v3_model.json": "d8f84368a108e6f028a2fb5ef92c8a2d29141539e089b2df19e11aaae51b9c3f",
+   "data/research/v3_features.parquet": "13020371d95d71e5990e156eb71a0f96349356b15a325b492bdd2efc3378eb28",
+   "data/research/v3_oos.json": "6fba54dfb5ad34247ae57d8cddd95eda016ddb7013d7e8609c9c2c3272d75424",
+   "data/research/v3_cost_calibration.json": "3f79453e10b85246d8e8f36b2b49109c1592584de0ed07c5892f6fa7943ac783"
+  },
+  "raw_data": {
+   "data/live/v4/20260818-190746/raw.jsonl": "379a785647aace494c6461a8236ec1877c499e91a6afcdbcdbf62066dfddc3aa",
+   "data/live/v4/20260818-190823/raw.jsonl": "b73dbbbf9055fa9ef06d6584a19428f518d75f6520f76250956fa240ab4c4224",
+   "data/live/v4/20260818-191124/raw.jsonl": "4197405540f2f8ddb412056fe7dd1bda5782c08cd6fd8275a33160678ab7fefd",
+   "data/live/v4/20260818-191426/raw.jsonl": "a5fbc26c51d4b472f1c668b3a179276183505682828cb7219581bcd98b5170fe",
+   "data/live/v4/20260818-191727/raw.jsonl": "6f248c3f4cef00803fc5eabdd54d08141903c2c823a4b1a24a50f9fab5be35fc",
+   "data/live/v4/20260818-192029/raw.jsonl": "836088dafb2e32e81f2adc777629901189dbc05011f52449a93c81f474026085",
+   "data/live/v4/20260818-193713/raw.jsonl": "22cef00d11b17159e0e50820b9572e66b2a97c661abf8e990bf10fc51a8bb123",
+   "data/live/v4/20260818-194015/raw.jsonl": "004d5d764101c58c6707462b99dafa3bd612d0bc23153e1b4472f5b71ff0c03a",
+   "data/live/v4/20260818-194317/raw.jsonl": "a67a6dcbcb7046e7bc61b17474507539c19e92567a0e4af7e6726f0f88e5ed55",
+   "data/live/v4/20260818-194618/raw.jsonl": "a6ed21d1503c518b20e532717947b7885ea21f875ad41241ea65f2063b362c27",
+   "data/live/v4/20260818-194920/raw.jsonl": "86c1373436259040afcc8fd7dff06fb6d3c4b8af370355590c1e49e2fafd5fd6",
+   "data/live/v4/20260818-195221/raw.jsonl": "0ef34ae312386b97ed468c1ad306dfa6152004718bf241d31ba23a2bcbbcbc3f"
+  },
+  "dependencies": {
+   "numpy": "2.3.5",
+   "pandas": "3.0.1",
+   "pyarrow": "24.0.0",
+   "pytest": "9.0.3",
+   "python": "3.13.12"
+  }
+ },
+ "note": "V4 freeze = sha256(modules + frozen V3 artifacts + raw logs + deps). OOS read only after this froze."
+}

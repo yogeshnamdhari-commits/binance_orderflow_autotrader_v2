@@ -1,0 +1,31 @@
+{
+  "title": "Final Signal Decision Specification",
+  "generated_at": "2026-08-19T20:29:02.267752+00:00",
+  "decision_tree": [
+    "IF data_invalid: NO_TRADE",
+    "ELIF book_invalid: NO_TRADE",
+    "ELIF liquidity_state in (THIN, STRESSED, SHOCK): NO_TRADE",
+    "ELIF expected_gross <= estimated_total_cost: NO_TRADE",
+    "ELIF calibrated_probability < 0.60: NO_TRADE",
+    "ELIF OOS_edge_not_verified: NO_TRADE",
+    "ELIF regime_not_supported: NO_TRADE",
+    "ELIF expected_net_return <= 0: NO_TRADE",
+    "ELIF toxicity in (HIGH_TOXICITY, ELEVATED_TOXICITY): NO_TRADE",
+    "ELIF direction == BUY: BUY",
+    "ELIF direction == SELL: SELL",
+    "ELSE: NO_TRADE"
+  ],
+  "hard_invariants": [
+    "No signal generated while book is invalid",
+    "No trade when expected net return <= 0",
+    "No trade in high toxicity regimes",
+    "No trade without calibrated probability >= 0.60",
+    "No OOS fitting",
+    "No threshold fishing"
+  ],
+  "cost_model": {
+    "taker_gate_bps": 4.6646,
+    "maker_gate_bps": 3.4396,
+    "source": "Q2 contemporaneous measurement"
+  }
+}

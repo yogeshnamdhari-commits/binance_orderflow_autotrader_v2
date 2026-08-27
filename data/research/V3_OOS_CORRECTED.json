@@ -1,0 +1,151 @@
+{
+ "generated_at": "2026-08-19T06:57:13.477769+00:00",
+ "model": "/Users/targetmobile/Downloads/binance_orderflow_autotrader_v2/data/research/v3_model.json",
+ "cost_calibration": "/Users/targetmobile/Downloads/binance_orderflow_autotrader_v2/data/hist/research/execution_calibration.json",
+ "style": "taker",
+ "notional_usd": 1000.0,
+ "horizon_ms": 500,
+ "gate_bps": 4.6658,
+ "cost_model": {
+  "notional_usd": 1000.0,
+  "safety_margin_bps": 0.5,
+  "taker": {
+   "total_bps": 4.1658,
+   "margin_bps": 0.5,
+   "gate_bps": 4.6658,
+   "components": {
+    "basis": "effective_taker_roundtrip.p90 + impact + latency",
+    "spread_bps": 0.0158,
+    "slippage_bps": 0.0079
+   }
+  },
+  "maker": {
+   "total_bps": 2.98605,
+   "margin_bps": 0.5,
+   "gate_bps": 3.48605,
+   "components": {
+    "adverse_selection_bps": 0.821,
+    "p_fill": 0.7699,
+    "maker_fee_rt_bps": 2.0
+   }
+  }
+ },
+ "split_fractions": [
+  0.7,
+  0.15,
+  0.15
+ ],
+ "days": {
+  "train": {
+   "lo_ms": 1787080068417,
+   "hi_ms": 1787082331201,
+   "rows": 18145
+  },
+  "validation": {
+   "lo_ms": 1787082331303,
+   "hi_ms": 1787082620783,
+   "rows": 3888
+  },
+  "oos": {
+   "lo_ms": 1787082620885,
+   "hi_ms": 1787082921993,
+   "rows": 3889
+  }
+ },
+ "blocks": {
+  "validation": {
+   "rows": 3888,
+   "gross_expectancy_bps": 0.039918,
+   "net_expectancy_bps": -4.625882,
+   "n_valid": 3888,
+   "std_bps": 0.353923,
+   "sem_bps": 0.005676,
+   "ci_95_low": -4.63701,
+   "ci_95_high": -4.614754,
+   "t_stat": -814.984678,
+   "p_value": 0.0,
+   "profit_factor": 0.0,
+   "max_drawdown_bps": 17980.764145,
+   "long": {
+    "direction": "long",
+    "n": 2560,
+    "gross_mean_bps": 0.038961,
+    "net_mean_bps": -4.626839,
+    "net_median_bps": -4.6658,
+    "hit_rate": 0.0,
+    "profit_factor": 0.0
+   },
+   "short": {
+    "direction": "short",
+    "n": 1328,
+    "gross_mean_bps": 0.041763,
+    "net_mean_bps": -4.624037,
+    "net_median_bps": -4.6658,
+    "hit_rate": 0.0,
+    "profit_factor": 0.0
+   },
+   "regimes": {
+    "normal": {
+     "n": 2673,
+     "gross_mean_bps": 0.054521,
+     "net_mean_bps": -4.611279
+    },
+    "high_impact": {
+     "n": 1198,
+     "gross_mean_bps": 0.004106,
+     "net_mean_bps": -4.661694
+    },
+    "thin_book": {
+     "n": 17,
+     "gross_mean_bps": 0.267511,
+     "net_mean_bps": -4.398289
+    }
+   }
+  },
+  "oos": {
+   "rows": 3889,
+   "gross_expectancy_bps": 0.074416,
+   "net_expectancy_bps": -4.591384,
+   "n_valid": 3882,
+   "std_bps": 0.376206,
+   "sem_bps": 0.006038,
+   "ci_95_low": -4.603222,
+   "ci_95_high": -4.579545,
+   "t_stat": -760.405283,
+   "p_value": 0.0,
+   "profit_factor": 0.0,
+   "max_drawdown_bps": 17819.085308,
+   "long": {
+    "direction": "long",
+    "n": 2863,
+    "gross_mean_bps": 0.020522,
+    "net_mean_bps": -4.645278,
+    "net_median_bps": -4.6658,
+    "hit_rate": 0.0,
+    "profit_factor": 0.0
+   },
+   "short": {
+    "direction": "short",
+    "n": 1019,
+    "gross_mean_bps": 0.22584,
+    "net_mean_bps": -4.43996,
+    "net_median_bps": -4.6658,
+    "hit_rate": 0.0,
+    "profit_factor": 0.0
+   },
+   "regimes": {
+    "high_impact": {
+     "n": 1380,
+     "gross_mean_bps": 0.001906,
+     "net_mean_bps": -4.663894
+    },
+    "normal": {
+     "n": 2502,
+     "gross_mean_bps": 0.11441,
+     "net_mean_bps": -4.55139
+    }
+   }
+  }
+ },
+ "verdict": "STOP"
+}

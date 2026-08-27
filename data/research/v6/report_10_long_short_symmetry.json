@@ -1,0 +1,30 @@
+{
+  "title": "Long/Short Symmetry Report",
+  "generated_at": "2026-08-19T20:29:02.264652+00:00",
+  "v6_long": {
+    "n": 0,
+    "gross_bps": NaN,
+    "net_bps": NaN,
+    "win_rate": 0.0
+  },
+  "v6_short": {
+    "n": 0,
+    "gross_bps": NaN,
+    "net_bps": NaN,
+    "win_rate": 0.0
+  },
+  "v5_long": {
+    "n": 0,
+    "gross_bps": NaN,
+    "net_bps": NaN,
+    "win_rate": 0.0
+  },
+  "v5_short": {
+    "n": 0,
+    "gross_bps": NaN,
+    "net_bps": NaN,
+    "win_rate": 0.0
+  },
+  "verdict": "NO_EDGE",
+  "note": "A deployable strategy must not be long-only or short-only profitable. Both directions must be profitable or both non-significant."
+}

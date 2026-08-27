@@ -1,0 +1,186 @@
+{
+  "title": "OOS Report",
+  "generated_at": "2026-08-19T20:29:02.261484+00:00",
+  "oos_rows": 3889,
+  "sessions": [
+    "20260818-194920",
+    "20260818-195221"
+  ],
+  "start_ts_ms": 1787082620885,
+  "end_ts_ms": 1787082921993,
+  "v5_scoreboard": {
+    "horizon_ms": 500,
+    "gate_bps": 4.672,
+    "oos_rows": 3889,
+    "executed_rows": 0,
+    "no_trade_rows": 3889,
+    "gross_dir_n": 3889,
+    "gross_expectancy_bps": 0.06408,
+    "gross_std_bps": 0.378104,
+    "gross_hac_se_bps": 0.008425,
+    "gross_hac_z": 7.605499,
+    "gross_hac_p": 0.0,
+    "gross_hac_ci95_low": 0.047566,
+    "gross_hac_ci95_high": 0.080594,
+    "gated_expectancy_bps": 0.0,
+    "gated_std_bps": 0.0,
+    "gated_hac_se_bps": 0.0,
+    "gated_hac_z": 0.0,
+    "gated_hac_p": 1.0,
+    "gated_hac_ci95_low": 0.0,
+    "gated_hac_ci95_high": 0.0,
+    "per_direction": {
+      "LONG": {
+        "n": 0,
+        "gross_bps": NaN,
+        "net_bps": NaN,
+        "win_rate": 0.0
+      },
+      "SHORT": {
+        "n": 0,
+        "gross_bps": NaN,
+        "net_bps": NaN,
+        "win_rate": 0.0
+      }
+    },
+    "per_session": {
+      "20260818-194920": {
+        "rows": 1574,
+        "executed_rows": 0,
+        "gross_bps": 0.000923,
+        "net_bps": 0.0
+      },
+      "20260818-195221": {
+        "rows": 2315,
+        "executed_rows": 0,
+        "gross_bps": 0.107151,
+        "net_bps": 0.0
+      }
+    },
+    "per_regime": {},
+    "hac_max_lag": 1,
+    "pf": 0.0,
+    "sharpe": 0.0,
+    "max_drawdown_bps": 0.0,
+    "net_trail_n": 0
+  },
+  "v6_scoreboard": {
+    "horizon_ms": 500,
+    "gate_bps": 4.672,
+    "oos_rows": 3889,
+    "executed_rows": 0,
+    "no_trade_rows": 3889,
+    "gross_dir_n": 3889,
+    "gross_expectancy_bps": 0.071924,
+    "gross_std_bps": 0.376691,
+    "gross_hac_se_bps": 0.008393,
+    "gross_hac_z": 8.570073,
+    "gross_hac_p": 0.0,
+    "gross_hac_ci95_low": 0.055475,
+    "gross_hac_ci95_high": 0.088374,
+    "gated_expectancy_bps": 0.0,
+    "gated_std_bps": 0.0,
+    "gated_hac_se_bps": 0.0,
+    "gated_hac_z": 0.0,
+    "gated_hac_p": 1.0,
+    "gated_hac_ci95_low": 0.0,
+    "gated_hac_ci95_high": 0.0,
+    "per_direction": {
+      "LONG": {
+        "n": 0,
+        "gross_bps": NaN,
+        "net_bps": NaN,
+        "win_rate": 0.0
+      },
+      "SHORT": {
+        "n": 0,
+        "gross_bps": NaN,
+        "net_bps": NaN,
+        "win_rate": 0.0
+      }
+    },
+    "per_session": {
+      "20260818-194920": {
+        "rows": 1574,
+        "executed_rows": 0,
+        "gross_bps": 0.033281,
+        "net_bps": 0.0
+      },
+      "20260818-195221": {
+        "rows": 2315,
+        "executed_rows": 0,
+        "gross_bps": 0.098278,
+        "net_bps": 0.0
+      }
+    },
+    "per_regime": {},
+    "hac_max_lag": 1,
+    "pf": 0.0,
+    "sharpe": 0.0,
+    "max_drawdown_bps": 0.0,
+    "net_trail_n": 0
+  },
+  "cost_adjusted": {
+    "historical_taker": {
+      "gate_bps": 4.672,
+      "gross_bps": 0.071924,
+      "gross_hac_se_bps": 0.008393,
+      "gross_hac_p": 0.0,
+      "gross_hac_ci95": [
+        0.055475,
+        0.088374
+      ],
+      "net_bps": 0.0,
+      "net_hac_se_bps": 0.0,
+      "net_hac_z": 0.0,
+      "net_hac_p": 1.0,
+      "net_hac_ci95": [
+        0.0,
+        0.0
+      ],
+      "executed_n": 0,
+      "cost_to_gross_ratio": 65.0
+    },
+    "contemporaneous_taker": {
+      "gate_bps": 4.6646,
+      "gross_bps": 0.071924,
+      "gross_hac_se_bps": 0.008393,
+      "gross_hac_p": 0.0,
+      "gross_hac_ci95": [
+        0.055475,
+        0.088374
+      ],
+      "net_bps": 0.0,
+      "net_hac_se_bps": 0.0,
+      "net_hac_z": 0.0,
+      "net_hac_p": 1.0,
+      "net_hac_ci95": [
+        0.0,
+        0.0
+      ],
+      "executed_n": 0,
+      "cost_to_gross_ratio": 64.9
+    },
+    "contemporaneous_maker": {
+      "gate_bps": 3.4396,
+      "gross_bps": 0.071924,
+      "gross_hac_se_bps": 0.008393,
+      "gross_hac_p": 0.0,
+      "gross_hac_ci95": [
+        0.055475,
+        0.088374
+      ],
+      "net_bps": -0.001032,
+      "net_hac_se_bps": 0.0,
+      "net_hac_z": 0.0,
+      "net_hac_p": 1.0,
+      "net_hac_ci95": [
+        -4.011914,
+        -4.011914
+      ],
+      "executed_n": 1,
+      "cost_to_gross_ratio": 47.8
+    }
+  },
+  "verdict": "NO_EDGE"
+}

@@ -1,0 +1,108 @@
+{
+  "experiment_id": "EXP-007",
+  "hypothesis": "Horizon-Matched Feature Aggregation",
+  "generated_at": "2026-08-23T20:04:02.531986+00:00",
+  "cost_bps": 2.5,
+  "horizons": {
+    "1000": {
+      "n_oos": 3883,
+      "gross_predicted_bps": 0.0295,
+      "gross_actual_bps": -0.044,
+      "net_bps": -2.544,
+      "net_ci95": [
+        -2.4781,
+        -2.4635
+      ],
+      "direction_accuracy": 0.1496,
+      "pct_above_gate": 0.0,
+      "n_features": 10,
+      "feature_names": [
+        "ofi_h",
+        "tfi_sum_h",
+        "tfi_mean_h",
+        "vol_h",
+        "depth_change_h",
+        "vpin_h",
+        "autocorr_h",
+        "qi_cur",
+        "spread_cur",
+        "mpd_cur"
+      ]
+    },
+    "5000": {
+      "n_oos": 3871,
+      "gross_predicted_bps": 0.1129,
+      "gross_actual_bps": -0.0647,
+      "net_bps": -2.5647,
+      "net_ci95": [
+        -2.3978,
+        -2.3768
+      ],
+      "direction_accuracy": 0.2687,
+      "pct_above_gate": 0.0,
+      "n_features": 10,
+      "feature_names": [
+        "ofi_h",
+        "tfi_sum_h",
+        "tfi_mean_h",
+        "vol_h",
+        "depth_change_h",
+        "vpin_h",
+        "autocorr_h",
+        "qi_cur",
+        "spread_cur",
+        "mpd_cur"
+      ]
+    },
+    "10000": {
+      "n_oos": 3863,
+      "gross_predicted_bps": 0.0693,
+      "gross_actual_bps": -0.0614,
+      "net_bps": -2.5614,
+      "net_ci95": [
+        -2.4466,
+        -2.4149
+      ],
+      "direction_accuracy": 0.4041,
+      "pct_above_gate": 0.0,
+      "n_features": 10,
+      "feature_names": [
+        "ofi_h",
+        "tfi_sum_h",
+        "tfi_mean_h",
+        "vol_h",
+        "depth_change_h",
+        "vpin_h",
+        "autocorr_h",
+        "qi_cur",
+        "spread_cur",
+        "mpd_cur"
+      ]
+    },
+    "30000": {
+      "n_oos": 3830,
+      "gross_predicted_bps": 0.1412,
+      "gross_actual_bps": -0.1368,
+      "net_bps": -2.6368,
+      "net_ci95": [
+        -2.3809,
+        -2.3358
+      ],
+      "direction_accuracy": 0.3783,
+      "pct_above_gate": 0.0,
+      "n_features": 10,
+      "feature_names": [
+        "ofi_h",
+        "tfi_sum_h",
+        "tfi_mean_h",
+        "vol_h",
+        "depth_change_h",
+        "vpin_h",
+        "autocorr_h",
+        "qi_cur",
+        "spread_cur",
+        "mpd_cur"
+      ]
+    }
+  }
+}

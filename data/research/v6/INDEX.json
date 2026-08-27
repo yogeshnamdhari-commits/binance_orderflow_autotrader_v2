@@ -1,0 +1,72 @@
+{
+  "title": "V6 Final Reports Index",
+  "generated_at": "2026-08-19T20:29:02.269995+00:00",
+  "final_verdict": "NO_EDGE",
+  "reports": [
+    {
+      "id": 1,
+      "file": "report_01_v5_baseline.json",
+      "title": "V5 Frozen Baseline Report"
+    },
+    {
+      "id": 2,
+      "file": "report_02_v6_feature_audit.json",
+      "title": "V6 Feature Audit"
+    },
+    {
+      "id": 3,
+      "file": "report_03_feature_predictive.json",
+      "title": "Feature-by-Feature Predictive Report"
+    },
+    {
+      "id": 4,
+      "file": "report_04_incremental_information.json",
+      "title": "Incremental-Information Report"
+    },
+    {
+      "id": 5,
+      "file": "report_05_execution_cost.json",
+      "title": "Execution-Cost Report"
+    },
+    {
+      "id": 6,
+      "file": "report_06_oos.json",
+      "title": "OOS Report"
+    },
+    {
+      "id": 7,
+      "file": "report_07_multiple_testing.json",
+      "title": "Multiple-Testing Report"
+    },
+    {
+      "id": 8,
+      "file": "report_08_probability_calibration.json",
+      "title": "Probability-Calibration Report"
+    },
+    {
+      "id": 9,
+      "file": "report_09_regime.json",
+      "title": "Regime Report"
+    },
+    {
+      "id": 10,
+      "file": "report_10_long_short_symmetry.json",
+      "title": "Long/Short Symmetry Report"
+    },
+    {
+      "id": 11,
+      "file": "report_11_replication_protocol.json",
+      "title": "Independent-Replication Protocol"
+    },
+    {
+      "id": 12,
+      "file": "report_12_signal_decision_spec.json",
+      "title": "Final Signal Decision Specification"
+    },
+    {
+      "id": 13,
+      "file": "report_13_deployment_gate.json",
+      "title": "Deployment Gate Report"
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+ "freeze_id": "0d0e4291880bee7ce6b69478455386a11e451360f1dad6d6a9344d8944544b5d",
+ "frozen_at": "2026-08-18T20:21:35.388952+00:00",
+ "run_kind": "freeze",
+ "body": {
+  "modules": {
+   "app/v3_collector.py": "9b1abd0b98322026fa2bef57eb594e331025702af7c967e41fe0695e62c86f6d",
+   "app/v3_replay.py": "0c1e2c39ddf3b5dc8dad365d564e20628c4aa5a31465508c5717e39c8146696a",
+   "app/v3_features.py": "1754a8603659b7eaed30534ceb98b99dd6a296ea07b7a2fbd38bd454b16a5f99",
+   "app/v3_labels.py": "77ea53b93fdc0afb3314c56143009abf1083a93fa06567c31837c5dd6d4feb73",
+   "app/v3_model.py": "1ef9be0e4a770c46a2ffb3b90f5f0166cded8afd1c32a8528e358c384f867623",
+   "app/v3_cost.py": "f8228606b39512f95e2f4d2bdd44ebd8bf5243f01fa27e403560dd872ff76c2a",
+   "app/v3_signal.py": "707f4b388fab4276749ebc3e833bc5f1e182ec632e7e7c270683a43bc763e2d8",
+   "app/v3_validation.py": "dcc288fa741de3a13836c49e03653f354d69c5caaae2c4a86162280b98206b41",
+   "app/v3_economic_report.py": "5110edfbdd426280947e1af4074c47c63ccb2ba27e1759390712f74de455e5e6",
+   "app/v3_manifest.py": "d672393dbdf67fe2eee0be3ea9e9d58eda0d07f3d069d066c16088d256641a0d",
+   "app/l2_collector.py": "ad7c373a132fd44d063d65fccb34b97499403b32f0b1d431ffcdbcabbc6ee43c",
+   "app/l2_replay.py": "db5e45984bfb7bfa6a1cef059133427b4e5f49023899c5632f20aa40a8800332",
+   "app/orderbook.py": "1e130c2a133ca7ecb77b7e1509dfb8ae16256430e439f5b1c9eb3d615b7e0d57",
+   "app/models.py": "7f54c83cdc4636cdb831d2684f48f43e52f413d47039fb2690fe9b1e76816248",
+   "app/config.py": "bd4cdbb1299a4240759d12567d2a85c83b5ee75b8b0a86ee3808e3740e19534c"
+  },
+  "artifacts": {
+   "data/research/v3_model.json": "d8f84368a108e6f028a2fb5ef92c8a2d29141539e089b2df19e11aaae51b9c3f",
+   "data/research/v3_calibration.json": "9e7ab02aa276fd90e43248a4effeb4860c82921af46ce424483825358c42fde9",
+   "data/hist/research/execution_calibration.json": "2d036e81b5106e3357b81d3cc9cd5101bcc85d55e958afc4bf6daf3189e7003d"
+  },
+  "dependencies": {
+   "numpy": "2.3.5",
+   "pandas": "3.0.1",
+   "pyarrow": "24.0.0",
+   "requests": "2.32.5",
+   "websocket-client": "1.9.0",
+   "python-dotenv": "1.2.2",
+   "pytest": "9.0.3",
+   "python": "3.13.12"
+  }
+ },
+ "note": "V3 freeze_id = sha256 over modules+artifacts+deps. OOS runner must reproduce this id or it aborts.",
+ "out_dir": "data/research"
+}

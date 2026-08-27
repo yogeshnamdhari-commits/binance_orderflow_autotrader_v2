@@ -1,0 +1,118 @@
+{
+  "experiment_id": "EXP-016",
+  "hypothesis": "Cross-Market/Derivatives Context: Incremental Information Test",
+  "status": "REJECTED",
+  "date_completed": "2026-08-24T10:00:00Z",
+  "data_sources": [
+    "data/hist/normalized/BTCUSDT/aggTrades/ (30 days, 37M trades)",
+    "Binance Futures API: funding_rates (8h intervals)",
+    "Binance Futures API: hourly_prices"
+  ],
+  "available_data_dimensions": {
+    "trade_flow": "YES (30 days)",
+    "funding_rate": "YES (8h intervals, 91 records)",
+    "open_interest": "NO (historical OI not downloadable)",
+    "basis_spot_vs_perp": "PARTIAL (hourly perp prices only, no spot)",
+    "liquidation_data": "NO (not available)",
+    "cross_venue_lead_lag": "NO (only Binance data)"
+  },
+  "features_tested": {
+    "funding_rate": "Previous 8h funding rate (causal)",
+    "funding_sign": "Sign of funding rate",
+    "funding_abs": "Absolute funding rate",
+    "funding_change": "Change from previous interval",
+    "hourly_return_1h": "1-hour lagged return",
+    "hourly_return_24h": "24-hour lagged return",
+    "funding_x_tradesign": "Interaction: funding sign \u00d7 trade sign"
+  },
+  "horizons_tested": [
+    1,
+    5,
+    10,
+    30,
+    60
+  ],
+  "size_conditioning": "p99.9 and p99.0 (train-only threshold)",
+  "model": "LogisticRegression(C=1.0, max_iter=2000)",
+  "split": "70% chronological train / 30% test",
+  "baseline_results": {
+    "1s_p99.9": {
+      "ic": 0.342,
+      "auc": 0.767,
+      "dp_bps": 1.22,
+      "net_maker": -0.78,
+      "net_taker": -2.79
+    },
+    "5s_p99.9": {
+      "ic": 0.196,
+      "auc": 0.676,
+      "dp_bps": 1.2,
+      "net_maker": -0.8,
+      "net_taker": -2.81
+    },
+    "10s_p99.9": {
+      "ic": 0.166,
+      "auc": 0.637,
+      "dp_bps": 1.11,
+      "net_maker": -0.89,
+      "net_taker": -2.89
+    },
+    "30s_p99.9": {
+      "ic": 0.108,
+      "auc": 0.581,
+      "dp_bps": 1.07,
+      "net_maker": -0.93,
+      "net_taker": -2.94
+    },
+    "60s_p99.9": {
+      "ic": 0.083,
+      "auc": 0.558,
+      "dp_bps": 1.11,
+      "net_maker": -0.89,
+      "net_taker": -2.9
+    }
+  },
+  "incremental_results": {
+    "funding_rate": {
+      "best_incremental_dp": -0.07,
+      "range": [
+        -0.13,
+        -0.03
+      ]
+    },
+    "hourly_returns": {
+      "best_incremental_dp": 0.05,
+      "range": [
+        -0.16,
+        0.07
+      ]
+    },
+    "full_model": {
+      "best_incremental_dp": 0.05,
+      "range": [
+        -0.16,
+        0.07
+      ]
+    }
+  },
+  "walk_forward": {
+    "all_test_periods_negative": true,
+    "bootstrap_ci_excludes_positive": true
+  },
+  "funding_regime_analysis": {
+    "positive_funding_IC": 0.172,
+    "negative_funding_IC": 0.16,
+    "difference": 0.012,
+    "conclusion": "No regime-dependent effect"
+  },
+  "leakage_audit": "NO LEAKAGE \u2014 all features use only past data",
+  "rejection_summary": {
+    "incremental_OOS_IC": "negligible (all < 0.02)",
+    "AUC_improvement": "none (AUC unchanged or degrades)",
+    "net_expectancy": "\u2264 0 in all branches",
+    "bootstrap_CI": "excludes positive in all branches",
+    "walk_forward": "no stability (test net_maker < 0)",
+    "concentration": "not concentrated in one period",
+    "leakage": "none"
+  }
+}

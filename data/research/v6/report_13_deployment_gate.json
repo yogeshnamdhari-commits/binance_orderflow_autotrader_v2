@@ -1,0 +1,52 @@
+{
+  "title": "Deployment Gate Report",
+  "generated_at": "2026-08-19T20:29:02.268942+00:00",
+  "final_verdict": "NO_EDGE",
+  "verdict_reason": "V6 does not demonstrate deployable edge after execution costs.",
+  "deployment_gates": {
+    "net_positive_after_cost": false,
+    "gross_statistically_significant": true,
+    "net_statistically_significant": false,
+    "normal_regime_robust": false,
+    "long_short_symmetric": false,
+    "incremental_r2_positive": false
+  },
+  "gate_results": {
+    "net_positive_after_cost": {
+      "status": "FAIL",
+      "value": 0.0,
+      "threshold": "> 0 bps"
+    },
+    "gross_statistically_significant": {
+      "status": "PASS",
+      "value": 0.0,
+      "threshold": "< 0.05"
+    },
+    "net_statistically_significant": {
+      "status": "FAIL",
+      "value": 1.0,
+      "threshold": "< 0.05"
+    },
+    "normal_regime_robust": {
+      "status": "FAIL",
+      "value": "See regime report",
+      "threshold": "Profitable in NORMAL regime"
+    },
+    "long_short_symmetric": {
+      "status": "FAIL",
+      "value": "LONG=nan, SHORT=nan",
+      "threshold": "Both directions profitable or both non-significant"
+    },
+    "incremental_r2_positive": {
+      "status": "FAIL",
+      "value": 0.0,
+      "threshold": "> 0"
+    }
+  },
+  "next_steps": [
+    "If CONDITIONAL_EDGE: proceed to independent replication on new untouched data",
+    "If NO_EDGE: report failure; do not optimize; investigate alternative signal formulation",
+    "Live trading remains BLOCKED until independent replication passes"
+  ],
+  "scientific_conclusion": "V6 contains statistically significant incremental information over V5, but the incremental gross expectancy is only ~0.0078 bps and is completely overwhelmed by realistic execution costs of ~3.44 bps maker / ~4.67 bps taker. There is no deployable economic edge at current horizons. The next research question is whether the validated order-flow information can be expressed at a different pre-registered trading horizon, signal formulation, or instrument where the price response is economically large enough to survive costs."
+}

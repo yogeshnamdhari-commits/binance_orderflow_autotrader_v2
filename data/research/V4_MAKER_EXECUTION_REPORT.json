@@ -1,0 +1,144 @@
+{
+ "generated_at": "2026-08-18T20:54:54.024759+00:00",
+ "horizon_ms": 500,
+ "post_gate_bps": 1.55,
+ "frozen_model": "data/research/v3_model.json",
+ "integrity": {
+  "replay_aligned_integrity_failures": []
+ },
+ "scoreboard": {
+  "conclusion": "valid",
+  "samples": 946,
+  "posted_signals": 946,
+  "entries_filled": 24,
+  "fill_probability": 0.02537,
+  "full_fill_probability": 1.0,
+  "partial_fill_probability": 0.0,
+  "median_time_to_fill_ms": 4214.5,
+  "p95_time_to_fill_ms": 4998.0,
+  "net_expectancy_bps": -0.609468,
+  "net_median_bps": -0.55,
+  "profit_factor": 0.0,
+  "sharpe": -48.105977480796156,
+  "max_drawdown_bps": -576.0071844357874,
+  "adverse_selection_mean_bps": 0.106989,
+  "adverse_selection_median_bps": 0.0,
+  "adverse_selection_p95_bps": 0.443942,
+  "fill_conditional_drag_bps": -0.130199,
+  "unconditional_gross_bps": 0.02321,
+  "oos_periods": 12,
+  "largest_session_net_share": 0.3145158966851944,
+  "per_session": {
+   "20260818-190746": {
+    "signals": 0,
+    "entry_attempts": 0,
+    "filled": 0,
+    "net_mean_bps": null
+   },
+   "20260818-190823": {
+    "signals": 0,
+    "entry_attempts": 0,
+    "filled": 0,
+    "net_mean_bps": null
+   },
+   "20260818-191124": {
+    "signals": 0,
+    "entry_attempts": 0,
+    "filled": 0,
+    "net_mean_bps": null
+   },
+   "20260818-191426": {
+    "signals": 0,
+    "entry_attempts": 0,
+    "filled": 0,
+    "net_mean_bps": null
+   },
+   "20260818-191727": {
+    "signals": 0,
+    "entry_attempts": 0,
+    "filled": 0,
+    "net_mean_bps": null
+   },
+   "20260818-192029": {
+    "signals": 0,
+    "entry_attempts": 0,
+    "filled": 0,
+    "net_mean_bps": null
+   },
+   "20260818-193713": {
+    "signals": 0,
+    "entry_attempts": 0,
+    "filled": 0,
+    "net_mean_bps": null
+   },
+   "20260818-194015": {
+    "signals": 0,
+    "entry_attempts": 0,
+    "filled": 0,
+    "net_mean_bps": null
+   },
+   "20260818-194317": {
+    "signals": 0,
+    "entry_attempts": 0,
+    "filled": 0,
+    "net_mean_bps": null
+   },
+   "20260818-194618": {
+    "signals": 0,
+    "entry_attempts": 0,
+    "filled": 0,
+    "net_mean_bps": null
+   },
+   "20260818-194920": {
+    "signals": 292,
+    "entry_attempts": 292,
+    "filled": 10,
+    "net_mean_bps": -0.621015
+   },
+   "20260818-195221": {
+    "signals": 654,
+    "entry_attempts": 654,
+    "filled": 14,
+    "net_mean_bps": -0.604313
+   }
+  }
+ },
+ "binding_component_decomposition": {
+  "posted_signals": 946,
+  "long_posts": 863,
+  "short_posts": 83,
+  "decision_state_counts": {
+   "NO_TRADE": 946
+  },
+  "binding_detail": "FILL RARITY IS THE BINDING COMPONENT: only 2.5% of posted touch-quotes fill within 5 s (median time-to-fill 4.2 s, deep queue ahead); adverse selection is NOT the driver (measured fills-conditional drag is negative). The ~97.5% of attempts that never fill each incur the predeclared cancel/reprice+latency drag.",
+  "decomposition": {
+   "realized_move_bps": -0.002175,
+   "executed_maker_taker_fees_bps": 0.06871,
+   "nonfill_cancel_reprice_latency_drag_bps": 0.538584,
+   "net_bps": -0.609468
+  },
+  "filled_sample": {
+   "n": 24,
+   "net_mean_bps": -2.894049,
+   "move_mean_bps": -0.085716
+  }
+ },
+ "verdict": {
+  "verdict": "FAIL",
+  "reasons": [
+   "net maker expectancy -0.6095 bps <= 0 after realistic maker costs"
+  ],
+  "criteria": {
+   "net_expectancy_bps": -0.609468,
+   "oos_periods": 12,
+   "posted_signals": 946,
+   "officials_ok": true,
+   "fill_supported": false,
+   "single_session_share": 0.3145158966851944,
+   "dominance_ok": true,
+   "positive_session_fraction": 0.0,
+   "robust": false,
+   "adverse_consumes_edge": false
+  }
+ }
+}

@@ -1,0 +1,77 @@
+# ============================================================
+# Binance Orderflow Autotrader V2 - Git exclusions
+# ============================================================
+
+# ------------------------------------------------------------
+# LARGE MARKET DATA — KEEP LOCAL, NEVER COMMIT
+# ------------------------------------------------------------
+data/hist/
+data/raw/
+data/archives/
+data/normalized/
+
+# Large data formats anywhere else
+*.parquet
+*.feather
+*.h5
+*.hdf5
+*.arrow
+*.gz
+*.zip
+*.tar
+*.tar.gz
+*.db
+*.sqlite
+*.sqlite3
+
+# ------------------------------------------------------------
+# GENERATED / TEMPORARY FILES
+# ------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+tmp/
+temp/
+*.tmp
+*.bak
+*.log
+
+# ------------------------------------------------------------
+# VIRTUAL ENVIRONMENTS
+# ------------------------------------------------------------
+.venv/
+venv/
+env/
+ENV/
+
+# ------------------------------------------------------------
+# SECRETS / CREDENTIALS
+# ------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+secrets.json
+
+# ------------------------------------------------------------
+# OS / IDE
+# ------------------------------------------------------------
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# ------------------------------------------------------------
+# LOCAL RESEARCH OUTPUT THAT SHOULD NOT BE COMMITTED
+# ------------------------------------------------------------
+*.pickle
+*.pkl
+*.joblib

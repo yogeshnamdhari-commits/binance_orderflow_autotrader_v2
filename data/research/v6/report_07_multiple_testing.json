@@ -1,0 +1,12 @@
+{
+  "title": "Multiple-Testing Report",
+  "generated_at": "2026-08-19T20:29:02.262544+00:00",
+  "n_experiments": 108,
+  "family_wise_error_rate": 0.05,
+  "bonferroni_corrected_alpha": 0.000463,
+  "current_v6_p_gross": 0.0,
+  "current_v6_p_net": 1.0,
+  "passes_bonferroni_gross": true,
+  "passes_bonferroni_net": false,
+  "note": "For Phase 7, all 108 experiments must be evaluated before any conclusion. Current V6 result is from a single experiment and does not survive Bonferroni correction."
+}

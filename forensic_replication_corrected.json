@@ -1,0 +1,203 @@
+{
+  "replication_audit_metadata": {
+    "audit_type": "Strict Replication Audit - Category Classification",
+    "project": "Binance Order Flow AutoTrader v2",
+    "audit_timestamp": "2026-08-21T01:30:00+05:30",
+    "audit_scope": "Strict classification of work performed into three categories: Original Calculation, Independent Recalculation/Verification, True Independent Replication",
+    "trigger": "Terminology inconsistency identified: 'Independent Replication = NOT PERFORMED' vs 'Final Classification: B. REPRODUCED + ECONOMICALLY NEGATIVE' vs 'NO_EDGE / REPLICATION_FAIL was fully reproduced and confirmed by independent calculation.'",
+    "constraints": {
+      "no_strategy_modification": true,
+      "no_parameter_tuning": true,
+      "no_v5_baseline_changes": true,
+      "no_live_trading_enable": true,
+      "no_governance_bypass": true,
+      "no_edge_manufacture": true,
+      "no_gate_lowering": true
+    }
+  },
+  "1_category_definitions": {
+    "1_original_calculation": {
+      "definition": "The original economic reports produced by the project's own validation pipeline (v5_economic_report.py, v6_comprehensive_validation.py)",
+      "files": [
+        "data/research/v5/v5_verdict.json",
+        "data/research/v5/v5_verdict.md",
+        "data/research/v6/V6_COMPREHENSIVE_VALIDATION.json",
+        "data/research/v5/Q2/v5_q2_report.json"
+      ],
+      "code_used": "app/v5_economic_report.py, app/v6_comprehensive_validation.py, app/v5_cost.py, app/v5_validation.py, app/v5_model.py, app/v6_model.py",
+      "data_used": "data/research/v5_features.parquet, data/research/v6_features.parquet",
+      "independently_implemented": false,
+      "same_source_code_reused": true,
+      "same_intermediate_predictions_reused": true,
+      "sample_size": 3889,
+      "formulas": "Gross expectancy = mean(sign(pred) * r_500); Gated = mean(sign(pred)*y - gate) for |pred|>gate",
+      "results": "V5 gross: 0.06408 bps, gated: 0.0; V6 gross: 0.0719 bps, gated: 0.0"
+    },
+    "2_independent_recalculation_verification": {
+      "definition": "Independent re-execution of the SAME source code on the SAME data to verify computational correctness. Same code, same data, same environment. Not independent replication.",
+      "what_was_done": "Re-ran the EXACT same pipeline (v5_economic_report.py logic, v6_comprehensive_validation.py logic) on the SAME data using the SAME source code in the SAME environment, step-by-step, to verify computational correctness.",
+      "dataset_used": "SAME data/research/v5_features.parquet, data/research/v6_features.parquet",
+      "code_used": "SAME source code (app/v5_economic_report.py, app/v5_validation.py, app/v6_comprehensive_validation.py, app/v5_model.py, app/v6_model.py, app/v5_cost.py)",
+      "independently_implemented": false,
+      "same_source_code_reused": true,
+      "same_intermediate_predictions_reused": false,
+      "predictions_regenerated": true,
+      "sample_size": 3889,
+      "exact_formulas_replicated": "Gross: mean(sign(pred)*r_500); Gated: mean(sign(pred)*y - gate) for |pred|>gate",
+      "results_matched": true,
+      "results": {
+        "v5_gross_expectancy_bps": 0.06407983716249906,
+        "v6_gross_expectancy_bps": 0.07192436463353025,
+        "v5_gated_expectancy_bps": 0.0,
+        "v6_gated_expectancy_bps": 0.0,
+        "v5_executed_rows": 0,
+        "v6_executed_rows": 0
+      },
+      "classification": "INDEPENDENT RECALCULATION / VERIFICATION (Category 2)",
+      "note": "This is a VERIFICATION of computational correctness, NOT an independent replication. Same code, same data, same environment."
+    },
+    "3_true_independent_replication": {
+      "definition": "Completely independent reconstruction from source raw data using independently implemented code, independent feature engineering, independently trained models, independent cost model, on NEW untouched data.",
+      "requirements_per_protocol": [
+        "Collect NEW untouched Binance USD-M Futures data (not used in training/validation/OOS)",
+        "Apply identical V6 feature engineering (independently implemented)",
+        "Use same frozen V6 model (no refitting) - but model must be loaded from artifact",
+        "Apply same cost model (Q2 contemporary) - independently implemented",
+        "Run identical Signal Decision Engine gates (independently implemented)",
+        "Report gross expectancy, net expectancy, HAC p-values",
+        "Compare with original OOS results"
+      ],
+      "acceptance_criteria": {
+        "net_expectancy_after_cost_bps": "> 0",
+        "gross_hac_p": "< 0.05",
+        "net_hac_p": "< 0.05",
+        "regime_robust": "Profitable in at least one non-high-impact regime",
+        "long_short_symmetry": "Both directions profitable or both non-significant"
+      },
+      "what_was_done": "NOTHING. No new data collected. No independent feature engineering. No independent model training. No independent cost model implementation. No independent Signal Decision Engine implementation.",
+      "dataset_used": "SAME existing OOS data (20260818-194920, 20260818-195221)",
+      "code_used": "SAME original source code",
+      "independently_implemented": false,
+      "new_data_collected": false,
+      "independent_feature_engineering": false,
+      "independent_model_training": false,
+      "independent_cost_model": false,
+      "independent_decision_engine": false,
+      "sample_size": "N/A (not performed)",
+      "results": "NOT PERFORMED",
+      "classification": "TRUE INDEPENDENT REPLICATION NOT PERFORMED (Category 3 - Outstanding)",
+      "replication_protocol_file": "data/research/v6/report_11_replication_protocol.json",
+      "protocol_requires_new_data": true
+    }
+  },
+  "2_category_comparison": {
+    "category_1_original_calculation": {
+      "performed": true,
+      "by_whom": "Original project validation pipeline",
+      "status": "Completed (original reports exist)"
+    },
+    "category_2_independent_recalculation_verification": {
+      "performed": true,
+      "by_whom": "This audit (Kilo)",
+      "method": "Step-by-step re-execution of original code on original data",
+      "status": "COMPLETED - All calculations match exactly",
+      "results_matched": true,
+      "note": "This is VERIFICATION, not replication"
+    },
+    "category_3_true_independent_replication": {
+      "performed": false,
+      "reason": "Requires NEW untouched Binance data, independent feature engineering, independent cost model, independent Signal Decision Engine - none performed",
+      "status": "OUTSTANDING - Required by protocol before any deployment review",
+      "protocol_file": "data/research/v6/report_11_replication_protocol.json"
+    }
+  },
+  "3_corrected_classification": {
+    "original_report_classification": "B. REPRODUCED + ECONOMICALLY NEGATIVE",
+    "corrected_classification": "A. VERIFIED RECALCULATION + ECONOMICALLY NEGATIVE (TRUE INDEPENDENT REPLICATION OUTSTANDING)",
+    "reason": "The work performed was Category 2 (independent recalculation/verification), NOT Category 3 (true independent replication). The term 'REPRODUCED' in the original classification referred to computational verification, not independent replication.",
+    "replication_status": "REPLICATION_FAIL / NOT PERFORMED (unchanged)",
+    "economic_conclusion": "NO_EDGE (unchanged - verified by independent recalculation)",
+    "governance_status": "LIVE TRADING HARD-BLOCKED (V5_BASELINE_NO_LIVE_TRADE = True)",
+    "note": "The term 'REPRODUCED' in original report referred to computational verification (Category 2), not true independent replication (Category 3). True independent replication remains OUTSTANDING per protocol."
+  },
+  "4_incremental_r2_investigation": {
+    "v5_r2": 0.102707,
+    "v6_r2": -0.573328,
+    "incremental_r2": -0.676035,
+    "v5_v6_correlation": 0.552484,
+    "v6_residual_correlation_with_y": 0.127100,
+    "v6_residual_t_stat": 7.9817,
+    "v6_residual_p_value": 0.000000,
+    "v5_r2_explanation": "V5 R² = 0.1027 means V5 explains ~10% of variance in r_500 (positive, reasonable)",
+    "v6_r2_explanation": "V6 R² = -0.573 is NEGATIVE because V6 predictions are in ARBITRARY UNITS (max ~3.5) vs r_500 in bps (max ~1.4). V6 predictions are on completely different scale, so MSE is huge. V6 performs WORSE than predicting the mean.",
+    "v6_residual_correlation_with_y": 0.1271,
+    "v6_residual_t_stat": 7.9817,
+    "v6_residual_p_value": 0.000000,
+    "v6_residual_interpretation": "V6 residuals ARE significantly correlated with y (p=0.000), meaning V6 DOES contain incremental predictive information about r_500 that V5 doesn't capture. However, the V6 model is so poorly scaled (predictions in arbitrary units, not bps) that overall fit is worse than V5 alone.",
+    "incremental_r2_meaning": "Negative incremental R² (-0.676) does NOT mean V6 has no incremental information. It means V6's poor calibration destroys overall fit. The significant residual correlation (0.127, p=0.000) proves V6 has incremental predictive information, but the model is miscalibrated.",
+    "statistical_significance_of_incremental_info": "V6 residual correlation with y IS statistically significant (t=7.98, p<0.001). V6 DOES contain incremental predictive information. However, the model is miscalibrated so badly that net R² is negative.",
+    "conclusion": "V6 DOES contain incremental predictive information (residual correlation p=0.000), but the model is miscalibrated. Incremental R² is negative due to scale mismatch, not lack of information. This is a CALIBRATION issue, not an information issue."
+  },
+  "5_final_classification_matrix": {
+    "A_verified_recalculation": {
+      "performed": true,
+      "category": "Category 2 - Independent Recalculation/Verification",
+      "description": "Step-by-step re-execution of original code on original data to verify computational correctness",
+      "result": "ALL CALCULATIONS MATCH EXACTLY",
+      "status": "COMPLETED"
+    },
+    "B_true_independent_replication": {
+      "performed": false,
+      "category": "Category 3 - True Independent Replication",
+      "description": "Independent reconstruction on NEW data with independently implemented pipeline",
+      "result": "NOT PERFORMED",
+      "status": "OUTSTANDING - Required by protocol before deployment review"
+    },
+    "C_economic_validity": {
+      "assessment": "NO_EDGE",
+      "gross_expectancy_bps": 0.064,
+      "net_expectancy_bps": 0.0,
+      "cost_exceeds_signal_x": 73,
+      "verdict": "NO_EDGE"
+    },
+    "D_statistical_validity": {
+      "gross_expectancy_significant": true,
+      "net_expectancy_significant": false,
+      "sample_adequate": false,
+      "note": "Gross directional edge statistically significant but net expectancy zero due to zero executions at actual gate"
+    }
+  },
+  "6_corrected_final_classification": {
+    "classification": "A. VERIFIED RECALCULATION + ECONOMICALLY NEGATIVE (TRUE INDEPENDENT REPLICATION OUTSTANDING)",
+    "reasons": [
+      "All calculations independently verified (Category 2) - all match exactly",
+      "Zero trades executed in OOS (0/3,889 rows) at actual gate threshold",
+      "Net expectancy zero or negative after realistic costs at ALL gate levels",
+      "Net expectancy not statistically distinguishable from zero (HAC p=1.0)",
+      "Cost-to-gross ratio 48-73x exceeds breakeven by 48-73x",
+      "Break-even cost (0.064-0.072 bps) exceeded by 48-73x",
+      "Zero directional trades executed (0 LONG, 0 SHORT) at actual gate",
+      "V6 adds zero incremental economic value (incremental R² negative due to calibration, not lack of info)",
+      "TRUE INDEPENDENT REPLICATION NOT PERFORMED (Category 3 outstanding)",
+      "Multiple testing correction fails for net expectancy",
+      "No regime shows positive net expectancy",
+      "Governance lock V5_BASELINE_NO_LIVE_TRADE = True remains active"
+    ],
+    "final_verdict": "NO_EDGE (verified by independent recalculation; true independent replication still outstanding)",
+    "replication_status": "REPLICATION_FAIL / OUTSTANDING (protocol requires new data)",
+    "economic_conclusion": "NO_EDGE (verified by independent recalculation; true independent replication still required per protocol)",
+    "governance_status": "LIVE TRADING HARD-BLOCKED by V5_BASELINE_NO_LIVE_TRADE = True (hardcoded)"
+  },
+  "7_audit_conclusion": {
+    "corrected_terminology": "The work performed was Category 2 (Independent Recalculation/Verification), NOT Category 3 (True Independent Replication). The term 'REPRODUCED' in original report referred to computational verification, not independent replication.",
+    "data_integrity": "VERIFIED - Source data files exist and match reported values",
+    "computation_integrity": "VERIFIED - All calculations independently recalculated and match exactly",
+    "discrepancy_explained": "Gross expectancy (0.064 bps V5, 0.072 bps V6) is ALL-OBSERVATION DIRECTIONAL PREDICTION EXPECTANCY, NOT executed trade expectancy. Executed trades = 0 because model predictions (~0.7-3.5 arbitrary units) are far below gate threshold (4.6646 bps) due to UNIT MISMATCH.",
+    "executed_trades_zero_reason": "Model predictions in arbitrary units (max ~0.7 V5, ~3.5 V6) vs gate threshold in bps (4.6646). UNIT MISMATCH → 0 executions.",
+    "gross_expectancy_interpretation": "0.064 bps (V5) and 0.072 bps (V6) are ALL-OBSERVATION DIRECTIONAL PREDICTION EXPECTANCY, NOT executed trade expectancy. 0 trades executed at actual gate.",
+    "cost_verification": "Costs independently verified from execution_calibration.json and Q2 report. Gate = 4.6646 bps (contemporary). Break-even = 0.064-0.072 bps. Current cost exceeds break-even by 48-73x.",
+    "replication_status": "REPLICATION_FAIL / OUTSTANDING - True independent replication requires NEW data and independent implementation per protocol. This audit was Category 2 (verification), NOT Category 3 (replication).",
+    "governance_status": "LIVE TRADING HARD-BLOCKED by V5_BASELINE_NO_LIVE_TRADE = True (hardcoded)",
+    "economic_conclusion": "NO_EDGE (verified by independent recalculation; true independent replication still required per protocol)"
+  }
+}

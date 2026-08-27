@@ -1,0 +1,235 @@
+{
+  "audit_date": "2026-08-24T10:50:53Z",
+  "baseline_period": {
+    "start": "2024-08-16",
+    "end": "2026-08-15",
+    "days": 730
+  },
+  "dimensions": {
+    "btcusdt_trades": {
+      "classification": "A",
+      "description": "BTCUSDT historical trades/order flow",
+      "source": "Binance data.binance.vision (historical archives)",
+      "api_endpoint": null,
+      "local_path": "data/hist/normalized/BTCUSDT/aggTrades/",
+      "start_date": "2024-08-16",
+      "end_date": "2026-08-15",
+      "frequency": "per-trade",
+      "precision": "millisecond",
+      "records": 43600000,
+      "missingness": "0 days missing",
+      "reconstructable": true,
+      "synchronized": true,
+      "common_sample_size": "730 days",
+      "leakage_risk": "NONE",
+      "note": "Full 730-day dataset already downloaded and normalized"
+    },
+    "btcusdt_l2": {
+      "classification": "B",
+      "description": "BTCUSDT historical L2/order-book snapshots",
+      "source": "Binance data.binance.vision (bookDepth)",
+      "api_endpoint": "https://data.binance.vision/data/futures/um/daily/bookDepth/BTCUSDT/{date}.zip",
+      "local_path": "data/live/v5/",
+      "start_date": "2024-08-16 (live capture sessions)",
+      "end_date": "2024-08-16",
+      "frequency": "event-based depth updates",
+      "precision": "millisecond",
+      "records_available": 0,
+      "records_downloaded": 0,
+      "missingness": "0 of 730 days (not downloaded; URL returns 404 \u2014 deprecated)",
+      "reconstructable": false,
+      "synchronized": false,
+      "common_sample_size": "21 sessions from 1 day (V5 live capture)",
+      "leakage_risk": "NONE (live capture)",
+      "note": "Binance deprecated bulk bookDepth downloads. Only 21 sessions of V5 live capture available."
+    },
+    "btcusdt_open_interest": {
+      "classification": "D",
+      "description": "BTCUSDT historical open interest",
+      "source": "Binance Futures API",
+      "api_endpoint": "https://fapi.binance.com/fapi/v1/openInterest (current-only)",
+      "local_path": null,
+      "start_date": null,
+      "end_date": null,
+      "frequency": "N/A",
+      "precision": "N/A",
+      "records": 0,
+      "missingness": "NO historical data available",
+      "reconstructable": false,
+      "synchronized": false,
+      "common_sample_size": 0,
+      "leakage_risk": "HIGH if current data used for historical events",
+      "note": "Binance API returns only current OI snapshot. No historical OI archive exists. Using current OI for historical analysis would be future leakage."
+    },
+    "btcusdt_funding_rate": {
+      "classification": "B",
+      "description": "BTCUSDT perpetual funding rate (8h intervals)",
+      "source": "Binance Futures API /fapi/v1/fundingRate",
+      "api_endpoint": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1000",
+      "local_path": "data/hist/derivatives/BTCUSDT/funding_rates.parquet",
+      "start_date": "2024-08-16",
+      "end_date": "2024-09-15 (30 days downloaded)",
+      "full_range_start": "2024-08-16",
+      "full_range_end": "2026-08-15 (available via API)",
+      "frequency": "8-hour intervals",
+      "precision": "millisecond",
+      "records_downloaded": 91,
+      "records_full_range": "~2190 (730 days \u00d7 3 per day)",
+      "missingness": "700 days not yet downloaded",
+      "reconstructable": true,
+      "reconstructable_note": "Yes \u2014 API pagination (limit=1000, ~22 calls needed for 730 days)",
+      "synchronized": true,
+      "common_sample_size": "30 days downloaded; 730 days available upon download",
+      "leakage_risk": "NONE \u2014 funding rate is determined 8h before trade"
+    },
+    "btc_spot_price": {
+      "classification": "B",
+      "description": "BTC spot price (hourly klines)",
+      "source": "Binance spot klines (historical archive)",
+      "api_endpoint": "https://data.binance.vision/data/spot/daily/klines/BTCUSDT/1h/{date}.zip (404)",
+      "local_path": "data/hist/derivatives/BTCUSDT/hourly_price.parquet",
+      "start_date": "2024-08-16",
+      "end_date": "2024-09-15 (30 days downloaded)",
+      "full_range_start": "2017-08-17 (archive start)",
+      "full_range_end": "2026-08-15",
+      "frequency": "hourly",
+      "precision": "millisecond",
+      "records_downloaded": 721,
+      "missingness": "700 days not downloaded; bulk URL returns 404",
+      "reconstructable": "PARTIAL \u2014 API endpoint available: https://api.binance.com/api/v3/klines",
+      "synchronized": true,
+      "common_sample_size": "30 days; 730 days available via API pagination",
+      "leakage_risk": "NONE if hourly returns are lagged before trade timestamp",
+      "note": "Historical kline downloads return 404 (deprecated). Must use REST API with pagination (max 500 per call)."
+    },
+    "btcusdt_mark_price": {
+      "classification": "B",
+      "description": "BTCUSDT perpetual mark price / index price",
+      "source": "Binance Futures API",
+      "api_endpoint": "https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&type=markPrice",
+      "local_path": null,
+      "start_date": null,
+      "end_date": null,
+      "frequency": "1m/1h available",
+      "precision": "millisecond",
+      "records": 0,
+      "missingness": "Not downloaded",
+      "reconstructable": true,
+      "synchronized": true,
+      "common_sample_size": "730 days via API pagination",
+      "leakage_risk": "NONE if lagged",
+      "note": "Mark price klines available via /fapi/v1/klines with type parameter"
+    },
+    "btcusdt_basis": {
+      "classification": "B",
+      "description": "BTC spot/perpetual basis (premium)",
+      "source": "Derived from spot + perp mark prices",
+      "api_endpoint": "Both spot and perp klines available via API",
+      "local_path": null,
+      "start_date": "2024-08-16",
+      "end_date": "2024-09-15 (once downloaded)",
+      "frequency": "hourly",
+      "precision": "millisecond",
+      "records": 0,
+      "missingness": "Requires downloading both spot and perp data",
+      "reconstructable": true,
+      "synchronized": true,
+      "common_sample_size": "730 days (both endpoints available)",
+      "leakage_risk": "NONE if both spot and perp are lagged",
+      "note": "Basis = perp_price - spot_price. Both data sources available via API."
+    },
+    "ethbtc_cross_asset": {
+      "classification": "B",
+      "description": "ETH/BTC cross-asset state (ETHUSDT trades, funding)",
+      "source": "Binance Futures API + historical archives",
+      "api_endpoint": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=ETHUSDT (verified working)",
+      "local_path": null,
+      "start_date": "2024-08-16",
+      "end_date": "2024-09-15",
+      "full_range": "730 days available via API",
+      "frequency": "8h (funding), per-trade (aggTrades)",
+      "precision": "millisecond",
+      "records": 0,
+      "missingness": "Not downloaded",
+      "reconstructable": true,
+      "synchronized": true,
+      "common_sample_size": "730 days (ETH data available via same sources as BTC)",
+      "leakage_risk": "NONE if ETH features are lagged",
+      "note": "ETH funding rate API verified (returns 500 records). ETH aggTrades available via same archive URLs."
+    },
+    "liquidation_events": {
+      "classification": "C",
+      "description": "Liquidation event data",
+      "source": "Coinalyze / CoinGlass API",
+      "api_endpoint": "https://api.coinglass.com/v2/liquidations (subscription required)",
+      "local_path": null,
+      "start_date": null,
+      "end_date": null,
+      "frequency": "hourly",
+      "precision": "hour",
+      "records": 0,
+      "missingness": "No free source available",
+      "reconstructable": "Only via paid subscription ($50-200/month)",
+      "synchronized": "YES (hourly timestamps)",
+      "common_sample_size": "Full 730 days via paid service",
+      "leakage_risk": "NONE \u2014 liquidations are realized events",
+      "note": "Coinalyze offers hourly liquidation data. CoinGlass API requires subscription. No free historical source."
+    },
+    "cross_venue_prices": {
+      "classification": "C",
+      "description": "Cross-venue BTC prices for arbitrage/basis analysis",
+      "source": "CoinGecko API, Coinbase Pro, Kraken",
+      "api_endpoint": "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart",
+      "local_path": null,
+      "start_date": "2026-05-27 (CoinGecko 90-day limit)",
+      "end_date": "2024-08-16",
+      "frequency": "hourly",
+      "precision": "second",
+      "records": 0,
+      "missingness": "CoinGecko: 90-day hourly max. Coinbase/Kraken: real-time only",
+      "reconstructable": "PARTIAL \u2014 90-day hourly via CoinGecko",
+      "synchronized": "PARTIAL \u2014 90-day overlap",
+      "common_sample_size": "~90 days hourly",
+      "leakage_risk": "NONE if lagged",
+      "note": "CoinGecko provides hourly BTC/USD for up to 90 days free (rate-limited). No tick-level cross-venue data available."
+    }
+  },
+  "classification_summary": {
+    "A_sufficient": [
+      "btcusdt_trades"
+    ],
+    "B_partial": [
+      "btcusdt_funding_rate",
+      "btc_spot_price",
+      "btcusdt_mark_price",
+      "btcusdt_basis",
+      "ethbtc_cross_asset"
+    ],
+    "C_current_only": [
+      "liquidation_events",
+      "cross_venue_prices"
+    ],
+    "D_unavailable": [
+      "btcusdt_open_interest",
+      "btcusdt_l2_historical"
+    ]
+  },
+  "experiment_design_implications": {
+    "testable_with_download": [
+      "funding_rate",
+      "basis",
+      "ethbtc_cross_asset"
+    ],
+    "not_testable_without_payment": [
+      "liquidations"
+    ],
+    "fundamentally_unavailable": [
+      "open_interest",
+      "bookDepth_historical"
+    ],
+    "limited_overlap": [
+      "cross_venue_prices (~90 days)"
+    ]
+  },
+  "next_action": "Download full 730 days of funding rates, spot/perp klines, and ETH data. Then run incremental information test against EXP-015 baseline."
+}

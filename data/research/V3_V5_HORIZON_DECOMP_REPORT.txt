@@ -1,0 +1,148 @@
+================================================================================
+HORIZON DECOMPOSITION ANALYSIS — V3 OOS
+================================================================================
+V3 features shape: (25922, 36)
+V3 r_* columns: []
+V5 features shape: (25922, 32)
+V5 r_* columns: []
+Train rows: 18145, OOS rows: 3889
+Costs — Taker: 4.6658 bps, Maker: 3.0518 bps (using taker for net)
+
+--------------------------------------------------------------------------------
+Horizon: 250 ms
+--------------------------------------------------------------------------------
+  n observations           : 3885
+  LONG count (pred > 0)    : 2875
+  SHORT count (pred < 0)   : 1010
+  NO_TRADE count (pred = 0): 0
+  mean prediction (bps)    : 0.069677
+  mean realized return (bps): -0.042962
+  median realized return    : 0.000000
+  std realized return       : 0.372739
+  P1/P5/P10/P25/P50/P75/P90/P95/P99:
+    -1.701523 / -0.866384 / 0.000000 / 0.000000 / 0.000000 / 0.000000 / 0.000000 / 0.262925 / 1.129158
+  gross expectancy (bps)    : 0.069537
+  execution cost (bps)      : 4.6658
+  net expectancy after cost : -4.596263
+  standard error of net     : 0.005915
+  95% confidence interval   : [-4.607857, -4.584669]
+  t-statistic (vs 0)        : -776.9988
+  p-value (two-sided)       : 0.0000
+  LONG expectancy gross (bps): 0.017955
+  LONG expectancy net   (bps): -4.647845
+  SHORT expectancy gross(bps): 0.216366
+  SHORT expectancy net  (bps): -4.449434
+  break-even execution cost  : 0.069537
+
+  Regime breakdown:
+    high_impact: n=1381, gross=0.002576, net=-4.663224
+    normal: n=2504, gross=0.106467, net=-4.559333
+
+--------------------------------------------------------------------------------
+Horizon: 500 ms
+--------------------------------------------------------------------------------
+  n observations           : 3882
+  LONG count (pred > 0)    : 2863
+  SHORT count (pred < 0)   : 1019
+  NO_TRADE count (pred = 0): 0
+  mean prediction (bps)    : 0.069009
+  mean realized return (bps): -0.044147
+  median realized return    : 0.000000
+  std realized return       : 0.380995
+  P1/P5/P10/P25/P50/P75/P90/P95/P99:
+    -1.701523 / -0.866384 / 0.000000 / 0.000000 / 0.000000 / 0.000000 / 0.000000 / 0.309368 / 1.129158
+  gross expectancy (bps)    : 0.074416
+  execution cost (bps)      : 4.6658
+  net expectancy after cost : -4.591384
+  standard error of net     : 0.006039
+  95% confidence interval   : [-4.603220, -4.579547]
+  t-statistic (vs 0)        : -760.3073
+  p-value (two-sided)       : 0.0000
+  LONG expectancy gross (bps): 0.020522
+  LONG expectancy net   (bps): -4.645278
+  SHORT expectancy gross(bps): 0.225840
+  SHORT expectancy net  (bps): -4.439960
+  break-even execution cost  : 0.074416
+
+  Regime breakdown:
+    high_impact: n=1380, gross=0.001906, net=-4.663894
+    normal: n=2502, gross=0.114410, net=-4.551390
+
+--------------------------------------------------------------------------------
+Horizon: 1000 ms
+--------------------------------------------------------------------------------
+  n observations           : 3876
+  LONG count (pred > 0)    : 2819
+  SHORT count (pred < 0)   : 1057
+  NO_TRADE count (pred = 0): 0
+  mean prediction (bps)    : 0.073081
+  mean realized return (bps): -0.043904
+  median realized return    : 0.000000
+  std realized return       : 0.409328
+  P1/P5/P10/P25/P50/P75/P90/P95/P99:
+    -1.701523 / -0.866384 / -0.247531 / 0.000000 / 0.000000 / 0.000000 / 0.000000 / 0.448604 / 1.392112
+  gross expectancy (bps)    : 0.081732
+  execution cost (bps)      : 4.6658
+  net expectancy after cost : -4.584068
+  standard error of net     : 0.006481
+  95% confidence interval   : [-4.596771, -4.571366]
+  t-statistic (vs 0)        : -707.3300
+  p-value (two-sided)       : 0.0000
+  LONG expectancy gross (bps): 0.026006
+  LONG expectancy net   (bps): -4.639794
+  SHORT expectancy gross(bps): 0.230351
+  SHORT expectancy net  (bps): -4.435449
+  break-even execution cost  : 0.081732
+
+  Regime breakdown:
+    high_impact: n=1378, gross=0.003335, net=-4.662465
+    normal: n=2498, gross=0.124979, net=-4.540821
+
+================================================================================
+COMPARISON TABLE — V3 OOS vs V2 FROZEN
+================================================================================
+Metric                                              V2 250       V3 250       V2 500       V3 500      V2 1000      V3 1000
+-------------------------------------------------------------------------------------------------------------------
+n observations                                       17746         3885        17743         3882        17737         3876
+LONG count                                                         2875                      2863                      2819
+SHORT count                                                        1010                      1019                      1057
+NO_TRADE count                                                        0                         0                         0
+mean prediction (bps)                            -0.053588     0.069677    -0.053211     0.069009    -0.056952     0.073081
+mean realized return (bps)                       -0.013501    -0.042962    -0.017732    -0.044147    -0.021975    -0.043904
+std realized return (bps)                         0.278710     0.372739     0.299148     0.380995     0.332345     0.409328
+gross expectancy (bps)                            0.037564     0.069537     0.046373     0.074416     0.058951     0.081732
+net expectancy after cost (bps)                               -4.596263                 -4.591384                 -4.584068
+standard error of net (bps)                                    0.005915                  0.006039                  0.006481
+95% CI lower (bps)                                            -4.607857                 -4.603220                 -4.596771
+95% CI upper (bps)                                            -4.584669                 -4.579547                 -4.571366
+t-statistic                                                 -776.998751               -760.307336               -707.329994
+p-value                                                        0.000000                  0.000000                  0.000000
+LONG gross expectancy (bps)                       0.025718     0.017955     0.030441     0.020522     0.039763     0.026006
+LONG net expectancy (bps)                        -4.140082    -4.647845    -4.135359    -4.645278    -4.126037    -4.639794
+SHORT gross expectancy (bps)                      0.047978     0.216366     0.060526     0.225840     0.075626     0.230351
+SHORT net expectancy (bps)                       -4.117822    -4.449434    -4.105274    -4.439960    -4.090174    -4.435449
+break-even execution cost (bps)                                0.069537                  0.074416                  0.081732
+
+================================================================================
+V2 HORIZONS 2000/5000 (projection only, not available in V3)
+================================================================================
+  Horizon 2000 ms:
+    n observations           : 17725
+    gross expectancy (bps)   : 0.067742
+    mean prediction (bps)    : -0.078380
+    mean realized return (bps): -0.029359
+    std realized return (bps) : 0.372525
+    LONG gross expectancy    : 0.042532
+    LONG net expectancy      : -4.123268
+    SHORT gross expectancy   : 0.088471
+    SHORT net expectancy     : -4.077329
+  Horizon 5000 ms:
+    n observations           : 17640
+    gross expectancy (bps)   : 0.113085
+    mean prediction (bps)    : -0.110984
+    mean realized return (bps): -0.049134
+    std realized return (bps) : 0.486892
+    LONG gross expectancy    : 0.072621
+    LONG net expectancy      : -4.093179
+    SHORT gross expectancy   : 0.144918
+    SHORT net expectancy     : -4.020882

@@ -1,0 +1,370 @@
+{
+  "analysis_metadata": {
+    "analysis_type": "Forensic Tier-A Economic Expectancy Analysis",
+    "project": "Binance Order Flow AutoTrader v2",
+    "analysis_timestamp": "2026-08-20T13:17:37+05:30",
+    "source_reports": [
+      "data/research/v5/v5_verdict.json",
+      "data/research/v5/v5_verdict.md",
+      "data/research/v5/Q2/v5_q2_report.json",
+      "data/research/v6/V6_COMPREHENSIVE_VALIDATION.json",
+      "data/research/v6/report_11_replication_protocol.json",
+      "data/research/v6/report_07_multiple_testing.json",
+      "data/research/v5/Q2/v5_q2_report.json"
+    ],
+    "analysis_constraints": {
+      "no_parameter_search": true,
+      "no_threshold_optimization": true,
+      "no_new_signal_rules": true,
+      "no_dataset_modification": true,
+      "no_lookahead": true,
+      "no_future_data_leakage": true,
+      "no_losing_trade_removal": true,
+      "no_cherry_picking": true,
+      "preserve_no_edge_conclusion": true
+    }
+  },
+  "1_trade_count_and_sample_size_adequacy": {
+    "oos_total_rows": 3889,
+    "executed_trades_v5": 0,
+    "executed_trades_v6": 0,
+    "long_trades": 0,
+    "short_trades": 0,
+    "oos_sessions": 2,
+    "session_details": [
+      { "session": "20260818-194920", "rows": 1574, "executed": 0 },
+      { "session": "20260818-195221", "rows": 2315, "executed": 0 }
+    ],
+    "sample_size_verdict": "INADEQUATE",
+    "min_signals_per_direction_required": 200,
+    "actual_signals_per_direction": 0,
+    "oos_periods": 2,
+    "min_oos_periods_required": 3,
+    "verdict": "SAMPLE SIZE INADEQUATE FOR ECONOMIC VALIDATION"
+  },
+  "2_gross_pnl_distribution_per_trade": {
+    "executed_trades": 0,
+    "mean_trade_bps": "N/A",
+    "median_trade_bps": "N/A",
+    "std_trade_bps": "N/A",
+    "max_win_bps": "N/A",
+    "max_loss_bps": "N/A",
+    "verdict": "NO TRADES EXECUTED - NO DISTRIBUTION AVAILABLE"
+  },
+  "3_gross_expectancy_bps": {
+    "v5_gross_expectancy_bps": 0.06407983716249906,
+    "v5_gross_std_bps": 0.3781042935014144,
+    "v5_gross_hac_se_bps": 0.008425,
+    "v5_gross_hac_ci95": [0.047566, 0.080594],
+    "v5_gross_hac_z": 7.605499,
+    "v5_gross_hac_p": 0.0,
+    "v6_gross_expectancy_bps": 0.071924,
+    "v6_gross_std_bps": 0.376691,
+    "v6_gross_hac_se_bps": 0.008393,
+    "v6_gross_hac_ci95": [0.055475, 0.088374],
+    "v6_gross_hac_z": 8.570073,
+    "v6_gross_hac_p": 0.0,
+    "gross_expectancy_positive": true,
+    "gross_statistically_significant": true,
+    "gross_hac_p_value": 0.0
+  },
+  "4_measured_taker_cost_bps": {
+    "historical_gate_bps": 4.6658,
+    "contemporaneous_gate_bps": 4.6646,
+    "contemporaneous_taker_total_bps": 4.1646,
+    "components": {
+      "taker_roundtrip_p90_bps": 4.0146,
+      "spread_p90_bps": 0.0147,
+      "impact_bps": 0.1,
+      "latency_bps": 0.05,
+      "safety_margin_bps": 0.5
+    },
+    "cost_calibration_samples": 1764,
+    "cost_calibration_window_seconds": 1796.1,
+    "spread_p90_bps": 0.0147,
+    "taker_rt_p90_bps_1000usd": 4.0146,
+    "maker_fee_rt_bps": 2.0
+  },
+  "5_net_expectancy_after_costs": {
+    "v5_taker_net_bps": 0.0,
+    "v5_maker_net_bps": "N/A",
+    "v6_historical_taker_net_bps": 0.0,
+    "v6_contemporaneous_taker_net_bps": 0.0,
+    "v6_contemporaneous_maker_net_bps": -0.001032,
+    "net_expectancy_positive": false,
+    "net_statistically_significant": false,
+    "net_hac_p_value": 1.0,
+    "executed_n_taker": 0,
+    "executed_n_maker": 1,
+    "cost_to_gross_ratio_taker": 64.9,
+    "cost_to_gross_ratio_maker": 47.8,
+    "verdict": "NET EXPECTANCY NEGATIVE OR ZERO AFTER REALISTIC COSTS"
+  },
+  "6_break_even_round_trip_cost_bps": {
+    "v5_break_even_cost_bps": 0.06408,
+    "v6_break_even_cost_bps": 0.071924,
+    "current_taker_cost_bps": 4.6646,
+    "current_maker_cost_bps": 3.4396,
+    "cost_exceeds_breakeven_by_factor_taker": 72.9,
+    "cost_exceeds_breakeven_by_factor_maker": 53.3,
+    "verdict": "CURRENT COSTS EXCEED BREAK-EVEN BY 50-70X"
+  },
+  "7_cost_sensitivity_table": {
+    "gate_bps": {
+      "0": {
+        "gate_bps": 0,
+        "v5_gated_expectancy_bps": 0.06408,
+        "v6_gated_expectancy_bps": 0.071924,
+        "executed_rows_estimate": "N/A"
+      },
+      "0.5": {
+        "gate_bps": 0.5,
+        "v5_gated_expectancy_bps": -0.43592,
+        "v6_gated_expectancy_bps": -0.428076,
+        "executed_rows_estimate": "N/A"
+      },
+      "1": {
+        "gate_bps": 1,
+        "v5_gated_expectancy_bps": -0.93592,
+        "v6_gated_expectancy_bps": -0.928076,
+        "executed_rows_estimate": "N/A"
+      },
+      "2": {
+        "gate_bps": 2,
+        "v5_gated_expectancy_bps": -1.93592,
+        "v6_gated_expectancy_bps": -1.928076,
+        "executed_rows_estimate": "N/A"
+      },
+      "3": {
+        "gate_bps": 3,
+        "v5_gated_expectancy_bps": -2.93592,
+        "v6_gated_expectancy_bps": -2.928076,
+        "executed_rows_estimate": "N/A"
+      },
+      "4": {
+        "gate_bps": 4,
+        "v5_gated_expectancy_bps": -3.93592,
+        "v6_gated_expectancy_bps": -3.928076,
+        "executed_rows_estimate": "N/A"
+      },
+      "4.6658": {
+        "gate_bps": 4.6658,
+        "v5_gated_expectancy_bps": 0.0,
+        "v6_gated_expectancy_bps": 0.0,
+        "executed_rows": 0
+      },
+      "5": {
+        "gate_bps": 5,
+        "v5_gated_expectancy_bps": -4.93592,
+        "v6_gated_expectancy_bps": -4.928076,
+        "executed_rows_estimate": "N/A"
+      }
+    },
+    "note": "Gated expectancy = gross_expectancy - gate_bps (when > 0). At current gate levels, net expectancy <= 0."
+  },
+  "8_win_rate_loss_rate_payoff_profit_factor": {
+    "executed_trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "win_rate": 0.0,
+    "loss_rate": 0.0,
+    "avg_win_bps": "N/A",
+    "avg_loss_bps": "N/A",
+    "payoff_ratio": "N/A",
+    "profit_factor": 0.0,
+    "sharpe": 0.0,
+    "max_drawdown_bps": 0.0,
+    "verdict": "NO TRADES EXECUTED - ALL METRICS N/A OR ZERO"
+  },
+  "9_median_mean_tail_contribution": {
+    "executed_trades": 0,
+    "median_trade_bps": "N/A",
+    "mean_trade_bps": "N/A",
+    "tail_contribution_pct": "N/A",
+    "verdict": "NO TRADES EXECUTED - NO TAIL ANALYSIS POSSIBLE"
+  },
+  "10_bootstrap_confidence_interval": {
+    "method": "HAC (Heteroskedasticity and Autocorrelation Consistent) with max_lag=1",
+    "v5_gross_ci95": [0.047566, 0.080594],
+    "v6_gross_ci95": [0.055475, 0.088374],
+    "v5_net_taker_ci95": [0.0, 0.0],
+    "v6_net_taker_ci95": [0.0, 0.0],
+    "v6_net_maker_ci95": [-4.011914, -4.011914],
+    "note": "HAC standard errors with max_lag=1 used for all confidence intervals. Net expectancy CIs are degenerate at zero for taker, negative for maker."
+  },
+  "11_statistical_test_of_expectancy": {
+    "v5_gross": {
+      "hac_z": 7.605499,
+      "hac_p": 0.0,
+      "significant_at_5pct": true,
+      "interpretation": "Gross expectancy statistically significantly > 0"
+    },
+    "v6_gross": {
+      "hac_z": 8.570073,
+      "hac_p": 0.0,
+      "significant_at_5pct": true,
+      "interpretation": "Gross expectancy statistically significantly > 0"
+    },
+    "v5_net_taker": {
+      "hac_z": 0.0,
+      "hac_p": 1.0,
+      "significant_at_5pct": false,
+      "interpretation": "Net expectancy NOT distinguishable from zero"
+    },
+    "v6_net_taker": {
+      "hac_z": 0.0,
+      "hac_p": 1.0,
+      "significant_at_5pct": false,
+      "interpretation": "Net expectancy NOT distinguishable from zero"
+    },
+    "v6_net_maker": {
+      "hac_z": 0.0,
+      "hac_p": 1.0,
+      "significant_at_5pct": false,
+      "interpretation": "Net expectancy NOT distinguishable from zero (actually negative)"
+    },
+    "multiple_testing": {
+      "n_experiments": 108,
+      "bonferroni_alpha": 0.000463,
+      "v6_gross_p": 0.0,
+      "v6_net_p": 1.0,
+      "passes_bonferroni_gross": true,
+      "passes_bonferroni_net": false,
+      "note": "Gross survives Bonferroni, net does not. Per protocol, net must survive."
+    },
+    "conclusion": "GROSS EDGE STATISTICALLY SIGNIFICANT BUT NET EXPECTANCY NOT STATISTICALLY DISTINGUISHABLE FROM ZERO"
+  },
+  "12_stability_by_time_period_regime": {
+    "by_half": {
+      "first_half": {
+        "n": 1944,
+        "executed": 0,
+        "gross_bps": -0.006199,
+        "net_bps": 0.0
+      },
+      "second_half": {
+        "n": 1945,
+        "executed": 0,
+        "gross_bps": 0.134576,
+        "net_bps": 0.0
+      }
+    },
+    "by_regime": {
+      "high_impact": {
+        "n": 1383,
+        "executed": 0,
+        "gross_bps": 0.001973,
+        "net_bps": 0.0
+      },
+      "normal": {
+        "n": 2506,
+        "executed": 0,
+        "gross_bps": 0.098335,
+        "net_bps": 0.0
+      }
+    },
+    "by_vol_tercile": {
+      "high_vol": {
+        "n": 140,
+        "executed": 0,
+        "gross_bps": 0.046735
+      },
+      "low_vol": {
+        "n": 3746,
+        "executed": 0,
+        "gross_bps": 0.064532
+      },
+      "nan_vol": {
+        "n": 3,
+        "executed": 0,
+        "gross_bps": 0.309368
+      }
+    },
+    "stability_verdict": "GROSS EDGE VARIABLE ACROSS REGIMES - NO REGIME SHOWS POSITIVE NET EXPECTANCY"
+  },
+  "13_v5_vs_v6_comparison": {
+    "methodology": "Identical OOS data (3889 rows), identical horizon (500ms), identical cost model (contemporaneous Q2)",
+    "v5_gross_expectancy_bps": 0.06408,
+    "v6_gross_expectancy_bps": 0.071924,
+    "gross_improvement_bps": 0.007844,
+    "relative_improvement_pct": 12.2,
+    "v5_gross_hac_ci95": [0.047566, 0.080594],
+    "v6_gross_hac_ci95": [0.055475, 0.088374],
+    "ci_overlap": true,
+    "v5_net_taker_bps": 0.0,
+    "v6_net_taker_bps": 0.0,
+    "v6_net_maker_bps": -0.001032,
+    "incremental_r2": 0.0,
+    "v5_v6_correlation": 0.552484,
+    "v6_residual_correlation_with_y": 0.1271,
+    "v6_residual_t_stat": 7.9817,
+    "v6_residual_p_value": 0.0,
+    "incremental_r2": 0.0,
+    "v6_verdict": "NO_EDGE",
+    "v5_verdict": "CONDITIONAL_PASS",
+    "conclusion": "V6 ADDS NO ECONOMIC VALUE - ZERO INCREMENTAL R2, NET STILL NEGATIVE"
+  },
+  "14_independent_replication": {
+    "protocol_defined": true,
+    "protocol_file": "data/research/v6/report_11_replication_protocol.json",
+    "replication_performed": false,
+    "replication_status": "REPLICATION_FAIL",
+    "protocol_requirements": [
+      "Collect new untouched Binance data",
+      "Apply identical V6 feature engineering",
+      "Use same frozen V6 model (no refitting)",
+      "Apply same cost model (Q2 contemporary)",
+      "Run identical Signal Decision Engine gates",
+      "Report gross expectancy, net expectancy, HAC p-values",
+      "Compare with original OOS results"
+    ],
+    "acceptance_criteria": {
+      "net_expectancy_after_cost_bps": "> 0",
+      "gross_hac_p": "< 0.05",
+      "net_hac_p": "< 0.05",
+      "regime_robust": "Profitable in at least one non-high-impact regime",
+      "long_short_symmetry": "Both directions profitable or both non-significant"
+    },
+    "verdict": "REPLICATION_FAIL - NO INDEPENDENT REPLICATION PERFORMED"
+  },
+  "15_gross_edge_survives_realistic_costs": {
+    "gross_expectancy_v5_bps": 0.06408,
+    "gross_expectancy_v6_bps": 0.071924,
+    "taker_cost_bps": 4.6646,
+    "maker_cost_bps": 3.4396,
+    "cost_to_gross_ratio_taker": 64.9,
+    "cost_to_gross_ratio_maker": 47.8,
+    "net_after_taker_v5_bps": 0.0,
+    "net_after_taker_v6_bps": 0.0,
+    "net_after_maker_v6_bps": -0.001032,
+    "cost_to_gross_ratio_taker_v5": 72.9,
+    "cost_to_gross_ratio_maker_v6": 47.8,
+    "verdict": "GROSS EDGE DOES NOT SURVIVE REALISTIC TRANSACTION COSTS - COST-TO-GROSS RATIO 48-73X"
+  },
+  "16_max_allowable_round_trip_cost": {
+    "v5_max_cost_for_nonnegative_net_bps": 0.06408,
+    "v6_max_cost_for_nonnegative_net_bps": 0.071924,
+    "current_taker_cost_bps": 4.6646,
+    "current_maker_cost_bps": 3.4396,
+    "current_cost_exceeds_breakeven_factor_taker": 72.9,
+    "current_cost_exceeds_breakeven_factor_maker": 47.8,
+    "verdict": "CURRENT COSTS EXCEED MAXIMUM ALLOWABLE BY 48-73X"
+  },
+  "17_final_classification": {
+    "classification": "NO_EDGE",
+    "reasons": [
+      "Zero trades executed in OOS (0/3889 rows)",
+      "Net expectancy zero or negative after realistic costs",
+      "Net expectancy not statistically distinguishable from zero (HAC p=1.0)",
+      "Cost-to-gross ratio 48-73x exceeds breakeven",
+      "Break-even cost threshold (0.064-0.072 bps) exceeded by 48-73x",
+      "Zero directional trades executed (0 LONG, 0 SHORT)",
+      "V6 adds zero incremental R2 over V5",
+      "Independent replication NOT performed (REPLICATION_FAIL)",
+      "Multiple testing correction fails for net expectancy",
+      "No regime shows positive net expectancy",
+      "Governance lock V5_BASELINE_NO_LIVE_TRADE = True remains active"
+    ],
+    "final_verdict": "NO_EDGE"
+  }
+}

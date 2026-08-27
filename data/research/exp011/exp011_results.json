@@ -1,0 +1,115 @@
+{
+  "experiment_id": "EXP-011",
+  "hypothesis": "Long-Horizon Prediction (5-60 min)",
+  "generated_at": "2026-08-23T19:51:09.170203+00:00",
+  "cost_bps": 2.5,
+  "alpha": 0.05,
+  "features": [
+    "ofi_l1",
+    "ofi_norm_l1",
+    "qi_l1",
+    "di_l5",
+    "di_l10",
+    "mpd_bps",
+    "spread_bps",
+    "bid_cancel_bps",
+    "ask_add_bps",
+    "cancel_pressure",
+    "tfi_500",
+    "liq_depletion",
+    "log_depth1",
+    "log_depth5",
+    "log_event_rate",
+    "depth_slope_bps",
+    "vol_500",
+    "ofi_l2",
+    "ofi_l3",
+    "ofi_l5",
+    "ofi_l10",
+    "mlofi_weighted",
+    "qi_multi",
+    "qi_slope",
+    "qi_accel",
+    "mp_vel",
+    "vpin",
+    "kyle_lambda",
+    "signed_vol_imbalance",
+    "vol_ratio",
+    "ofi_x_qi",
+    "mlofi_x_spread"
+  ],
+  "n_features": 32,
+  "horizons": {
+    "2.3628453397022255e-17": {
+      "valid_labels": 25915,
+      "n_oos": 3882,
+      "r2_train": 0.38871234156319634,
+      "gross_pred_bps": 0.0114,
+      "net_bps": -2.4886,
+      "net_ci95": [
+        -2.4886,
+        -2.4886
+      ],
+      "actual_gross_bps": -0.0441,
+      "actual_net_bps": -2.5441,
+      "direction_accuracy": 0.0605,
+      "pct_above_gate": 0.0,
+      "long_net_bps": -2.5441,
+      "short_net_bps": null,
+      "hac_z": -1.0532387834063613e+17,
+      "validate_model_verdict": "NEGATIVE_EDGE"
+    },
+    "0.0": {
+      "valid_labels": 25532,
+      "n_oos": 3499,
+      "r2_train": 0.16621425130563694,
+      "gross_pred_bps": -0.267,
+      "net_bps": -2.767,
+      "net_ci95": [
+        -2.767,
+        -2.767
+      ],
+      "actual_gross_bps": -0.0534,
+      "actual_net_bps": -2.5534,
+      "direction_accuracy": 0.5113,
+      "pct_above_gate": 0.0,
+      "long_net_bps": null,
+      "short_net_bps": -2.5534,
+      "hac_z": 0.0,
+      "validate_model_verdict": "NEGATIVE_EDGE"
+    },
+    "3.3868394603227665e-16": {
+      "valid_labels": 22047,
+      "n_oos": 14,
+      "r2_train": 0.1652798722980925,
+      "gross_pred_bps": -0.2441,
+      "net_bps": -2.7441,
+      "net_ci95": [
+        -2.7441,
+        -2.7441
+      ],
+      "actual_gross_bps": -1.1448,
+      "actual_net_bps": -3.6448,
+      "direction_accuracy": 1.0,
+      "pct_above_gate": 0.0,
+      "long_net_bps": null,
+      "short_net_bps": -3.6448,
+      "hac_z": -8102304882798626.0,
+      "validate_model_verdict": "NEGATIVE_EDGE"
+    },
+    "600000": {
+      "status": "no_finite_oos"
+    },
+    "1200000": {
+      "status": "no_finite_oos"
+    },
+    "1800000": {
+      "status": "no_finite_oos"
+    },
+    "3600000": {
+      "valid_labels": 0,
+      "status": "insufficient_data"
+    }
+  },
+  "verdict": "HYPOTHESIS_REJECTED"
+}

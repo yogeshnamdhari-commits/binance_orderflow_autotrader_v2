@@ -1,0 +1,12 @@
+{
+  "title": "Probability Calibration Report",
+  "generated_at": "2026-08-19T20:29:02.263255+00:00",
+  "status": "Not yet implemented \u2014 requires Platt scaling or isotonic regression on validation set",
+  "required_metrics": [
+    "Brier score",
+    "ECE",
+    "reliability curve",
+    "log loss"
+  ],
+  "note": "Probability calibration is a Phase 7 requirement. Current V6 model outputs raw predictions, not calibrated probabilities."
+}

@@ -1,0 +1,23 @@
+{
+  "title": " Independent Replication Protocol",
+  "generated_at": "2026-08-19T20:29:02.266233+00:00",
+  "trigger": "Any experiment passes all deployment gates",
+  "procedure": [
+    "1. Collect new untouched Binance USD-M data (not used in training/validation/OOS)",
+    "2. Apply identical V6 feature engineering",
+    "3. Use same V6 model (frozen, no refitting)",
+    "4. Apply same cost model (Q2 contemporary)",
+    "5. Run identical Signal Decision Engine gates",
+    "6. Report gross expectancy, net expectancy, HAC p-values",
+    "7. Compare with original OOS results",
+    "8. Replication passes if: net > 0, p < 0.05, regime robust, long/short symmetric"
+  ],
+  "acceptance_criteria": {
+    "net_expectancy_after_cost": "> 0 bps",
+    "gross_statistical_significance": "HAC p < 0.05",
+    "net_statistical_significance": "HAC p < 0.05",
+    "regime_robustness": "Profitable in at least one non-high-impact regime",
+    "long_short_symmetry": "Both directions profitable or both non-significant"
+  },
+  "note": "Independent replication is MANDATORY before any deployment review. No exceptions."
+}

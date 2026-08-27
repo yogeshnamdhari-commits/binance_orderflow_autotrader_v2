@@ -1,0 +1,169 @@
+======================================================================
+CORRECTED COST-CALIBRATION REPORT
+======================================================================
+
+A. TIMELINE
+---------------------------------------
+V3 OOS period (from v3_oos.json):
+  lo_ms = 1787082620885  ->  2026-08-18T19:50:20.885000+00:00
+  hi_ms = 1787082921993  ->  2026-08-18T19:55:21.993000+00:00
+
+Cost sampler files:
+  cost_sampler_20260817-123428.jsonl:  2026-08-17T12:46:46.426000+00:00
+  cost_sampler_20260817-124646.jsonl:  2026-08-17T14:51:05.318000+00:00
+
+Temporal gap between last sampler sample and OOS start:
+  29.0 hours
+
+CONCLUSION: No contemporaneous cost calibration exists for the OOS period.
+The only measured cost data in the repository is from 2026-08-17,
+which is 29.0 hours BEFORE the OOS period (2026-08-18).
+
+B. SOURCE FILES AND FIELDS FOR EVERY COST COMPONENT
+---------------------------------------
+
+1. TAKER FEE
+   Source: execution_calibration.json -> fees_per_side_bps.taker = 2.0
+           execution_calibration.json -> taker_fee_rt_bps = 4.0
+   Convention: per-side fee = 2.0 bps; round-trip = 4.0 bps
+   Units: bps (round-trip)
+   Sample size: N/A (exchange schedule, not measured)
+   Uncertainty: None (fixed by exchange)
+
+2. SPREAD
+   Source: execution_calibration.json -> spread
+   Fields: mean_bps=0.0163, median_bps=0.0157, p90_bps=0.0158
+   Convention: (ask-bid)/mid * 1e4; measured from sampler
+   How measured: Median of 7279 samples over 7458.9s
+   Percentile: p90 = 0.0158 bps
+   Units: bps
+   Sample size: 7279 samples
+   Note: Spread is essentially zero for BTCUSDT; p90 = 0.0158 bps
+
+3. SLIPPAGE (per notional band)
+   Source: execution_calibration.json -> slippage_by_notional
+   Band $1000: buy_p90=0.0079, sell_p90=-0.0079, pct_depth_insufficient=0.03
+   Band $5000: buy_p90=0.0079, sell_p90=-0.0079, pct_depth_insufficient=0.21
+   Band $10000: buy_p90=0.0079, sell_p90=-0.0079, pct_depth_insufficient=0.37
+   Band $25000: buy_p90=0.0079, sell_p90=-0.0079, pct_depth_insufficient=1.22
+   Band $50000: buy_p90=0.0079, sell_p90=-0.0079, pct_depth_insufficient=2.62
+   Convention: walk-slippage through order-book levels (L5 max)
+   How measured: cost_sampler.py walks bids/asks for each notional band
+   Percentile: p90 used for conservative estimate
+   Units: bps (per side)
+   Sample size: 7279 samples
+
+4. EFFECTIVE TAKER ROUND-TRIP
+   Source: execution_calibration.json -> effective_taker_roundtrip
+   Band $1000: median=4.0158, p90=4.0158
+   Band $5000: median=4.0158, p90=4.0158
+   Band $10000: median=4.0158, p90=4.0158
+   Band $25000: median=4.0158, p90=4.0158
+   Band $50000: median=4.0158, p90=4.0158
+   Convention: fee + spread + slippage (all-in round-trip)
+   How measured: Derived from sampler + fee schedule
+   Percentile: p90 = 4.0158 bps (for $1000)
+   Units: bps (round-trip)
+
+5. MARKET IMPACT ALLOWANCE
+   Source: v3_cost.py -> IMPACT_ALLOWANCE_BPS = 0.10
+   Convention: Fixed allowance for temporary impact
+   Units: bps
+
+6. LATENCY COST
+   Source: v3_cost.py -> LATENCY_COST_BPS = 0.05
+   Convention: Fixed allowance for execution latency
+   Units: bps
+
+7. MAKER FEE
+   Source: execution_calibration.json -> maker_fee_rt_bps = 2.0
+   Convention: round-trip maker fee
+   Units: bps (round-trip)
+
+8. ADVERSE SELECTION (MAKER)
+   Source: execution_calibration.json -> oos_fill
+   Method: drag = gross_unconditional_bps - e_fill_return_bps
+   Median calculation: sorted(drags)[len(drags)//2] (upper median for even N)
+   OOS fill cells (8 cells from execution_calibration.json):
+     10_long@5s:   drag=0.538,  p_fill=0.7123
+     1_short@5s:   drag=0.520,  p_fill=0.7065
+     10_long@15s:  drag=0.715,  p_fill=0.7437
+     1_short@15s:  drag=0.697,  p_fill=0.7393
+     10_long@30s:  drag=0.834,  p_fill=0.7762
+     1_short@30s:  drag=0.821,  p_fill=0.7699
+     10_long@60s:  drag=0.995,  p_fill=0.8112
+     1_short@60s:  drag=0.944,  p_fill=0.8045
+   Sorted drags: [0.520, 0.538, 0.697, 0.715, 0.821, 0.834, 0.944, 0.995]
+   Median adverse selection drag: 0.821 bps
+   Units: bps
+
+9. FILL PROBABILITY (MAKER)
+   Source: execution_calibration.json -> oos_fill -> p_fill_same_tick
+   Values: [0.7065, 0.7123, 0.7393, 0.7437, 0.7699, 0.7762, 0.8045, 0.8112]
+   Sorted: [0.7065, 0.7123, 0.7393, 0.7437, 0.7699, 0.7762, 0.8045, 0.8112]
+   Median p_fill: 0.7699
+   Units: probability (0-1)
+
+10. NON-FILL REPRICE COST (MAKER)
+    Source: v3_cost.py -> NON_FILL_REPRICE_COST_BPS = 0.50
+    Convention: cost when order does not fill and market moves
+    Formula: NON_FILL_REPRICE_COST_BPS * (1 - p_fill)
+    Units: bps
+
+11. SAFETY MARGIN
+    Source: v3_cost.py -> SAFETY_MARGIN_BPS = 0.5
+    Convention: Predeclared minimum net edge required per side
+    Units: bps
+
+C. FEE CONVENTION
+---------------------------------------
+Taker fee: 2.0 bps per side, 4.0 bps round-trip
+Maker fee: 2.0 bps round-trip
+
+D. COST SUMMARY
+---------------------------------------
+TAKER:
+  One-way cost: 2.0829 bps (half of round-trip)
+  Round-trip cost: 4.1658 bps
+  Gate (with margin): 4.6658 bps
+
+MAKER (using median values from execution_calibration.json):
+  Maker fee (round-trip): 2.0000 bps
+  Adverse selection: 0.8210 bps
+  Non-fill reprice: 0.1151 bps  [0.50 * (1 - 0.7699)]
+  Latency: 0.0500 bps
+  Round-trip cost: 2.9861 bps
+  Gate (with margin): 3.4861 bps
+
+E. ORIGINAL OOS_OOS.JSON COST ASSUMPTION
+---------------------------------------
+File: data/hist/research/oos_oos.json
+Cost model (frozen, older protocol):
+  taker_fee_bps_per_side: 2.0
+  slip_bps_per_side: 1.0
+  round_trip_bps: 6.0
+  Total gate: 6.0 bps round-trip
+
+F. CONTEMPORANEOUS COST CALIBRATION ASSESSMENT
+---------------------------------------
+Does a contemporaneous cost calibration exist for the OOS period? NO
+
+Evidence:
+  - Cost sampler files are from 2026-08-17
+  - OOS period is 2026-08-18
+  - Gap: 29.0 hours
+  - No other cost/calibration files found with OOS-period timestamps
+
+Cost files found in data/hist/research/:
+  exec_report.json
+  exec_report.md
+  execution_calibration.json
+  execution_calibration.md
+  execution_cost_model.json
+  execution_cost_model.md
+  execution_report.json
+  execution_report.md
+  fill_calib.json
+  fill_calib.log
+  fill_calib.md
+  v2_calibration.json

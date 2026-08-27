@@ -1,0 +1,7 @@
+{
+  "title": "Regime Report",
+  "generated_at": "2026-08-19T20:29:02.263834+00:00",
+  "regimes": {},
+  "verdict": "NO_EDGE",
+  "note": "Performance breakdown by liquidity regime. A deployable strategy must be profitable in at least one non-high-impact regime."
+}

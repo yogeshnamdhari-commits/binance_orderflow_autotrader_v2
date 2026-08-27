@@ -1,0 +1,1205 @@
+{
+  "generated_at": "2026-08-19T19:49:11.430602+00:00",
+  "protocol": "V6 forensic validation: immutable V5 baseline vs V6 research extension. Pre-registered horizons, chronological split, HAC-robust inference, no post-hoc adjustment.",
+  "cost_gates": {
+    "historical_taker_bps": 4.6658,
+    "contemporaneous_taker_bps": 4.6646,
+    "contemporaneous_maker_bps": 3.4396
+  },
+  "oos": {
+    "rows": 3889,
+    "sessions": [
+      "20260818-194920",
+      "20260818-195221"
+    ],
+    "start_ts_ms": 1787082620885,
+    "end_ts_ms": 1787082921993
+  },
+  "v5_scoreboard": {
+    "horizon_ms": 500,
+    "gate_bps": 4.6658,
+    "oos_rows": 3889,
+    "executed_rows": 0,
+    "no_trade_rows": 3889,
+    "gross_dir_n": 3889,
+    "gross_expectancy_bps": 0.06408,
+    "gross_std_bps": 0.378104,
+    "gross_hac_se_bps": 0.008425,
+    "gross_hac_z": 7.605499,
+    "gross_hac_p": 0.0,
+    "gross_hac_ci95_low": 0.047566,
+    "gross_hac_ci95_high": 0.080594,
+    "gated_expectancy_bps": 0.0,
+    "gated_std_bps": 0.0,
+    "gated_hac_se_bps": 0.0,
+    "gated_hac_z": 0.0,
+    "gated_hac_p": 1.0,
+    "gated_hac_ci95_low": 0.0,
+    "gated_hac_ci95_high": 0.0,
+    "per_direction": {
+      "LONG": {
+        "n": 0,
+        "gross_bps": NaN,
+        "net_bps": NaN,
+        "win_rate": 0.0
+      },
+      "SHORT": {
+        "n": 0,
+        "gross_bps": NaN,
+        "net_bps": NaN,
+        "win_rate": 0.0
+      }
+    },
+    "per_session": {
+      "20260818-194920": {
+        "rows": 1574,
+        "executed_rows": 0,
+        "gross_bps": 0.000923,
+        "net_bps": 0.0
+      },
+      "20260818-195221": {
+        "rows": 2315,
+        "executed_rows": 0,
+        "gross_bps": 0.107151,
+        "net_bps": 0.0
+      }
+    },
+    "per_regime": {},
+    "hac_max_lag": 1,
+    "pf": 0.0,
+    "sharpe": 0.0,
+    "max_drawdown_bps": 0.0,
+    "net_trail_n": 0
+  },
+  "v6_scoreboard": {
+    "horizon_ms": 500,
+    "gate_bps": 4.6658,
+    "oos_rows": 3889,
+    "executed_rows": 0,
+    "no_trade_rows": 3889,
+    "gross_dir_n": 3889,
+    "gross_expectancy_bps": 0.071924,
+    "gross_std_bps": 0.376691,
+    "gross_hac_se_bps": 0.008393,
+    "gross_hac_z": 8.570073,
+    "gross_hac_p": 0.0,
+    "gross_hac_ci95_low": 0.055475,
+    "gross_hac_ci95_high": 0.088374,
+    "gated_expectancy_bps": 0.0,
+    "gated_std_bps": 0.0,
+    "gated_hac_se_bps": 0.0,
+    "gated_hac_z": 0.0,
+    "gated_hac_p": 1.0,
+    "gated_hac_ci95_low": 0.0,
+    "gated_hac_ci95_high": 0.0,
+    "per_direction": {
+      "LONG": {
+        "n": 0,
+        "gross_bps": NaN,
+        "net_bps": NaN,
+        "win_rate": 0.0
+      },
+      "SHORT": {
+        "n": 0,
+        "gross_bps": NaN,
+        "net_bps": NaN,
+        "win_rate": 0.0
+      }
+    },
+    "per_session": {
+      "20260818-194920": {
+        "rows": 1574,
+        "executed_rows": 0,
+        "gross_bps": 0.033281,
+        "net_bps": 0.0
+      },
+      "20260818-195221": {
+        "rows": 2315,
+        "executed_rows": 0,
+        "gross_bps": 0.098278,
+        "net_bps": 0.0
+      }
+    },
+    "per_regime": {},
+    "hac_max_lag": 1,
+    "pf": 0.0,
+    "sharpe": 0.0,
+    "max_drawdown_bps": 0.0,
+    "net_trail_n": 0
+  },
+  "v6_scoreboard_contemporaneous": {
+    "horizon_ms": 500,
+    "gate_bps": 4.6646,
+    "oos_rows": 3889,
+    "executed_rows": 0,
+    "no_trade_rows": 3889,
+    "gross_dir_n": 3889,
+    "gross_expectancy_bps": 0.071924,
+    "gross_std_bps": 0.376691,
+    "gross_hac_se_bps": 0.008393,
+    "gross_hac_z": 8.570073,
+    "gross_hac_p": 0.0,
+    "gross_hac_ci95_low": 0.055475,
+    "gross_hac_ci95_high": 0.088374,
+    "gated_expectancy_bps": 0.0,
+    "gated_std_bps": 0.0,
+    "gated_hac_se_bps": 0.0,
+    "gated_hac_z": 0.0,
+    "gated_hac_p": 1.0,
+    "gated_hac_ci95_low": 0.0,
+    "gated_hac_ci95_high": 0.0,
+    "per_direction": {
+      "LONG": {
+        "n": 0,
+        "gross_bps": NaN,
+        "net_bps": NaN,
+        "win_rate": 0.0
+      },
+      "SHORT": {
+        "n": 0,
+        "gross_bps": NaN,
+        "net_bps": NaN,
+        "win_rate": 0.0
+      }
+    },
+    "per_session": {
+      "20260818-194920": {
+        "rows": 1574,
+        "executed_rows": 0,
+        "gross_bps": 0.033281,
+        "net_bps": 0.0
+      },
+      "20260818-195221": {
+        "rows": 2315,
+        "executed_rows": 0,
+        "gross_bps": 0.098278,
+        "net_bps": 0.0
+      }
+    },
+    "per_regime": {},
+    "hac_max_lag": 1,
+    "pf": 0.0,
+    "sharpe": 0.0,
+    "max_drawdown_bps": 0.0,
+    "net_trail_n": 0
+  },
+  "feature_groups": {
+    "A_L1_OFI": {
+      "group_name": "A_L1_OFI",
+      "features": [
+        "ofi_l1"
+      ],
+      "n_features": 1,
+      "feature_correlations": {
+        "ofi_l1": {
+          "correlation": 0.037974,
+          "t_stat": 2.3671,
+          "p_value": 0.017977,
+          "n": 3882
+        }
+      },
+      "gross_expectancy_bps": 0.071924,
+      "gross_hac_se_bps": 0.008393,
+      "gross_hac_p": 0.0,
+      "gross_hac_ci95": [
+        0.055475,
+        0.088374
+      ],
+      "net_expectancy_bps": 0.0,
+      "net_hac_se_bps": 0.0,
+      "net_hac_p": 1.0,
+      "net_hac_ci95": [
+        0.0,
+        0.0
+      ],
+      "hac_max_lag": 1,
+      "executed_n": 0
+    },
+    "B_multilevel_OFI": {
+      "group_name": "B_multilevel_OFI",
+      "features": [
+        "ofi_slope",
+        "ofi_persistence"
+      ],
+      "n_features": 2,
+      "feature_correlations": {
+        "ofi_slope": {
+          "correlation": -0.057863,
+          "t_stat": -3.6103,
+          "p_value": 0.00031,
+          "n": 3882
+        },
+        "ofi_persistence": {
+          "correlation": -0.201241,
+          "t_stat": -12.7971,
+          "p_value": 0.0,
+          "n": 3882
+        }
+      },
+      "gross_expectancy_bps": 0.071924,
+      "gross_hac_se_bps": 0.008393,
+      "gross_hac_p": 0.0,
+      "gross_hac_ci95": [
+        0.055475,
+        0.088374
+      ],
+      "net_expectancy_bps": 0.0,
+      "net_hac_se_bps": 0.0,
+      "net_hac_p": 1.0,
+      "net_hac_ci95": [
+        0.0,
+        0.0
+      ],
+      "hac_max_lag": 1,
+      "executed_n": 0
+    },
+    "C_depth_normalized_OFI": {
+      "group_name": "C_depth_normalized_OFI",
+      "features": [
+        "ofi_norm_l1"
+      ],
+      "n_features": 1,
+      "feature_correlations": {
+        "ofi_norm_l1": {
+          "correlation": 0.036902,
+          "t_stat": 2.3002,
+          "p_value": 0.021492,
+          "n": 3882
+        }
+      },
+      "gross_expectancy_bps": 0.071924,
+      "gross_hac_se_bps": 0.008393,
+      "gross_hac_p": 0.0,
+      "gross_hac_ci95": [
+        0.055475,
+        0.088374
+      ],
+      "net_expectancy_bps": 0.0,
+      "net_hac_se_bps": 0.0,
+      "net_hac_p": 1.0,
+      "net_hac_ci95": [
+        0.0,
+        0.0
+      ],
+      "hac_max_lag": 1,
+      "executed_n": 0
+    },
+    "D_signed_trade_flow": {
+      "group_name": "D_signed_trade_flow",
+      "features": [
+        "tfi_500",
+        "signed_vol_momentum",
+        "vpin_500",
+        "trade_size_kyle"
+      ],
+      "n_features": 4,
+      "feature_correlations": {
+        "tfi_500": {
+          "correlation": 0.398116,
+          "t_stat": 27.0332,
+          "p_value": 0.0,
+          "n": 3882
+        },
+        "signed_vol_momentum": {
+          "correlation": 0.48345,
+          "t_stat": 34.4013,
+          "p_value": 0.0,
+          "n": 3882
+        },
+        "vpin_500": {
+          "correlation": 0.106966,
+          "t_stat": 6.7013,
+          "p_value": 0.0,
+          "n": 3882
+        },
+        "trade_size_kyle": {
+          "correlation": 0.001786,
+          "t_stat": 0.1112,
+          "p_value": 0.911446,
+          "n": 3882
+        }
+      },
+      "gross_expectancy_bps": 0.071924,
+      "gross_hac_se_bps": 0.008393,
+      "gross_hac_p": 0.0,
+      "gross_hac_ci95": [
+        0.055475,
+        0.088374
+      ],
+      "net_expectancy_bps": 0.0,
+      "net_hac_se_bps": 0.0,
+      "net_hac_p": 1.0,
+      "net_hac_ci95": [
+        0.0,
+        0.0
+      ],
+      "hac_max_lag": 1,
+      "executed_n": 0
+    },
+    "E_CVD": {
+      "group_name": "E_CVD",
+      "features": [
+        "cvd_slope",
+        "cvd_price_divergence",
+        "cvd_acceleration"
+      ],
+      "n_features": 3,
+      "feature_correlations": {
+        "cvd_slope": {
+          "correlation": 0.507326,
+          "t_stat": 36.6707,
+          "p_value": 0.0,
+          "n": 3882
+        },
+        "cvd_price_divergence": {
+          "correlation": -0.107665,
+          "t_stat": -6.7456,
+          "p_value": 0.0,
+          "n": 3882
+        },
+        "cvd_acceleration": {
+          "correlation": 0.472665,
+          "t_stat": 33.4098,
+          "p_value": 0.0,
+          "n": 3882
+        }
+      },
+      "gross_expectancy_bps": 0.071924,
+      "gross_hac_se_bps": 0.008393,
+      "gross_hac_p": 0.0,
+      "gross_hac_ci95": [
+        0.055475,
+        0.088374
+      ],
+      "net_expectancy_bps": 0.0,
+      "net_hac_se_bps": 0.0,
+      "net_hac_p": 1.0,
+      "net_hac_ci95": [
+        0.0,
+        0.0
+      ],
+      "hac_max_lag": 1,
+      "executed_n": 0
+    },
+    "F_trade_intensity": {
+      "group_name": "F_trade_intensity",
+      "features": [
+        "log_event_rate"
+      ],
+      "n_features": 1,
+      "feature_correlations": {
+        "log_event_rate": {
+          "correlation": -0.293669,
+          "t_stat": -19.1363,
+          "p_value": 0.0,
+          "n": 3882
+        }
+      },
+      "gross_expectancy_bps": 0.071924,
+      "gross_hac_se_bps": 0.008393,
+      "gross_hac_p": 0.0,
+      "gross_hac_ci95": [
+        0.055475,
+        0.088374
+      ],
+      "net_expectancy_bps": 0.0,
+      "net_hac_se_bps": 0.0,
+      "net_hac_p": 1.0,
+      "net_hac_ci95": [
+        0.0,
+        0.0
+      ],
+      "hac_max_lag": 1,
+      "executed_n": 0
+    },
+    "G_spread": {
+      "group_name": "G_spread",
+      "features": [
+        "spread_bps",
+        "mpd_bps",
+        "effective_spread"
+      ],
+      "n_features": 3,
+      "feature_correlations": {
+        "spread_bps": {
+          "correlation": 0.12592,
+          "t_stat": 7.9064,
+          "p_value": 0.0,
+          "n": 3882
+        },
+        "mpd_bps": {
+          "correlation": 0.287988,
+          "t_stat": 18.7323,
+          "p_value": 0.0,
+          "n": 3882
+        },
+        "effective_spread": {
+          "correlation": -0.106721,
+          "t_stat": -6.6858,
+          "p_value": 0.0,
+          "n": 3882
+        }
+      },
+      "gross_expectancy_bps": 0.071924,
+      "gross_hac_se_bps": 0.008393,
+      "gross_hac_p": 0.0,
+      "gross_hac_ci95": [
+        0.055475,
+        0.088374
+      ],
+      "net_expectancy_bps": 0.0,
+      "net_hac_se_bps": 0.0,
+      "net_hac_p": 1.0,
+      "net_hac_ci95": [
+        0.0,
+        0.0
+      ],
+      "hac_max_lag": 1,
+      "executed_n": 0
+    },
+    "H_multilevel_depth_imbalance": {
+      "group_name": "H_multilevel_depth_imbalance",
+      "features": [
+        "qi_l1",
+        "di_l5",
+        "di_l10",
+        "di_l1_3",
+        "di_l4_7",
+        "di_l8_10",
+        "imbalance_slope"
+      ],
+      "n_features": 7,
+      "feature_correlations": {
+        "qi_l1": {
+          "correlation": 0.288012,
+          "t_stat": 18.734,
+          "p_value": 0.0,
+          "n": 3882
+        },
+        "di_l5": {
+          "correlation": 0.292328,
+          "t_stat": 19.0407,
+          "p_value": 0.0,
+          "n": 3882
+        },
+        "di_l10": {
+          "correlation": 0.292828,
+          "t_stat": 19.0764,
+          "p_value": 0.0,
+          "n": 3882
+        },
+        "di_l1_3": {
+          "correlation": 0.290966,
+          "t_stat": 18.9438,
+          "p_value": 0.0,
+          "n": 3882
+        },
+        "di_l4_7": {
+          "correlation": 0.293106,
+          "t_stat": 19.0962,
+          "p_value": 0.0,
+          "n": 3882
+        },
+        "di_l8_10": {
+          "correlation": 0.293594,
+          "t_stat": 19.1309,
+          "p_value": 0.0,
+          "n": 3882
+        },
+        "imbalance_slope": {
+          "correlation": -0.135893,
+          "t_stat": -8.544,
+          "p_value": 0.0,
+          "n": 3882
+        }
+      },
+      "gross_expectancy_bps": 0.071924,
+      "gross_hac_se_bps": 0.008393,
+      "gross_hac_p": 0.0,
+      "gross_hac_ci95": [
+        0.055475,
+        0.088374
+      ],
+      "net_expectancy_bps": 0.0,
+      "net_hac_se_bps": 0.0,
+      "net_hac_p": 1.0,
+      "net_hac_ci95": [
+        0.0,
+        0.0
+      ],
+      "hac_max_lag": 1,
+      "executed_n": 0
+    },
+    "I_book_depletion_replenishment": {
+      "group_name": "I_book_depletion_replenishment",
+      "features": [
+        "liq_depletion",
+        "depth_recovery_rate",
+        "log_depth1",
+        "log_depth5"
+      ],
+      "n_features": 4,
+      "feature_correlations": {
+        "liq_depletion": {
+          "correlation": -0.299234,
+          "t_stat": -19.5342,
+          "p_value": 0.0,
+          "n": 3882
+        },
+        "depth_recovery_rate": {
+          "correlation": 0.042097,
+          "t_stat": 2.6246,
+          "p_value": 0.00871,
+          "n": 3882
+        },
+        "log_depth1": {
+          "correlation": 0.141131,
+          "t_stat": 8.8799,
+          "p_value": 0.0,
+          "n": 3882
+        },
+        "log_depth5": {
+          "correlation": 0.117307,
+          "t_stat": 7.3578,
+          "p_value": 0.0,
+          "n": 3882
+        }
+      },
+      "gross_expectancy_bps": 0.071924,
+      "gross_hac_se_bps": 0.008393,
+      "gross_hac_p": 0.0,
+      "gross_hac_ci95": [
+        0.055475,
+        0.088374
+      ],
+      "net_expectancy_bps": 0.0,
+      "net_hac_se_bps": 0.0,
+      "net_hac_p": 1.0,
+      "net_hac_ci95": [
+        0.0,
+        0.0
+      ],
+      "hac_max_lag": 1,
+      "executed_n": 0
+    },
+    "J_absorption": {
+      "group_name": "J_absorption",
+      "features": [
+        "absorption_proxy",
+        "impact_per_volume"
+      ],
+      "n_features": 2,
+      "feature_correlations": {
+        "absorption_proxy": {
+          "correlation": -0.337574,
+          "t_stat": -22.3386,
+          "p_value": 0.0,
+          "n": 3882
+        },
+        "impact_per_volume": {
+          "correlation": 0.005119,
+          "t_stat": 0.3188,
+          "p_value": 0.749865,
+          "n": 3882
+        }
+      },
+      "gross_expectancy_bps": 0.071924,
+      "gross_hac_se_bps": 0.008393,
+      "gross_hac_p": 0.0,
+      "gross_hac_ci95": [
+        0.055475,
+        0.088374
+      ],
+      "net_expectancy_bps": 0.0,
+      "net_hac_se_bps": 0.0,
+      "net_hac_p": 1.0,
+      "net_hac_ci95": [
+        0.0,
+        0.0
+      ],
+      "hac_max_lag": 1,
+      "executed_n": 0
+    },
+    "K_flow_toxicity": {
+      "group_name": "K_flow_toxicity",
+      "features": [
+        "vpin_500",
+        "trade_size_kyle"
+      ],
+      "n_features": 2,
+      "feature_correlations": {
+        "vpin_500": {
+          "correlation": 0.106966,
+          "t_stat": 6.7013,
+          "p_value": 0.0,
+          "n": 3882
+        },
+        "trade_size_kyle": {
+          "correlation": 0.001786,
+          "t_stat": 0.1112,
+          "p_value": 0.911446,
+          "n": 3882
+        }
+      },
+      "gross_expectancy_bps": 0.071924,
+      "gross_hac_se_bps": 0.008393,
+      "gross_hac_p": 0.0,
+      "gross_hac_ci95": [
+        0.055475,
+        0.088374
+      ],
+      "net_expectancy_bps": 0.0,
+      "net_hac_se_bps": 0.0,
+      "net_hac_p": 1.0,
+      "net_hac_ci95": [
+        0.0,
+        0.0
+      ],
+      "hac_max_lag": 1,
+      "executed_n": 0
+    },
+    "L_liquidity_regime": {
+      "group_name": "L_liquidity_regime",
+      "features": [
+        "liquidity_regime",
+        "depth_regime",
+        "vol_regime"
+      ],
+      "n_features": 3,
+      "feature_correlations": {},
+      "gross_expectancy_bps": 0.071924,
+      "gross_hac_se_bps": 0.008393,
+      "gross_hac_p": 0.0,
+      "gross_hac_ci95": [
+        0.055475,
+        0.088374
+      ],
+      "net_expectancy_bps": 0.0,
+      "net_hac_se_bps": 0.0,
+      "net_hac_p": 1.0,
+      "net_hac_ci95": [
+        0.0,
+        0.0
+      ],
+      "hac_max_lag": 1,
+      "executed_n": 0
+    },
+    "price_response": {
+      "group_name": "price_response",
+      "features": [
+        "price_response_to_ofi",
+        "microprice_momentum"
+      ],
+      "n_features": 2,
+      "feature_correlations": {
+        "price_response_to_ofi": {
+          "correlation": -0.022596,
+          "t_stat": -1.4078,
+          "p_value": 0.159261,
+          "n": 3882
+        },
+        "microprice_momentum": {
+          "correlation": 0.075958,
+          "t_stat": 4.7451,
+          "p_value": 2e-06,
+          "n": 3882
+        }
+      },
+      "gross_expectancy_bps": 0.071924,
+      "gross_hac_se_bps": 0.008393,
+      "gross_hac_p": 0.0,
+      "gross_hac_ci95": [
+        0.055475,
+        0.088374
+      ],
+      "net_expectancy_bps": 0.0,
+      "net_hac_se_bps": 0.0,
+      "net_hac_p": 1.0,
+      "net_hac_ci95": [
+        0.0,
+        0.0
+      ],
+      "hac_max_lag": 1,
+      "executed_n": 0
+    },
+    "execution_cost": {
+      "group_name": "execution_cost",
+      "features": [
+        "contemporaneous_cost_gate",
+        "cost_adjusted_signal"
+      ],
+      "n_features": 2,
+      "feature_correlations": {
+        "cost_adjusted_signal": {
+          "correlation": 0.036902,
+          "t_stat": 2.3002,
+          "p_value": 0.021492,
+          "n": 3882
+        }
+      },
+      "gross_expectancy_bps": 0.071924,
+      "gross_hac_se_bps": 0.008393,
+      "gross_hac_p": 0.0,
+      "gross_hac_ci95": [
+        0.055475,
+        0.088374
+      ],
+      "net_expectancy_bps": 0.0,
+      "net_hac_se_bps": 0.0,
+      "net_hac_p": 1.0,
+      "net_hac_ci95": [
+        0.0,
+        0.0
+      ],
+      "hac_max_lag": 1,
+      "executed_n": 0
+    }
+  },
+  "ablation_study": [
+    {
+      "ablation": "V6_full_minus_A_L1_OFI",
+      "removed_features": [
+        "ofi_l1"
+      ],
+      "gross_expectancy_bps": 0.071924,
+      "net_expectancy_bps": 0.0,
+      "gross_hac_p": 0.0,
+      "net_hac_p": 1.0,
+      "executed_n": 0
+    },
+    {
+      "ablation": "V6_full_minus_B_multilevel_OFI",
+      "removed_features": [
+        "ofi_slope",
+        "ofi_persistence"
+      ],
+      "gross_expectancy_bps": 0.071924,
+      "net_expectancy_bps": 0.0,
+      "gross_hac_p": 0.0,
+      "net_hac_p": 1.0,
+      "executed_n": 0
+    },
+    {
+      "ablation": "V6_full_minus_C_depth_normalized_OFI",
+      "removed_features": [
+        "ofi_norm_l1"
+      ],
+      "gross_expectancy_bps": 0.071924,
+      "net_expectancy_bps": 0.0,
+      "gross_hac_p": 0.0,
+      "net_hac_p": 1.0,
+      "executed_n": 0
+    },
+    {
+      "ablation": "V6_full_minus_D_signed_trade_flow",
+      "removed_features": [
+        "tfi_500",
+        "signed_vol_momentum",
+        "vpin_500",
+        "trade_size_kyle"
+      ],
+      "gross_expectancy_bps": 0.071924,
+      "net_expectancy_bps": 0.0,
+      "gross_hac_p": 0.0,
+      "net_hac_p": 1.0,
+      "executed_n": 0
+    },
+    {
+      "ablation": "V6_full_minus_E_CVD",
+      "removed_features": [
+        "cvd_slope",
+        "cvd_price_divergence",
+        "cvd_acceleration"
+      ],
+      "gross_expectancy_bps": 0.071924,
+      "net_expectancy_bps": 0.0,
+      "gross_hac_p": 0.0,
+      "net_hac_p": 1.0,
+      "executed_n": 0
+    },
+    {
+      "ablation": "V6_full_minus_F_trade_intensity",
+      "removed_features": [
+        "log_event_rate"
+      ],
+      "gross_expectancy_bps": 0.071924,
+      "net_expectancy_bps": 0.0,
+      "gross_hac_p": 0.0,
+      "net_hac_p": 1.0,
+      "executed_n": 0
+    },
+    {
+      "ablation": "V6_full_minus_G_spread",
+      "removed_features": [
+        "spread_bps",
+        "mpd_bps",
+        "effective_spread"
+      ],
+      "gross_expectancy_bps": 0.071924,
+      "net_expectancy_bps": 0.0,
+      "gross_hac_p": 0.0,
+      "net_hac_p": 1.0,
+      "executed_n": 0
+    },
+    {
+      "ablation": "V6_full_minus_H_multilevel_depth_imbalance",
+      "removed_features": [
+        "qi_l1",
+        "di_l5",
+        "di_l10",
+        "di_l1_3",
+        "di_l4_7",
+        "di_l8_10",
+        "imbalance_slope"
+      ],
+      "gross_expectancy_bps": 0.071924,
+      "net_expectancy_bps": 0.0,
+      "gross_hac_p": 0.0,
+      "net_hac_p": 1.0,
+      "executed_n": 0
+    },
+    {
+      "ablation": "V6_full_minus_I_book_depletion_replenishment",
+      "removed_features": [
+        "liq_depletion",
+        "depth_recovery_rate",
+        "log_depth1",
+        "log_depth5"
+      ],
+      "gross_expectancy_bps": 0.071924,
+      "net_expectancy_bps": 0.0,
+      "gross_hac_p": 0.0,
+      "net_hac_p": 1.0,
+      "executed_n": 0
+    },
+    {
+      "ablation": "V6_full_minus_J_absorption",
+      "removed_features": [
+        "absorption_proxy",
+        "impact_per_volume"
+      ],
+      "gross_expectancy_bps": 0.071924,
+      "net_expectancy_bps": 0.0,
+      "gross_hac_p": 0.0,
+      "net_hac_p": 1.0,
+      "executed_n": 0
+    },
+    {
+      "ablation": "V6_full_minus_K_flow_toxicity",
+      "removed_features": [
+        "vpin_500",
+        "trade_size_kyle"
+      ],
+      "gross_expectancy_bps": 0.071924,
+      "net_expectancy_bps": 0.0,
+      "gross_hac_p": 0.0,
+      "net_hac_p": 1.0,
+      "executed_n": 0
+    },
+    {
+      "ablation": "V6_full_minus_L_liquidity_regime",
+      "removed_features": [
+        "liquidity_regime",
+        "depth_regime",
+        "vol_regime"
+      ],
+      "gross_expectancy_bps": 0.071924,
+      "net_expectancy_bps": 0.0,
+      "gross_hac_p": 0.0,
+      "net_hac_p": 1.0,
+      "executed_n": 0
+    },
+    {
+      "ablation": "V6_full_minus_price_response",
+      "removed_features": [
+        "price_response_to_ofi",
+        "microprice_momentum"
+      ],
+      "gross_expectancy_bps": 0.071924,
+      "net_expectancy_bps": 0.0,
+      "gross_hac_p": 0.0,
+      "net_hac_p": 1.0,
+      "executed_n": 0
+    },
+    {
+      "ablation": "V6_full_minus_execution_cost",
+      "removed_features": [
+        "contemporaneous_cost_gate",
+        "cost_adjusted_signal"
+      ],
+      "gross_expectancy_bps": 0.071924,
+      "net_expectancy_bps": 0.0,
+      "gross_hac_p": 0.0,
+      "net_hac_p": 1.0,
+      "executed_n": 0
+    }
+  ],
+  "regime_breakdown": {
+    "high_impact": {
+      "n": 1383,
+      "executed_n": 0,
+      "gross_bps": 0.000292,
+      "gross_hac_se_bps": 0.003615,
+      "gross_hac_p": 0.935692,
+      "gross_hac_ci95": [
+        -0.006794,
+        0.007378
+      ],
+      "net_bps": 0.0,
+      "net_hac_se_bps": 0.0,
+      "net_hac_p": 1.0,
+      "net_hac_ci95": [
+        0.0,
+        0.0
+      ],
+      "long_gross_bps": -0.004064,
+      "short_gross_bps": 0.022891,
+      "long_net_bps": 0.0,
+      "short_net_bps": 0.0
+    },
+    "normal": {
+      "n": 2506,
+      "executed_n": 0,
+      "gross_bps": 0.111434,
+      "gross_hac_se_bps": 0.012677,
+      "gross_hac_p": 0.0,
+      "gross_hac_ci95": [
+        0.086586,
+        0.136282
+      ],
+      "net_bps": 0.0,
+      "net_hac_se_bps": 0.0,
+      "net_hac_p": 1.0,
+      "net_hac_ci95": [
+        0.0,
+        0.0
+      ],
+      "long_gross_bps": 0.03412,
+      "short_gross_bps": 0.280854,
+      "long_net_bps": 0.0,
+      "short_net_bps": 0.0
+    }
+  },
+  "cost_adjusted_analysis": {
+    "historical_taker": {
+      "gate_bps": 4.6658,
+      "gross_bps": 0.071924,
+      "gross_hac_se_bps": 0.008393,
+      "gross_hac_p": 0.0,
+      "gross_hac_ci95": [
+        0.055475,
+        0.088374
+      ],
+      "net_bps": 0.0,
+      "net_hac_se_bps": 0.0,
+      "net_hac_z": 0.0,
+      "net_hac_p": 1.0,
+      "net_hac_ci95": [
+        0.0,
+        0.0
+      ],
+      "executed_n": 0,
+      "cost_to_gross_ratio": 64.9
+    },
+    "contemporaneous_taker": {
+      "gate_bps": 4.6646,
+      "gross_bps": 0.071924,
+      "gross_hac_se_bps": 0.008393,
+      "gross_hac_p": 0.0,
+      "gross_hac_ci95": [
+        0.055475,
+        0.088374
+      ],
+      "net_bps": 0.0,
+      "net_hac_se_bps": 0.0,
+      "net_hac_z": 0.0,
+      "net_hac_p": 1.0,
+      "net_hac_ci95": [
+        0.0,
+        0.0
+      ],
+      "executed_n": 0,
+      "cost_to_gross_ratio": 64.9
+    },
+    "contemporaneous_maker": {
+      "gate_bps": 3.4396,
+      "gross_bps": 0.071924,
+      "gross_hac_se_bps": 0.008393,
+      "gross_hac_p": 0.0,
+      "gross_hac_ci95": [
+        0.055475,
+        0.088374
+      ],
+      "net_bps": -0.001032,
+      "net_hac_se_bps": 0.0,
+      "net_hac_z": 0.0,
+      "net_hac_p": 1.0,
+      "net_hac_ci95": [
+        -4.011914,
+        -4.011914
+      ],
+      "executed_n": 1,
+      "cost_to_gross_ratio": 47.8
+    }
+  },
+  "incremental_information": {
+    "v5_v6_prediction_correlation": 0.552484,
+    "v6_residual_correlation_with_y": 0.1271,
+    "v6_residual_t_stat": 7.9817,
+    "v6_residual_p_value": 0.0,
+    "v5_explained_variance": 0.0,
+    "v6_explained_variance": 0.0,
+    "incremental_r2": 0.0
+  },
+  "verdict": {
+    "verdict": "NO_EDGE",
+    "reasons": [
+      "V6 net expectancy negative after contemporaneous cost: 0.0000 bps",
+      "V6 gross expectancy statistically significant (HAC p=0.0000)",
+      "V6 net expectancy NOT statistically significant (HAC p=1.0000)",
+      "V6 NOT profitable in normal liquidity regime",
+      "LONG/SHORT asymmetry detected (LONG=nan, SHORT=nan)",
+      "V6 incremental R2 over V5: 0.000000",
+      "V6 residual predictive power p=0.0000"
+    ],
+    "criteria": {
+      "net_positive_after_cost": false,
+      "gross_statistically_significant": true,
+      "net_statistically_significant": false,
+      "normal_regime_robust": false,
+      "long_short_symmetric": false,
+      "incremental_r2_positive": false
+    },
+    "v5_baseline": {
+      "gross_expectancy_bps": 0.06408,
+      "gated_expectancy_bps": 0.0,
+      "pf": 0.0,
+      "sharpe": 0.0,
+      "max_drawdown_bps": 0.0
+    },
+    "v6_extension": {
+      "gross_expectancy_bps": 0.071924,
+      "gated_expectancy_bps": 0.0,
+      "pf": 0.0,
+      "sharpe": 0.0,
+      "max_drawdown_bps": 0.0
+    },
+    "cost_adjusted": {
+      "historical_taker": {
+        "gate_bps": 4.6658,
+        "gross_bps": 0.071924,
+        "gross_hac_se_bps": 0.008393,
+        "gross_hac_p": 0.0,
+        "gross_hac_ci95": [
+          0.055475,
+          0.088374
+        ],
+        "net_bps": 0.0,
+        "net_hac_se_bps": 0.0,
+        "net_hac_z": 0.0,
+        "net_hac_p": 1.0,
+        "net_hac_ci95": [
+          0.0,
+          0.0
+        ],
+        "executed_n": 0,
+        "cost_to_gross_ratio": 64.9
+      },
+      "contemporaneous_taker": {
+        "gate_bps": 4.6646,
+        "gross_bps": 0.071924,
+        "gross_hac_se_bps": 0.008393,
+        "gross_hac_p": 0.0,
+        "gross_hac_ci95": [
+          0.055475,
+          0.088374
+        ],
+        "net_bps": 0.0,
+        "net_hac_se_bps": 0.0,
+        "net_hac_z": 0.0,
+        "net_hac_p": 1.0,
+        "net_hac_ci95": [
+          0.0,
+          0.0
+        ],
+        "executed_n": 0,
+        "cost_to_gross_ratio": 64.9
+      },
+      "contemporaneous_maker": {
+        "gate_bps": 3.4396,
+        "gross_bps": 0.071924,
+        "gross_hac_se_bps": 0.008393,
+        "gross_hac_p": 0.0,
+        "gross_hac_ci95": [
+          0.055475,
+          0.088374
+        ],
+        "net_bps": -0.001032,
+        "net_hac_se_bps": 0.0,
+        "net_hac_z": 0.0,
+        "net_hac_p": 1.0,
+        "net_hac_ci95": [
+          -4.011914,
+          -4.011914
+        ],
+        "executed_n": 1,
+        "cost_to_gross_ratio": 47.8
+      }
+    },
+    "incremental_information": {
+      "v5_v6_prediction_correlation": 0.552484,
+      "v6_residual_correlation_with_y": 0.1271,
+      "v6_residual_t_stat": 7.9817,
+      "v6_residual_p_value": 0.0,
+      "v5_explained_variance": 0.0,
+      "v6_explained_variance": 0.0,
+      "incremental_r2": 0.0
+    },
+    "regime_breakdown": {
+      "high_impact": {
+        "n": 1383,
+        "executed_n": 0,
+        "gross_bps": 0.000292,
+        "gross_hac_se_bps": 0.003615,
+        "gross_hac_p": 0.935692,
+        "gross_hac_ci95": [
+          -0.006794,
+          0.007378
+        ],
+        "net_bps": 0.0,
+        "net_hac_se_bps": 0.0,
+        "net_hac_p": 1.0,
+        "net_hac_ci95": [
+          0.0,
+          0.0
+        ],
+        "long_gross_bps": -0.004064,
+        "short_gross_bps": 0.022891,
+        "long_net_bps": 0.0,
+        "short_net_bps": 0.0
+      },
+      "normal": {
+        "n": 2506,
+        "executed_n": 0,
+        "gross_bps": 0.111434,
+        "gross_hac_se_bps": 0.012677,
+        "gross_hac_p": 0.0,
+        "gross_hac_ci95": [
+          0.086586,
+          0.136282
+        ],
+        "net_bps": 0.0,
+        "net_hac_se_bps": 0.0,
+        "net_hac_p": 1.0,
+        "net_hac_ci95": [
+          0.0,
+          0.0
+        ],
+        "long_gross_bps": 0.03412,
+        "short_gross_bps": 0.280854,
+        "long_net_bps": 0.0,
+        "short_net_bps": 0.0
+      }
+    }
+  }
+}

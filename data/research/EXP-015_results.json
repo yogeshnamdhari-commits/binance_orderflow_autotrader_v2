@@ -1,0 +1,126 @@
+{
+  "experiment_id": "EXP-015",
+  "hypothesis": "Size-Conditioned Trade-Sign Directional Prediction",
+  "status": "REJECTED",
+  "timestamp": "2026-08-24T07:10:00Z",
+  "data_source": "data/hist/normalized/BTCUSDT/aggTrades/",
+  "sample_days": 30,
+  "total_trades": 37048552,
+  "train_split": 0.7,
+  "threshold_method": "train_only_percentile",
+  "threshold_p99_9": 597328,
+  "threshold_p99_99": 2029317,
+  "signal_measurements": {
+    "ALL_trades": {
+      "ic": 0.0819,
+      "directional_profit_bps": 0.43,
+      "e_abs_ret_bps": 3.08,
+      "net_taker_bps": -3.57,
+      "net_maker_bps": -1.57
+    },
+    "p99_9_events": {
+      "n": 12242,
+      "ic": 0.1811,
+      "directional_profit_bps": 1.2,
+      "e_abs_ret_bps": 3.83,
+      "net_taker_bps": -2.81,
+      "net_maker_bps": -0.78
+    },
+    "p99_99_events": {
+      "n": 1117,
+      "ic": 0.2048,
+      "directional_profit_bps": 1.66,
+      "e_abs_ret_bps": 4.59,
+      "net_taker_bps": -2.35,
+      "net_maker_bps": -0.34
+    }
+  },
+  "walk_forward": {
+    "method": "5 windows, train-only threshold per window",
+    "horizon": "10s",
+    "ic_mean": 0.1523,
+    "ic_std": 0.0105,
+    "dp_mean_bps": 1.06,
+    "dp_std_bps": 0.11,
+    "net_maker_mean_bps": -0.94,
+    "net_taker_mean_bps": -2.95,
+    "stable": true,
+    "ic_consistent": true
+  },
+  "bootstrap_ci": {
+    "n_events": 36444,
+    "n_resamples": 2000,
+    "seed": 42,
+    "net_maker_mean_bps": -0.87,
+    "net_maker_ci95_lower": -0.93,
+    "net_maker_ci95_upper": -0.8,
+    "net_taker_mean_bps": -2.88,
+    "net_taker_ci95_lower": -2.95,
+    "net_taker_ci95_upper": -2.82,
+    "ci_excludes_zero": true
+  },
+  "accuracy_claim_verification": {
+    "reported": "98.4%",
+    "actual_p99_9": "64.2%",
+    "verdict": "CLAIM_FALSE"
+  },
+  "multi_horizon": {
+    "1s": {
+      "ic": 0.342,
+      "dp_bps": 1.39,
+      "e_abs_bps": 2.13,
+      "net_maker_bps": -0.61,
+      "net_taker_bps": -2.62
+    },
+    "5s": {
+      "ic": 0.203,
+      "dp_bps": 1.29,
+      "e_abs_bps": 3.16,
+      "net_maker_bps": -0.71,
+      "net_taker_bps": -2.73
+    },
+    "10s": {
+      "ic": 0.181,
+      "dp_bps": 1.2,
+      "e_abs_bps": 3.83,
+      "net_maker_bps": -0.78,
+      "net_taker_bps": -2.81
+    },
+    "30s": {
+      "ic": 0.122,
+      "dp_bps": 1.15,
+      "e_abs_bps": 5.92,
+      "net_maker_bps": -0.85,
+      "net_taker_bps": -2.87
+    },
+    "60s": {
+      "ic": 0.094,
+      "dp_bps": 1.2,
+      "e_abs_bps": 8.1,
+      "net_maker_bps": -0.8,
+      "net_taker_bps": -2.82
+    },
+    "5min": {
+      "ic": 0.05,
+      "dp_bps": 1.22,
+      "e_abs_bps": 16.2,
+      "net_maker_bps": -0.78,
+      "net_taker_bps": -2.79
+    }
+  },
+  "leakage_audit": {
+    "threshold": "train_only - PASS",
+    "forward_returns": "strictly future - PASS",
+    "trade_sign": "available at trade time - PASS",
+    "chronology": "walk-forward chronological - PASS",
+    "overall": "NO LEAKAGE DETECTED"
+  },
+  "pre_prediction_test": {
+    "feature": "rolling trade volume + imbalance",
+    "model": "RandomForestClassifier",
+    "auc": 0.56,
+    "verdict": "Large trades CANNOT be predicted before occurrence"
+  },
+  "rejection_reason": "Strongest signal found in entire research program (IC=0.18) but directional profit (1.13 bps) insufficient to overcome taker cost (4.0146 bps). Even at p99.99: net(maker)=-0.34 bps (CI crosses 0). Max return at 10s (3.83 bps) below taker cost. Required accuracy at 5min (62.7%) cannot be achieved (IC=0.18 \u2192 max ~58% accuracy).",
+  "significance": "This is the strongest signal discovered in the entire 15-experiment research program. However, it remains economically unviable by a factor of ~2-3x."
+}

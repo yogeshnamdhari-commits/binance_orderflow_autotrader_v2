@@ -1,0 +1,216 @@
+======================================================================
+CORRECTED VALIDATION REPORT
+======================================================================
+
+Generated: 2026-08-19
+Auditor: Kilo (read-only audit, no production files modified)
+
+======================================================================
+1. EXECUTIVE SUMMARY
+======================================================================
+
+The corrected cost model does NOT change the fundamental conclusion: the
+strategy is NOT deployable. Both V3 and V5 fail the economic gate after
+applying the measured execution cost.
+
+V3 Verdict: STOP (net expectancy significantly negative)
+V5 Verdict: INSUFFICIENT (no trades executed; predictions too small to clear gate)
+
+======================================================================
+2. COST MODEL FINDINGS
+======================================================================
+
+A. CONTEMPORANEOUS COST CALIBRATION: NOT AVAILABLE
+
+   The OOS validation period is 2026-08-18T19:50:20.885Z to
+   2026-08-18T19:55:21.993Z (approximately 5 minutes).
+
+   The only measured cost data in the repository is from cost sampler
+   files dated 2026-08-17 (29.0 hours before OOS).
+
+   Source files:
+   - data/live/cost_sampler_20260817-123428.jsonl
+   - data/live/cost_sampler_20260817-124646.jsonl
+   - data/hist/research/execution_calibration.json (built from samplers)
+   - data/hist/research/fill_calib.json (730-day fill history)
+
+B. COST COMPONENTS (all from execution_calibration.json)
+
+   Taker fee (round-trip): 4.0 bps (2.0 per side)
+   Spread (p90): 0.0158 bps (negligible)
+   Slippage ($1000, p90 per side): 0.0079 bps
+   Effective taker round-trip (p90): 4.0158 bps
+   Market impact allowance: 0.10 bps
+   Latency cost: 0.05 bps
+   Safety margin (predeclared): 0.5 bps
+   ----------------------------------------
+   TOTAL TAKER GATE: 4.6658 bps
+
+   Maker components (median of oos_fill cells):
+   Maker fee (round-trip): 2.0 bps
+   Adverse selection drag: 0.821 bps
+   Non-fill reprice: 0.1151 bps  [0.50 * (1 - 0.7699)]
+   Latency: 0.05 bps
+   ----------------------------------------
+   TOTAL MAKER GATE: 3.4861 bps
+
+C. ORIGINAL OOS_OOS.JSON COST (for reference)
+
+   File: data/hist/research/oos_oos.json
+   Original cost: 6.0 bps round-trip
+   Components: taker_fee=2.0/side, slip=1.0/side
+   This was a simpler, assumed cost model. The current codebase uses the
+   measured 4.6658 bps gate from execution_calibration.json.
+
+======================================================================
+3. V3 OOS RESULTS (horizon = 500ms)
+======================================================================
+
+A. GROSS EXPECTANCY
+   Value: 0.074416 bps
+   N: 3882 trades
+   95% CI: [-4.603222, -4.579545] bps
+   t-statistic: -760.41
+   p-value (two-sided): < 0.000001
+
+   Is gross predictive information statistically significant?
+   YES, but in the NEGATIVE direction. The gross expectancy is
+   significantly LESS than zero, meaning the signal predicts losses
+   on average (after accounting for direction).
+
+B. EXECUTION COST
+   Taker gate: 4.6658 bps
+   This is subtracted from every trade's gross P&L.
+
+C. NET EXPECTANCY
+   Value: -4.591384 bps
+   95% CI: [-4.603222, -4.579545] bps
+   The entire confidence interval is far below zero.
+
+D. BREAK-EVEN ANALYSIS
+   Break-even gross: 4.6658 bps
+   Current gross: 0.074416 bps
+   Shortfall: 4.5914 bps (98.4% of break-even)
+   The gross expectancy is 62.5x below break-even.
+
+E. DIRECTIONAL BREAKDOWN
+   LONG: n=2863, gross_mean=0.020522 bps, net_mean=-4.645278 bps
+   SHORT: n=1019, gross_mean=0.225840 bps, net_mean=-4.439960 bps
+   Both directions are deeply unprofitable.
+
+F. RISK METRICS
+   Profit factor: 0.000000 (no winners)
+   Max drawdown: 17819.085 bps
+   Sharpe (per-trade): -12.204
+   Hit rate: 0.000000
+
+G. VERDICT: STOP
+   The signal has NO predictive power after execution cost.
+   Even if execution cost were zero, the gross expectancy (0.074 bps)
+   is trivially small and not practically significant.
+
+======================================================================
+4. V5 OOS RESULTS (horizon = 500ms)
+======================================================================
+
+A. GROSS EXPECTANCY
+   Value: 0.064080 bps
+   N: 3882 observations
+
+B. EXECUTION COST
+   Taker gate: 4.6658 bps
+
+C. NET EXPECTANCY / EXECUTION
+   Executed rows: 0 (no trades)
+   Gated expectancy: 0.000000 bps
+   LONG trades: 0
+   SHORT trades: 0
+
+   The V5 model predictions range from -0.65 to +0.70 bps.
+   With a gate of 4.6658 bps, NO prediction ever exceeds the threshold.
+   The model does not produce actionable signals.
+
+D. VERDICT: INSUFFICIENT
+   Cannot evaluate profitability because the strategy takes zero trades.
+   The V5 model's expected-move magnitude is far too small relative
+   to execution cost.
+
+E. OTHER HORIZONS (V5)
+   h=250ms: gross=0.060252 bps, pred range [-0.613, +0.687]
+   h=500ms: gross=0.064080 bps, pred range [-0.650, +0.697]
+   h=1000ms: gross=0.068729 bps, pred range [-0.697, +0.764]
+   None approach break-even at any horizon.
+
+======================================================================
+5. KEY QUESTIONS ANSWERED
+======================================================================
+
+Q: Does the corrected cost model change the previous conclusion?
+A: NO. The previous conclusion (STOP) remains valid. The original
+   oos_oos.json used 6.0 bps; the corrected measured cost is 4.6658 bps.
+   Both are far above the gross expectancy of ~0.07 bps.
+
+Q: Is gross predictive information statistically significant?
+A: For V3, YES but NEGATIVELY significant (t=-760, p<0.000001).
+   The signal predicts small losses on average. For V5, the signal
+   is not significant because predictions never exceed the gate.
+
+Q: Is NET expectancy positive after corrected execution cost?
+A: NO. V3 net = -4.591 bps (95% CI entirely negative).
+   V5 net = 0 bps (no trades executed).
+
+Q: Does any supported horizon clear break-even?
+A: NO. V3 gross at 500ms = 0.074 bps (break-even = 4.666 bps).
+   V5 gross ranges from 0.060 to 0.069 bps across all horizons.
+
+Q: Does any subgroup have statistically credible positive edge?
+A: NO. Neither V3 nor V5 shows any subgroup with positive net expectancy.
+   V3 LONG and SHORT both have net means of ~-4.6 bps.
+   V5 has zero executed trades in all subgroups.
+
+Q: Is the existing frozen order-flow signal deployable?
+A: NO. The signal fails the economic gate decisively.
+
+Q: If not, is failure caused by signal quality, execution cost, or both?
+A: BOTH.
+   - Signal quality: Gross expectancy is ~0.07 bps, which is negligible
+     even before costs. The signal does not predict meaningful price moves.
+   - Execution cost: At 4.67 bps round-trip, cost exceeds gross by 63x.
+   Even with zero cost, the strategy would not be profitable because
+   the gross edge is too small to overcome variance and risk.
+
+Q: What about the original oos_oos.json results?
+A: The original file showed gross_mean_bps of 1.866 (10_long) and 1.743
+   (1_short) at 5000ms horizon with 6.0 bps cost. Those results are from
+   a DIFFERENT protocol (older, longer horizon, different signal definition
+   "delta_5s decile") and are not comparable to the current V3/V5 models.
+
+======================================================================
+6. FINAL DECISION
+======================================================================
+
+METHODOLOGICAL ERROR + SIGNAL QUALITY FAILURE
+
+Reasoning:
+1. No contemporaneous cost calibration exists for the OOS period.
+   The cost model relies on 29-hour-old sampler data (Aug 17) to
+   validate Aug 18 OOS results. This is a methodological limitation.
+
+2. Even accepting the best available cost estimate (4.6658 bps):
+   - V3 net expectancy is -4.591 bps with 95% CI [-4.603, -4.580]
+   - V5 produces zero actionable trades
+   - Gross predictive information is negative/negligible
+
+3. The signal quality is insufficient: the expected move is ~0.07 bps
+   while execution cost is ~4.67 bps. The gap is 63x.
+
+4. The original oos_oos.json (6.0 bps cost, longer horizon) is not
+   relevant to the current V3/V5 validation framework.
+
+RECOMMENDATION: STOP. Do not deploy. Do not re-fit.
+The frozen order-flow signal does not have predictive power sufficient
+to overcome execution costs at the 500ms horizon.
+
+======================================================================
+END OF REPORT
+======================================================================

@@ -1,0 +1,30 @@
+{
+  "experiment": "EXP-013",
+  "hypothesis": "Two-Stage Event + Direction Prediction",
+  "stage_a": {
+    "event_rate": 0.806,
+    "e_abs_ret": 15.78,
+    "e_abs_event": 18.41,
+    "accuracy": 0.51,
+    "auc": 0.505,
+    "ic": 0.012,
+    "n_samples": 8000000,
+    "required_dir_acc_taker": 0.6352768413972878,
+    "required_dir_acc_maker": 0.5673924382988531
+  },
+  "stage_b": {
+    "accuracy": 0.5241106719367589,
+    "auc": 0.5735339442754993,
+    "dir_profit": 0.04033050200468011,
+    "n_samples": 6321
+  },
+  "combined": {
+    "p_event": 0.806,
+    "p_direction": 0.5241106719367589,
+    "e_abs_event": 18.41,
+    "net_per_trade_taker": -3.299069517786562,
+    "required_accuracy": 0.6352768413972878,
+    "achieved_accuracy": 0.5241106719367589,
+    "verdict": "REJECTED"
+  }
+}

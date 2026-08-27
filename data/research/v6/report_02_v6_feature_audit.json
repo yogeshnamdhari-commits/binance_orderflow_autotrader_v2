@@ -1,0 +1,120 @@
+{
+  "title": "V6 Feature Audit",
+  "generated_at": "2026-08-19T20:29:01.697316+00:00",
+  "total_features": 38,
+  "feature_groups": {
+    "A_L1_OFI": {
+      "features": [
+        "ofi_l1",
+        "ofi_norm_l1"
+      ],
+      "count": 2
+    },
+    "B_Multi-level_OFI": {
+      "features": [
+        "ofi_slope",
+        "ofi_persistence"
+      ],
+      "count": 2
+    },
+    "C_Depth_normalized_OFI": {
+      "features": [
+        "ofi_norm_l1"
+      ],
+      "count": 1
+    },
+    "D_Signed_trade_flow": {
+      "features": [
+        "tfi_500",
+        "signed_vol_500",
+        "signed_vol_momentum",
+        "vpin_500",
+        "trade_size_kyle"
+      ],
+      "count": 5
+    },
+    "E_CVD": {
+      "features": [
+        "cvd_slope",
+        "cvd_price_divergence",
+        "cvd_acceleration"
+      ],
+      "count": 3
+    },
+    "F_Trade_intensity": {
+      "features": [
+        "trade_rate",
+        "log_event_rate"
+      ],
+      "count": 2
+    },
+    "G_Spread": {
+      "features": [
+        "spread_bps",
+        "mpd_bps",
+        "effective_spread"
+      ],
+      "count": 3
+    },
+    "H_Multi-level_depth_imbalance": {
+      "features": [
+        "qi_l1",
+        "di_l5",
+        "di_l10",
+        "di_l1_3",
+        "di_l4_7",
+        "di_l8_10",
+        "imbalance_slope"
+      ],
+      "count": 7
+    },
+    "I_Book_depletion_replenishment": {
+      "features": [
+        "liq_depletion",
+        "depth_recovery_rate",
+        "log_depth1",
+        "log_depth5"
+      ],
+      "count": 4
+    },
+    "J_Absorption": {
+      "features": [
+        "absorption_proxy",
+        "impact_per_volume"
+      ],
+      "count": 2
+    },
+    "K_Flow_toxicity": {
+      "features": [
+        "vpin_500",
+        "trade_size_kyle"
+      ],
+      "count": 2
+    },
+    "L_Liquidity_regime": {
+      "features": [
+        "liquidity_regime",
+        "depth_regime",
+        "vol_regime"
+      ],
+      "count": 3
+    },
+    "price_response": {
+      "features": [
+        "price_response_to_ofi",
+        "microprice_momentum"
+      ],
+      "count": 2
+    },
+    "execution_cost": {
+      "features": [
+        "contemporaneous_cost_gate",
+        "cost_adjusted_signal"
+      ],
+      "count": 2
+    }
+  },
+  "research_rationale": "All features grounded in peer-reviewed market microstructure literature (Cont-Kukanov-Stoikov, Easley-O'Hara, Hasbrouck, etc.)",
+  "incremental_predictive_value": 0.0,
+  "incremental_p_value": 0.0
+}

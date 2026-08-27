@@ -1,0 +1,315 @@
+{
+  "experiment_id": "EXP-012",
+  "hypothesis": "Aggressive Flow x Absorption Capacity x Liquidity Fragility",
+  "generated_at": "2026-08-23T20:30:22.008493+00:00",
+  "cost_model": {
+    "maker_fee_bps": 2.0,
+    "taker_fee_bps": 2.0,
+    "latency_bps": 0.01,
+    "slippage_coeff": 0.5
+  },
+  "horizons_tested": [
+    1000,
+    3000,
+    5000,
+    10000
+  ],
+  "validation_method": "purged_chronological_split + bootstrap_ci_2000",
+  "horizon_results": {
+    "1000": {
+      "horizon_ms": 1000,
+      "threshold": 0.14242703066666434,
+      "n_train": 12340,
+      "n_val": 1749,
+      "n_oos": 5240,
+      "n_gated": 72,
+      "gross_mean_bps": -0.0908914261128939,
+      "gross_ci95": [
+        -0.17056631369275807,
+        -0.017824959652457128
+      ],
+      "net_mean_bps": -4.139812946425123,
+      "net_ci95": [
+        -4.221213498092506,
+        -4.066147494693294
+      ],
+      "gate_rate": 0.0,
+      "positive_frac": 0.0,
+      "deployable": "False",
+      "verdict": "HYPOTHESIS_REJECTED",
+      "walk_forward": {
+        "n_folds": 2,
+        "net_mean_bps": -4.055293252793479,
+        "net_mean_std": 0.005882638981551835,
+        "fold_results": [
+          {
+            "horizon_ms": 1000,
+            "threshold": 0.010319592933508365,
+            "n_train": 3647,
+            "n_val": 912,
+            "n_oos": 5211,
+            "n_gated": 408,
+            "gross_mean_bps": -0.0037302530932563195,
+            "gross_ci95": [
+              -0.025683549891289306,
+              0.01360956981671058
+            ],
+            "net_mean_bps": -4.0494106138119275,
+            "net_ci95": [
+              -4.071306145925706,
+              -4.032066370244845
+            ],
+            "gate_rate": 0.0,
+            "positive_frac": 0.0,
+            "deployable": "False",
+            "verdict": "HYPOTHESIS_REJECTED"
+          },
+          {
+            "horizon_ms": 1000,
+            "threshold": 0.14242388752393995,
+            "n_train": 8858,
+            "n_val": 2215,
+            "n_oos": 5251,
+            "n_gated": 53,
+            "gross_mean_bps": -0.013031185597088059,
+            "gross_ci95": [
+              -0.06185254772114029,
+              0.04349606879317289
+            ],
+            "net_mean_bps": -4.061175891775031,
+            "net_ci95": [
+              -4.109761518149149,
+              -4.004149810594431
+            ],
+            "gate_rate": 0.0,
+            "positive_frac": 0.0,
+            "deployable": "False",
+            "verdict": "HYPOTHESIS_REJECTED"
+          }
+        ]
+      }
+    },
+    "3000": {
+      "horizon_ms": 3000,
+      "threshold": 0.14242703066666434,
+      "n_train": 12340,
+      "n_val": 1749,
+      "n_oos": 5220,
+      "n_gated": 72,
+      "gross_mean_bps": -0.10769188076879639,
+      "gross_ci95": [
+        -0.202812076465033,
+        -0.023622825552595542
+      ],
+      "net_mean_bps": -4.156613401081025,
+      "net_ci95": [
+        -4.253324188357714,
+        -4.071531494134391
+      ],
+      "gate_rate": 0.0,
+      "positive_frac": 0.0,
+      "deployable": "False",
+      "verdict": "HYPOTHESIS_REJECTED",
+      "walk_forward": {
+        "n_folds": 2,
+        "net_mean_bps": -4.08624722699691,
+        "net_mean_std": 0.013291452348218158,
+        "fold_results": [
+          {
+            "horizon_ms": 3000,
+            "threshold": 0.010319592933508365,
+            "n_train": 3647,
+            "n_val": 912,
+            "n_oos": 5211,
+            "n_gated": 408,
+            "gross_mean_bps": -0.027275413930020885,
+            "gross_ci95": [
+              -0.06902382900037832,
+              0.009482977160711503
+            ],
+            "net_mean_bps": -4.072955774648692,
+            "net_ci95": [
+              -4.114733664821991,
+              -4.036135730488324
+            ],
+            "gate_rate": 0.0,
+            "positive_frac": 0.0,
+            "deployable": "False",
+            "verdict": "HYPOTHESIS_REJECTED"
+          },
+          {
+            "horizon_ms": 3000,
+            "threshold": 0.14242388752393995,
+            "n_train": 8858,
+            "n_val": 2215,
+            "n_oos": 5251,
+            "n_gated": 53,
+            "gross_mean_bps": -0.051393973167184685,
+            "gross_ci95": [
+              -0.11030974581295291,
+              0.012587923958188897
+            ],
+            "net_mean_bps": -4.0995386793451285,
+            "net_ci95": [
+              -4.158274135258713,
+              -4.035705852157192
+            ],
+            "gate_rate": 0.0,
+            "positive_frac": 0.0,
+            "deployable": "False",
+            "verdict": "HYPOTHESIS_REJECTED"
+          }
+        ]
+      }
+    },
+    "5000": {
+      "horizon_ms": 5000,
+      "threshold": 0.14242703066666434,
+      "n_train": 12340,
+      "n_val": 1749,
+      "n_oos": 5200,
+      "n_gated": 69,
+      "gross_mean_bps": -0.14507603567681956,
+      "gross_ci95": [
+        -0.2488215989901432,
+        -0.04638456928824936
+      ],
+      "net_mean_bps": -4.194114782306855,
+      "net_ci95": [
+        -4.298291189504269,
+        -4.095484671220458
+      ],
+      "gate_rate": 0.0,
+      "positive_frac": 0.0,
+      "deployable": "False",
+      "verdict": "HYPOTHESIS_REJECTED",
+      "walk_forward": {
+        "n_folds": 2,
+        "net_mean_bps": -4.102153266111465,
+        "net_mean_std": 0.03235008181807464,
+        "fold_results": [
+          {
+            "horizon_ms": 5000,
+            "threshold": 0.010319592933508365,
+            "n_train": 3647,
+            "n_val": 912,
+            "n_oos": 5211,
+            "n_gated": 408,
+            "gross_mean_bps": -0.02412282357471814,
+            "gross_ci95": [
+              -0.06799584656581924,
+              0.01562225238051674
+            ],
+            "net_mean_bps": -4.06980318429339,
+            "net_ci95": [
+              -4.1135450259069515,
+              -4.030040930188811
+            ],
+            "gate_rate": 0.0,
+            "positive_frac": 0.0,
+            "deployable": "False",
+            "verdict": "HYPOTHESIS_REJECTED"
+          },
+          {
+            "horizon_ms": 5000,
+            "threshold": 0.14242388752393995,
+            "n_train": 8858,
+            "n_val": 2215,
+            "n_oos": 5251,
+            "n_gated": 53,
+            "gross_mean_bps": -0.08635864175159523,
+            "gross_ci95": [
+              -0.15902035931799166,
+              -0.011365043954713343
+            ],
+            "net_mean_bps": -4.134503347929539,
+            "net_ci95": [
+              -4.206918947155546,
+              -4.059802585813824
+            ],
+            "gate_rate": 0.0,
+            "positive_frac": 0.0,
+            "deployable": "False",
+            "verdict": "HYPOTHESIS_REJECTED"
+          }
+        ]
+      }
+    },
+    "10000": {
+      "horizon_ms": 10000,
+      "threshold": 0.0006160664245527434,
+      "n_train": 12340,
+      "n_val": 1749,
+      "n_oos": 5151,
+      "n_gated": 1262,
+      "gross_mean_bps": -0.08257985831621721,
+      "gross_ci95": [
+        -0.1154620879167761,
+        -0.05072544501688126
+      ],
+      "net_mean_bps": -4.128379612914733,
+      "net_ci95": [
+        -4.161317866133507,
+        -4.096361983022717
+      ],
+      "gate_rate": 0.0,
+      "positive_frac": 0.0,
+      "deployable": "False",
+      "verdict": "HYPOTHESIS_REJECTED",
+      "walk_forward": {
+        "n_folds": 2,
+        "net_mean_bps": -4.207147186105873,
+        "net_mean_std": 0.1415211942775252,
+        "fold_results": [
+          {
+            "horizon_ms": 10000,
+            "threshold": 0.010319592933508365,
+            "n_train": 3647,
+            "n_val": 912,
+            "n_oos": 5211,
+            "n_gated": 408,
+            "gross_mean_bps": -0.019945631109675645,
+            "gross_ci95": [
+              -0.08875273419453317,
+              0.04560819093393587
+            ],
+            "net_mean_bps": -4.065625991828347,
+            "net_ci95": [
+              -4.134374880643465,
+              -4.000041230993444
+            ],
+            "gate_rate": 0.0,
+            "positive_frac": 0.0,
+            "deployable": "False",
+            "verdict": "HYPOTHESIS_REJECTED"
+          },
+          {
+            "horizon_ms": 10000,
+            "threshold": 0.14242388752393995,
+            "n_train": 8858,
+            "n_val": 2215,
+            "n_oos": 5251,
+            "n_gated": 53,
+            "gross_mean_bps": -0.30052367420545467,
+            "gross_ci95": [
+              -0.4753434903321425,
+              -0.13503963160012245
+            ],
+            "net_mean_bps": -4.348668380383398,
+            "net_ci95": [
+              -4.523231639399174,
+              -4.184169600104939
+            ],
+            "gate_rate": 0.0,
+            "positive_frac": 0.0,
+            "deployable": "False",
+            "verdict": "HYPOTHESIS_REJECTED"
+          }
+        ]
+      }
+    }
+  },
+  "overall_verdict": "HYPOTHESIS_REJECTED",
+  "deployable_edge": false,
+  "live_trading": false
+}

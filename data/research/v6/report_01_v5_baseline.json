@@ -1,0 +1,34 @@
+{
+  "title": "V5 Frozen Baseline Report",
+  "generated_at": "2026-08-19T20:29:01.696307+00:00",
+  "status": "FROZEN \u2014 immutable control",
+  "model": {
+    "features": [],
+    "horizons_ms": [
+      250,
+      500,
+      1000
+    ],
+    "primary_horizon_ms": 500
+  },
+  "oos_performance": {
+    "gross_expectancy_bps": 0.06408,
+    "gated_expectancy_bps": 0.0,
+    "pf": 0.0,
+    "sharpe": 0.0,
+    "max_drawdown_bps": 0.0,
+    "executed_rows": 0
+  },
+  "economic_verdict": {
+    "gross_expectancy_bps": 0.06408,
+    "contemporaneous_taker_cost_bps": 4.6646,
+    "contemporaneous_maker_cost_bps": 3.4396,
+    "net_taker_bps": -4.60052,
+    "net_maker_bps": -3.37552,
+    "verdict": "NO_EDGE \u2014 net negative after execution cost"
+  },
+  "governance": {
+    "V5_BASELINE_NO_LIVE_TRADE": true,
+    "reason": "V5 failed economic gate; net expectancy negative after realistic execution cost"
+  }
+}

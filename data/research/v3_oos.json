@@ -1,0 +1,104 @@
+{
+ "generated_at": "2026-08-18T20:21:17.417980+00:00",
+ "model": "data/research/v3_model.json",
+ "cost_calibration": "data/research/v3_cost_calibration.json",
+ "style": "taker",
+ "notional_usd": 1000.0,
+ "horizon_ms": 500,
+ "gate_bps": 4.6658,
+ "cost_model": {
+  "notional_usd": 1000.0,
+  "safety_margin_bps": 0.5,
+  "taker": {
+   "total_bps": 4.1658,
+   "margin_bps": 0.5,
+   "gate_bps": 4.6658,
+   "components": {
+    "basis": "effective_taker_roundtrip.p90 + impact + latency",
+    "spread_bps": null,
+    "slippage_bps": null
+   }
+  },
+  "maker": {
+   "total_bps": 2.5518,
+   "margin_bps": 0.5,
+   "gate_bps": 3.0518,
+   "components": {
+    "adverse_selection_bps": 0.495,
+    "p_fill": 0.9864,
+    "maker_fee_rt_bps": 2.0
+   }
+  }
+ },
+ "split_fractions": [
+  0.7,
+  0.15,
+  0.15
+ ],
+ "days": {
+  "train": {
+   "lo_ms": 1787080068417,
+   "hi_ms": 1787082331201,
+   "rows": 18145
+  },
+  "validation": {
+   "lo_ms": 1787082331303,
+   "hi_ms": 1787082620783,
+   "rows": 3888
+  },
+  "oos": {
+   "lo_ms": 1787082620885,
+   "hi_ms": 1787082921993,
+   "rows": 3889
+  }
+ },
+ "blocks": {
+  "validation": {
+   "rows": 3888,
+   "gross_expectancy_bps": 0.039918,
+   "net_expectancy_bps": -4.625882,
+   "long": {
+    "direction": "long",
+    "n": 2560,
+    "gross_mean_bps": 0.038961,
+    "net_mean_bps": -4.626839,
+    "net_median_bps": -4.6658,
+    "hit_rate": 0.0,
+    "profit_factor": 0.0
+   },
+   "short": {
+    "direction": "short",
+    "n": 1328,
+    "gross_mean_bps": 0.041763,
+    "net_mean_bps": -4.624037,
+    "net_median_bps": -4.6658,
+    "hit_rate": 0.0,
+    "profit_factor": 0.0
+   }
+  },
+  "oos": {
+   "rows": 3889,
+   "gross_expectancy_bps": 0.074416,
+   "net_expectancy_bps": -4.591384,
+   "long": {
+    "direction": "long",
+    "n": 2863,
+    "gross_mean_bps": 0.020522,
+    "net_mean_bps": -4.645278,
+    "net_median_bps": -4.6658,
+    "hit_rate": 0.0,
+    "profit_factor": 0.0
+   },
+   "short": {
+    "direction": "short",
+    "n": 1019,
+    "gross_mean_bps": 0.22584,
+    "net_mean_bps": -4.43996,
+    "net_median_bps": -4.6658,
+    "hit_rate": 0.0,
+    "profit_factor": 0.0
+   }
+  }
+ },
+ "verdict": "STOP"
+}

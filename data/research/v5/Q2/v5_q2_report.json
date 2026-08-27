@@ -1,0 +1,70 @@
+{
+  "generated_at": "2026-08-19T18:46:17.976137+00:00",
+  "protocol": "Q2: contemporaneous execution cost measurement. Frozen V5 model is read-only; no re-fitting, no threshold changes.",
+  "governance": {
+    "ORDERFLOW_BASELINE_V5_NO_LIVE_TRADE": true,
+    "note": "Live trading is blocked until Q2 cost is measured and compared."
+  },
+  "historical_cost": {
+    "gate_bps": 4.6658,
+    "total_bps": 4.1658,
+    "safety_margin_bps": 0.5,
+    "components": {
+      "taker_roundtrip_p90_bps": 4.0158,
+      "impact_bps": 0.1,
+      "latency_bps": 0.05,
+      "safety_margin_bps": 0.5
+    },
+    "note": "Historical non-contemporaneous taker round-trip cost. Derived from execution_calibration.json collected BEFORE the V5 OOS window."
+  },
+  "contemporaneous_cost": {
+    "notional_usd": 1000.0,
+    "taker_roundtrip_p90_bps": 4.0146,
+    "spread_p90_bps": 0.0147,
+    "impact_bps": 0.1,
+    "latency_bps": 0.05,
+    "safety_margin_bps": 0.5,
+    "taker_total_bps": 4.1646,
+    "gate_bps": 4.6646
+  },
+  "maker_cost": {
+    "maker_fee_rt_bps": 2.0,
+    "adverse_selection_bps": 0.768,
+    "p_fill": 0.7568,
+    "non_fill_reprice_bps": 0.5,
+    "reprice_component_bps": 0.1216,
+    "latency_bps": 0.05,
+    "safety_margin_bps": 0.5,
+    "maker_total_bps": 2.9396,
+    "gate_bps": 3.4396
+  },
+  "signal_expectancy_bps": {
+    "low": 0.0685,
+    "high": 0.0801,
+    "source": "Tier-A: frozen 500 ms signal evaluated at 2s/5s/10s/30s horizons"
+  },
+  "comparison": {
+    "historical_gate_bps": 4.6658,
+    "contemporaneous_gate_bps": 4.6646,
+    "gate_difference_bps": -0.0012,
+    "gate_verdict": "CONTEMPORANEOUS_COST_SIMILAR",
+    "historical_total_bps": 4.1658,
+    "contemporaneous_total_bps": 4.1646,
+    "total_difference_bps": -0.0012,
+    "cost_to_signal_ratio_low": 68.1,
+    "cost_to_signal_ratio_high": 58.2,
+    "taker_net_at_low_signal_bps": -4.5961,
+    "taker_net_at_high_signal_bps": -4.5845,
+    "maker_net_at_low_signal_bps": -3.3711,
+    "maker_net_at_high_signal_bps": -3.3595,
+    "signal_viability": "FAIL \u2014 net negative at all signal levels"
+  },
+  "cost_calibration_summary": {
+    "n_samples": 1764,
+    "window_seconds": 1796.1,
+    "spread_p90_bps": 0.0147,
+    "taker_rt_p90_bps_1000usd": 4.0146,
+    "maker_fee_rt_bps": 2.0
+  },
+  "sample_path": "data/live/cost_sampler_20260819-181615.jsonl"
+}

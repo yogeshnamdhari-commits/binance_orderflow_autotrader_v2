@@ -1,0 +1,92 @@
+{
+ "source_note": "built by app.run_v3 from fill_calib.json + execution_cost_model.json (measured, not assumed)",
+ "effective_taker_roundtrip": {
+  "1000": {
+   "p90_bps": 4.0158,
+   "hint": 4.1658
+  }
+ },
+ "maker_fee_rt_bps": 2.0,
+ "oos_fill": {
+  "delta_5s_dec1_long@5s": {
+   "gross_unconditional_bps": -1.874,
+   "e_fill_return_bps": -1.916,
+   "p_fill_same_tick": 0.9869
+  },
+  "delta_5s_dec1_long@15s": {
+   "gross_unconditional_bps": -1.999,
+   "e_fill_return_bps": -2.026,
+   "p_fill_same_tick": 0.9934
+  },
+  "delta_5s_dec1_long@30s": {
+   "gross_unconditional_bps": -2.01,
+   "e_fill_return_bps": -2.033,
+   "p_fill_same_tick": 0.9954
+  },
+  "delta_5s_dec1_long@60s": {
+   "gross_unconditional_bps": -2.004,
+   "e_fill_return_bps": -2.025,
+   "p_fill_same_tick": 0.9968
+  },
+  "delta_5s_dec1_short@5s": {
+   "gross_unconditional_bps": -1.874,
+   "e_fill_return_bps": 1.379,
+   "p_fill_same_tick": 0.7375
+  },
+  "delta_5s_dec1_short@15s": {
+   "gross_unconditional_bps": -1.999,
+   "e_fill_return_bps": 1.326,
+   "p_fill_same_tick": 0.7683
+  },
+  "delta_5s_dec1_short@30s": {
+   "gross_unconditional_bps": -2.01,
+   "e_fill_return_bps": 1.201,
+   "p_fill_same_tick": 0.798
+  },
+  "delta_5s_dec1_short@60s": {
+   "gross_unconditional_bps": -2.004,
+   "e_fill_return_bps": 1.073,
+   "p_fill_same_tick": 0.8306
+  },
+  "delta_5s_dec10_long@5s": {
+   "gross_unconditional_bps": 1.91,
+   "e_fill_return_bps": 1.415,
+   "p_fill_same_tick": 0.7391
+  },
+  "delta_5s_dec10_long@15s": {
+   "gross_unconditional_bps": 2.066,
+   "e_fill_return_bps": 1.397,
+   "p_fill_same_tick": 0.7698
+  },
+  "delta_5s_dec10_long@30s": {
+   "gross_unconditional_bps": 2.112,
+   "e_fill_return_bps": 1.31,
+   "p_fill_same_tick": 0.8001
+  },
+  "delta_5s_dec10_long@60s": {
+   "gross_unconditional_bps": 2.099,
+   "e_fill_return_bps": 1.165,
+   "p_fill_same_tick": 0.8327
+  },
+  "delta_5s_dec10_short@5s": {
+   "gross_unconditional_bps": 1.91,
+   "e_fill_return_bps": -1.956,
+   "p_fill_same_tick": 0.9864
+  },
+  "delta_5s_dec10_short@15s": {
+   "gross_unconditional_bps": 2.066,
+   "e_fill_return_bps": -2.097,
+   "p_fill_same_tick": 0.9932
+  },
+  "delta_5s_dec10_short@30s": {
+   "gross_unconditional_bps": 2.112,
+   "e_fill_return_bps": -2.139,
+   "p_fill_same_tick": 0.9953
+  },
+  "delta_5s_dec10_short@60s": {
+   "gross_unconditional_bps": 2.099,
+   "e_fill_return_bps": -2.122,
+   "p_fill_same_tick": 0.9966
+  }
+ }
+}

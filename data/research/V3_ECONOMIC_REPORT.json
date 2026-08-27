@@ -1,0 +1,577 @@
+{
+ "generated_at": "2026-08-18T20:21:18.153871+00:00",
+ "model": {
+  "path": "data/research/v3_model.json",
+  "train_rows": 18145,
+  "oos_rows": 3889,
+  "oos_periods": 2
+ },
+ "cost_model": {
+  "notional_usd": 1000.0,
+  "safety_margin_bps": 0.5,
+  "taker": {
+   "total_bps": 4.1658,
+   "margin_bps": 0.5,
+   "gate_bps": 4.6658,
+   "components": {
+    "basis": "effective_taker_roundtrip.p90 + impact + latency",
+    "spread_bps": null,
+    "slippage_bps": null
+   }
+  },
+  "maker": {
+   "total_bps": 2.5518,
+   "margin_bps": 0.5,
+   "gate_bps": 3.0518,
+   "components": {
+    "adverse_selection_bps": 0.495,
+    "p_fill": 0.9864,
+    "maker_fee_rt_bps": 2.0
+   }
+  }
+ },
+ "safety_margin_bps": 0.5,
+ "horizons": {
+  "250": {
+   "horizon_ms": 250,
+   "taker": {
+    "signals": 3885,
+    "long": {
+     "n": 2875,
+     "net_mean_bps": -4.647844763436163,
+     "net_median_bps": -4.6658,
+     "win_rate": 0.0,
+     "profit_factor": 0.0,
+     "t_stat": -1575.324110091211
+    },
+    "short": {
+     "n": 1010,
+     "net_mean_bps": -4.449434199314607,
+     "net_median_bps": -4.6658,
+     "win_rate": 0.0,
+     "profit_factor": 0.0,
+     "t_stat": -217.45623013214163
+    },
+    "gross_expectancy_bps": 0.06953687614241237,
+    "net_expectancy_bps": -4.596263123857587,
+    "decision_states": {
+     "NO_TRADE": 3889
+    },
+    "gate_bps": 4.6658
+   },
+   "maker": {
+    "signals": 3885,
+    "long": {
+     "n": 2875,
+     "net_mean_bps": -3.0338447634361647,
+     "net_median_bps": -3.0518,
+     "win_rate": 0.0,
+     "profit_factor": 0.0,
+     "t_stat": -1028.2806430440282
+    },
+    "short": {
+     "n": 1010,
+     "net_mean_bps": -2.8354341993146077,
+     "net_median_bps": -3.0518,
+     "win_rate": 0.0,
+     "profit_factor": 0.0,
+     "t_stat": -138.5755590824741
+    },
+    "gross_expectancy_bps": 0.06953687614241237,
+    "net_expectancy_bps": -2.982263123857588,
+    "decision_states": {
+     "NO_TRADE": 3889
+    },
+    "gate_bps": 3.0518
+   },
+   "robustness_cells": [
+    {
+     "name": "time_block_0",
+     "n": 1960,
+     "net_mean_bps": -4.663069512591544,
+     "gross_mean_bps": 0.002730487408455463
+    },
+    {
+     "name": "time_block_1",
+     "n": 1925,
+     "net_mean_bps": -4.5282420735102855,
+     "gross_mean_bps": 0.13755792648971396
+    },
+    {
+     "name": "normal",
+     "n": 2504,
+     "net_mean_bps": -4.559333181362528,
+     "gross_mean_bps": 0.1064668186374713
+    },
+    {
+     "name": "thin_book",
+     "n": 0
+    },
+    {
+     "name": "high_impact",
+     "n": 1381,
+     "net_mean_bps": -4.663223714739287,
+     "gross_mean_bps": 0.0025762852607125017
+    }
+   ],
+   "absorption_cells": [
+    {
+     "name": "tfi_low_buy",
+     "n": 1194,
+     "net_mean_bps": -4.678769042549632,
+     "gross_mean_bps": -0.012969042549632622
+    },
+    {
+     "name": "tfi_mid",
+     "n": 1696,
+     "net_mean_bps": -4.667286553539561,
+     "gross_mean_bps": -0.001486553539561634
+    },
+    {
+     "name": "tfi_high_sell",
+     "n": 995,
+     "net_mean_bps": -4.376194979476754,
+     "gross_mean_bps": 0.2896050205232462
+    }
+   ],
+   "oos_n": 3889
+  },
+  "500": {
+   "horizon_ms": 500,
+   "taker": {
+    "signals": 3882,
+    "long": {
+     "n": 2863,
+     "net_mean_bps": -4.645278406022198,
+     "net_median_bps": -4.6658,
+     "win_rate": 0.0,
+     "profit_factor": 0.0,
+     "t_stat": -1368.687966822711
+    },
+    "short": {
+     "n": 1019,
+     "net_mean_bps": -4.4399597954097985,
+     "net_median_bps": -4.6658,
+     "win_rate": 0.0,
+     "profit_factor": 0.0,
+     "t_stat": -219.77896149674854
+    },
+    "gross_expectancy_bps": 0.07441640701593476,
+    "net_expectancy_bps": -4.591383592984065,
+    "decision_states": {
+     "NO_TRADE": 3889
+    },
+    "gate_bps": 4.6658
+   },
+   "maker": {
+    "signals": 3882,
+    "long": {
+     "n": 2863,
+     "net_mean_bps": -3.0312784060222,
+     "net_median_bps": -3.0518,
+     "win_rate": 0.0,
+     "profit_factor": 0.0,
+     "t_stat": -893.1379167787786
+    },
+    "short": {
+     "n": 1019,
+     "net_mean_bps": -2.825959795409799,
+     "net_median_bps": -3.0518,
+     "win_rate": 0.0,
+     "profit_factor": 0.0,
+     "t_stat": -139.88561556544565
+    },
+    "gross_expectancy_bps": 0.07441640701593476,
+    "net_expectancy_bps": -2.9773835929840655,
+    "decision_states": {
+     "NO_TRADE": 3889
+    },
+    "gate_bps": 3.0518
+   },
+   "robustness_cells": [
+    {
+     "name": "time_block_0",
+     "n": 1960,
+     "net_mean_bps": -4.65142815865651,
+     "gross_mean_bps": 0.014371841343489096
+    },
+    {
+     "name": "time_block_1",
+     "n": 1922,
+     "net_mean_bps": -4.530151881892497,
+     "gross_mean_bps": 0.13564811810750266
+    },
+    {
+     "name": "normal",
+     "n": 2502,
+     "net_mean_bps": -4.551389700845673,
+     "gross_mean_bps": 0.11441029915432563
+    },
+    {
+     "name": "thin_book",
+     "n": 0
+    },
+    {
+     "name": "high_impact",
+     "n": 1380,
+     "net_mean_bps": -4.6638942582958425,
+     "gross_mean_bps": 0.0019057417041564917
+    }
+   ],
+   "absorption_cells": [
+    {
+     "name": "tfi_low_buy",
+     "n": 1194,
+     "net_mean_bps": -4.670554466678397,
+     "gross_mean_bps": -0.004754466678397885
+    },
+    {
+     "name": "tfi_mid",
+     "n": 1695,
+     "net_mean_bps": -4.6651883430131385,
+     "gross_mean_bps": 0.0006116569868609089
+    },
+    {
+     "name": "tfi_high_sell",
+     "n": 993,
+     "net_mean_bps": -4.37020627728385,
+     "gross_mean_bps": 0.29559372271614964
+    }
+   ],
+   "oos_n": 3889
+  },
+  "1000": {
+   "horizon_ms": 1000,
+   "taker": {
+    "signals": 3876,
+    "long": {
+     "n": 2819,
+     "net_mean_bps": -4.6397940975655105,
+     "net_median_bps": -4.6658,
+     "win_rate": 0.0,
+     "profit_factor": 0.0,
+     "t_stat": -1086.993253937049
+    },
+    "short": {
+     "n": 1057,
+     "net_mean_bps": -4.435448791761472,
+     "net_median_bps": -4.6658,
+     "win_rate": 0.0,
+     "profit_factor": 0.0,
+     "t_stat": -219.92877191414718
+    },
+    "gross_expectancy_bps": 0.08173164759312353,
+    "net_expectancy_bps": -4.584068352406876,
+    "decision_states": {
+     "NO_TRADE": 3889
+    },
+    "gate_bps": 4.6658
+   },
+   "maker": {
+    "signals": 3876,
+    "long": {
+     "n": 2819,
+     "net_mean_bps": -3.0257940975655115,
+     "net_median_bps": -3.0518,
+     "win_rate": 0.0,
+     "profit_factor": 0.0,
+     "t_stat": -708.87149358244
+    },
+    "short": {
+     "n": 1057,
+     "net_mean_bps": -2.821448791761473,
+     "net_median_bps": -3.0518,
+     "win_rate": 0.0,
+     "profit_factor": 0.0,
+     "t_stat": -139.8996577174608
+    },
+    "gross_expectancy_bps": 0.08173164759312353,
+    "net_expectancy_bps": -2.9700683524068765,
+    "decision_states": {
+     "NO_TRADE": 3889
+    },
+    "gate_bps": 3.0518
+   },
+   "robustness_cells": [
+    {
+     "name": "time_block_0",
+     "n": 1960,
+     "net_mean_bps": -4.636037566934744,
+     "gross_mean_bps": 0.029762433065256035
+    },
+    {
+     "name": "time_block_1",
+     "n": 1916,
+     "net_mean_bps": -4.530905690363754,
+     "gross_mean_bps": 0.13489430963624477
+    },
+    {
+     "name": "normal",
+     "n": 2498,
+     "net_mean_bps": -4.540821379340651,
+     "gross_mean_bps": 0.12497862065934838
+    },
+    {
+     "name": "thin_book",
+     "n": 0
+    },
+    {
+     "name": "high_impact",
+     "n": 1378,
+     "net_mean_bps": -4.662465260040714,
+     "gross_mean_bps": 0.003334739959284862
+    }
+   ],
+   "absorption_cells": [
+    {
+     "name": "tfi_low_buy",
+     "n": 1192,
+     "net_mean_bps": -4.662606328337982,
+     "gross_mean_bps": 0.0031936716620178203
+    },
+    {
+     "name": "tfi_mid",
+     "n": 1694,
+     "net_mean_bps": -4.661662652214531,
+     "gross_mean_bps": 0.004137347785468363
+    },
+    {
+     "name": "tfi_high_sell",
+     "n": 990,
+     "net_mean_bps": -4.356732987574507,
+     "gross_mean_bps": 0.3090670124254931
+    }
+   ],
+   "oos_n": 3889
+  }
+ },
+ "verdict": {
+  "verdict": "FAIL",
+  "reasons": [
+   "measured OOS economics refuted on a large directional sample: long=2863 short=1019; net taker -4.5914 bps, maker -2.9774 bps (cost-adjusted edge <= 0)",
+   "OOS periods=2 < 3 (result rests on one window)",
+   "robustness coverage 0% < 50%"
+  ],
+  "criteria": {
+   "directional_sample_ok": true,
+   "periods_ok": false,
+   "net_taker_positive": false,
+   "net_maker_positive": false,
+   "robustness_positive_fraction": 0.0,
+   "min_oos_periods": 3,
+   "min_signals_per_direction": 200
+  }
+ },
+ "walk_forward": [
+  {
+   "block_ofs": 0,
+   "rows": 23422,
+   "horizon_ms": 250,
+   "gross_bps": 0.031360058496750026,
+   "net_taker_bps": -4.63443994150325
+  },
+  {
+   "block_ofs": 0,
+   "rows": 23422,
+   "horizon_ms": 500,
+   "gross_bps": 0.03584043122140308,
+   "net_taker_bps": -4.629959568778597
+  },
+  {
+   "block_ofs": 0,
+   "rows": 23422,
+   "horizon_ms": 1000,
+   "gross_bps": 0.042069547584384574,
+   "net_taker_bps": -4.623730452415615
+  },
+  {
+   "block_ofs": 2500,
+   "rows": 20922,
+   "horizon_ms": 250,
+   "gross_bps": 0.04919874709144868,
+   "net_taker_bps": -4.616601252908551
+  },
+  {
+   "block_ofs": 2500,
+   "rows": 20922,
+   "horizon_ms": 500,
+   "gross_bps": 0.058376254687696257,
+   "net_taker_bps": -4.607423745312303
+  },
+  {
+   "block_ofs": 2500,
+   "rows": 20922,
+   "horizon_ms": 1000,
+   "gross_bps": 0.0626755790275097,
+   "net_taker_bps": -4.60312442097249
+  },
+  {
+   "block_ofs": 5000,
+   "rows": 18422,
+   "horizon_ms": 250,
+   "gross_bps": 0.05084865330742168,
+   "net_taker_bps": -4.614951346692578
+  },
+  {
+   "block_ofs": 5000,
+   "rows": 18422,
+   "horizon_ms": 500,
+   "gross_bps": 0.06029796807943743,
+   "net_taker_bps": -4.605502031920563
+  },
+  {
+   "block_ofs": 5000,
+   "rows": 18422,
+   "horizon_ms": 1000,
+   "gross_bps": 0.06727872818854178,
+   "net_taker_bps": -4.5985212718114585
+  },
+  {
+   "block_ofs": 7500,
+   "rows": 15922,
+   "horizon_ms": 250,
+   "gross_bps": 0.05747840762585354,
+   "net_taker_bps": -4.608321592374146
+  },
+  {
+   "block_ofs": 7500,
+   "rows": 15922,
+   "horizon_ms": 500,
+   "gross_bps": 0.06833832953807525,
+   "net_taker_bps": -4.597461670461925
+  },
+  {
+   "block_ofs": 7500,
+   "rows": 15922,
+   "horizon_ms": 1000,
+   "gross_bps": 0.07776727805297584,
+   "net_taker_bps": -4.588032721947024
+  },
+  {
+   "block_ofs": 10000,
+   "rows": 13422,
+   "horizon_ms": 250,
+   "gross_bps": 0.07636123939812609,
+   "net_taker_bps": -4.589438760601874
+  },
+  {
+   "block_ofs": 10000,
+   "rows": 13422,
+   "horizon_ms": 500,
+   "gross_bps": 0.08242001828615858,
+   "net_taker_bps": -4.583379981713842
+  },
+  {
+   "block_ofs": 10000,
+   "rows": 13422,
+   "horizon_ms": 1000,
+   "gross_bps": 0.08801255532590885,
+   "net_taker_bps": -4.577787444674091
+  },
+  {
+   "block_ofs": 12500,
+   "rows": 10922,
+   "horizon_ms": 250,
+   "gross_bps": 0.06564446752408126,
+   "net_taker_bps": -4.6001555324759185
+  },
+  {
+   "block_ofs": 12500,
+   "rows": 10922,
+   "horizon_ms": 500,
+   "gross_bps": 0.08621041524386905,
+   "net_taker_bps": -4.579589584756131
+  },
+  {
+   "block_ofs": 12500,
+   "rows": 10922,
+   "horizon_ms": 1000,
+   "gross_bps": 0.09581288724755674,
+   "net_taker_bps": -4.569987112752443
+  },
+  {
+   "block_ofs": 15000,
+   "rows": 8422,
+   "horizon_ms": 250,
+   "gross_bps": 0.04318760208873676,
+   "net_taker_bps": -4.622612397911263
+  },
+  {
+   "block_ofs": 15000,
+   "rows": 8422,
+   "horizon_ms": 500,
+   "gross_bps": 0.05358184373494916,
+   "net_taker_bps": -4.612218156265051
+  },
+  {
+   "block_ofs": 15000,
+   "rows": 8422,
+   "horizon_ms": 1000,
+   "gross_bps": 0.06474432663894175,
+   "net_taker_bps": -4.601055673361058
+  },
+  {
+   "block_ofs": 17500,
+   "rows": 5922,
+   "horizon_ms": 250,
+   "gross_bps": 0.10315186417016414,
+   "net_taker_bps": -4.562648135829836
+  },
+  {
+   "block_ofs": 17500,
+   "rows": 5922,
+   "horizon_ms": 500,
+   "gross_bps": 0.11580909882189011,
+   "net_taker_bps": -4.54999090117811
+  },
+  {
+   "block_ofs": 17500,
+   "rows": 5922,
+   "horizon_ms": 1000,
+   "gross_bps": 0.1315866614056359,
+   "net_taker_bps": -4.534213338594364
+  },
+  {
+   "block_ofs": 20000,
+   "rows": 3422,
+   "horizon_ms": 250,
+   "gross_bps": 0.12428587253606509,
+   "net_taker_bps": -4.541514127463935
+  },
+  {
+   "block_ofs": 20000,
+   "rows": 3422,
+   "horizon_ms": 500,
+   "gross_bps": 0.12722629798866908,
+   "net_taker_bps": -4.538573702011331
+  },
+  {
+   "block_ofs": 20000,
+   "rows": 3422,
+   "horizon_ms": 1000,
+   "gross_bps": 0.1381948842059587,
+   "net_taker_bps": -4.527605115794041
+  },
+  {
+   "block_ofs": 22500,
+   "rows": 922,
+   "horizon_ms": 250,
+   "gross_bps": 0.20783679450842793,
+   "net_taker_bps": -4.457963205491572
+  },
+  {
+   "block_ofs": 22500,
+   "rows": 922,
+   "horizon_ms": 500,
+   "gross_bps": 0.20858552841039368,
+   "net_taker_bps": -4.457214471589606
+  },
+  {
+   "block_ofs": 22500,
+   "rows": 922,
+   "horizon_ms": 1000,
+   "gross_bps": 0.22224774614908369,
+   "net_taker_bps": -4.443552253850917
+  }
+ ]
+}

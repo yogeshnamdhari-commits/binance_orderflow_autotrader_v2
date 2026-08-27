@@ -1,0 +1,842 @@
+{
+  "total_sessions": 27,
+  "sessions": {
+    "20260818-190746": {
+      "session": "20260818-190746",
+      "total_events": 768,
+      "depth_events": 184,
+      "trade_events": 42,
+      "snapshot_events": 1,
+      "sequence_gaps": 183,
+      "sequence_gap_details": [
+        "Event 4: gap of 116 IDs (expected 11315326841320, got 11315326841436)",
+        "Event 9: gap of 40 IDs (expected 11315326846260, got 11315326846300)",
+        "Event 10: gap of 59 IDs (expected 11315326850436, got 11315326850495)",
+        "Event 14: gap of 78 IDs (expected 11315326854678, got 11315326854756)",
+        "Event 20: gap of 65 IDs (expected 11315326861236, got 11315326861301)"
+      ],
+      "non_monotonic_timestamps": 0,
+      "stale_events": 0,
+      "max_stale_ms": 0.0,
+      "crossed_book_events": 0,
+      "negative_qty_events": 0,
+      "zero_qty_events": 0,
+      "invalid_trade_sides": 0,
+      "zero_trade_qty": 0,
+      "orphan_updates": 1,
+      "skipped_events": 0,
+      "errors": [],
+      "warnings": [
+        "183 sequence gaps detected",
+        "1 orphan updates (before snapshot)"
+      ],
+      "passed": true
+    },
+    "20260818-190823": {
+      "session": "20260818-190823",
+      "total_events": 18556,
+      "depth_events": 1758,
+      "trade_events": 754,
+      "snapshot_events": 1,
+      "sequence_gaps": 1753,
+      "sequence_gap_details": [
+        "Event 4: gap of 41 IDs (expected 11315329600357, got 11315329600398)",
+        "Event 10: gap of 99 IDs (expected 11315329605832, got 11315329605931)",
+        "Event 14: gap of 18 IDs (expected 11315329611504, got 11315329611522)",
+        "Event 23: gap of 308 IDs (expected 11315329616532, got 11315329616840)",
+        "Event 29: gap of 49 IDs (expected 11315329622804, got 11315329622853)"
+      ],
+      "non_monotonic_timestamps": 0,
+      "stale_events": 0,
+      "max_stale_ms": 0.0,
+      "crossed_book_events": 0,
+      "negative_qty_events": 0,
+      "zero_qty_events": 0,
+      "invalid_trade_sides": 0,
+      "zero_trade_qty": 0,
+      "orphan_updates": 1,
+      "skipped_events": 0,
+      "errors": [],
+      "warnings": [
+        "1753 sequence gaps detected",
+        "1 orphan updates (before snapshot)"
+      ],
+      "passed": true
+    },
+    "20260818-191124": {
+      "session": "20260818-191124",
+      "total_events": 11364,
+      "depth_events": 1705,
+      "trade_events": 587,
+      "snapshot_events": 1,
+      "sequence_gaps": 1702,
+      "sequence_gap_details": [
+        "Event 4: gap of 282 IDs (expected 11315344039153, got 11315344039435)",
+        "Event 6: gap of 272 IDs (expected 11315344046923, got 11315344047195)",
+        "Event 13: gap of 501 IDs (expected 11315344053862, got 11315344054363)",
+        "Event 17: gap of 270 IDs (expected 11315344066103, got 11315344066373)",
+        "Event 20: gap of 55 IDs (expected 11315344074934, got 11315344074989)"
+      ],
+      "non_monotonic_timestamps": 0,
+      "stale_events": 0,
+      "max_stale_ms": 0.0,
+      "crossed_book_events": 0,
+      "negative_qty_events": 0,
+      "zero_qty_events": 0,
+      "invalid_trade_sides": 0,
+      "zero_trade_qty": 0,
+      "orphan_updates": 1,
+      "skipped_events": 0,
+      "errors": [],
+      "warnings": [
+        "1702 sequence gaps detected",
+        "1 orphan updates (before snapshot)"
+      ],
+      "passed": true
+    },
+    "20260818-191426": {
+      "session": "20260818-191426",
+      "total_events": 17625,
+      "depth_events": 1759,
+      "trade_events": 536,
+      "snapshot_events": 1,
+      "sequence_gaps": 1756,
+      "sequence_gap_details": [
+        "Event 3: gap of 228 IDs (expected 11315356496745, got 11315356496973)",
+        "Event 5: gap of 115 IDs (expected 11315356504719, got 11315356504834)",
+        "Event 35: gap of 152 IDs (expected 11315356511444, got 11315356511596)",
+        "Event 40: gap of 191 IDs (expected 11315356551024, got 11315356551215)",
+        "Event 46: gap of 97 IDs (expected 11315356564459, got 11315356564556)"
+      ],
+      "non_monotonic_timestamps": 0,
+      "stale_events": 0,
+      "max_stale_ms": 0.0,
+      "crossed_book_events": 0,
+      "negative_qty_events": 0,
+      "zero_qty_events": 0,
+      "invalid_trade_sides": 0,
+      "zero_trade_qty": 0,
+      "orphan_updates": 1,
+      "skipped_events": 0,
+      "errors": [],
+      "warnings": [
+        "1756 sequence gaps detected",
+        "1 orphan updates (before snapshot)"
+      ],
+      "passed": true
+    },
+    "20260818-191727": {
+      "session": "20260818-191727",
+      "total_events": 10318,
+      "depth_events": 1704,
+      "trade_events": 342,
+      "snapshot_events": 1,
+      "sequence_gaps": 1700,
+      "sequence_gap_details": [
+        "Event 12: gap of 55 IDs (expected 11315370693866, got 11315370693921)",
+        "Event 19: gap of 77 IDs (expected 11315370700874, got 11315370700951)",
+        "Event 30: gap of 593 IDs (expected 11315370706150, got 11315370706743)",
+        "Event 33: gap of 164 IDs (expected 11315370712189, got 11315370712353)",
+        "Event 51: gap of 160 IDs (expected 11315370716663, got 11315370716823)"
+      ],
+      "non_monotonic_timestamps": 0,
+      "stale_events": 0,
+      "max_stale_ms": 0.0,
+      "crossed_book_events": 0,
+      "negative_qty_events": 0,
+      "zero_qty_events": 0,
+      "invalid_trade_sides": 0,
+      "zero_trade_qty": 0,
+      "orphan_updates": 1,
+      "skipped_events": 0,
+      "errors": [],
+      "warnings": [
+        "1700 sequence gaps detected",
+        "1 orphan updates (before snapshot)"
+      ],
+      "passed": true
+    },
+    "20260818-192029": {
+      "session": "20260818-192029",
+      "total_events": 22935,
+      "depth_events": 1748,
+      "trade_events": 556,
+      "snapshot_events": 1,
+      "sequence_gaps": 1742,
+      "sequence_gap_details": [
+        "Event 3: gap of 48 IDs (expected 11315382898649, got 11315382898697)",
+        "Event 4: gap of 98 IDs (expected 11315382902974, got 11315382903072)",
+        "Event 17: gap of 376 IDs (expected 11315382908406, got 11315382908782)",
+        "Event 21: gap of 96 IDs (expected 11315382913300, got 11315382913396)",
+        "Event 25: gap of 74 IDs (expected 11315382918732, got 11315382918806)"
+      ],
+      "non_monotonic_timestamps": 0,
+      "stale_events": 0,
+      "max_stale_ms": 0.0,
+      "crossed_book_events": 0,
+      "negative_qty_events": 0,
+      "zero_qty_events": 0,
+      "invalid_trade_sides": 0,
+      "zero_trade_qty": 0,
+      "orphan_updates": 1,
+      "skipped_events": 0,
+      "errors": [],
+      "warnings": [
+        "1742 sequence gaps detected",
+        "1 orphan updates (before snapshot)"
+      ],
+      "passed": true
+    },
+    "20260818-193713": {
+      "session": "20260818-193713",
+      "total_events": 16122,
+      "depth_events": 1742,
+      "trade_events": 532,
+      "snapshot_events": 1,
+      "sequence_gaps": 1735,
+      "sequence_gap_details": [
+        "Event 3: gap of 23 IDs (expected 11315465955524, got 11315465955547)",
+        "Event 8: gap of 310 IDs (expected 11315465962261, got 11315465962571)",
+        "Event 11: gap of 136 IDs (expected 11315465969768, got 11315465969904)",
+        "Event 16: gap of 228 IDs (expected 11315465975679, got 11315465975907)",
+        "Event 18: gap of 66 IDs (expected 11315465981420, got 11315465981486)"
+      ],
+      "non_monotonic_timestamps": 0,
+      "stale_events": 0,
+      "max_stale_ms": 0.0,
+      "crossed_book_events": 0,
+      "negative_qty_events": 0,
+      "zero_qty_events": 0,
+      "invalid_trade_sides": 0,
+      "zero_trade_qty": 0,
+      "orphan_updates": 1,
+      "skipped_events": 0,
+      "errors": [],
+      "warnings": [
+        "1735 sequence gaps detected",
+        "1 orphan updates (before snapshot)"
+      ],
+      "passed": true
+    },
+    "20260818-194015": {
+      "session": "20260818-194015",
+      "total_events": 21179,
+      "depth_events": 1760,
+      "trade_events": 784,
+      "snapshot_events": 1,
+      "sequence_gaps": 1755,
+      "sequence_gap_details": [
+        "Event 7: gap of 203 IDs (expected 11315479490909, got 11315479491112)",
+        "Event 12: gap of 115 IDs (expected 11315479496696, got 11315479496811)",
+        "Event 18: gap of 261 IDs (expected 11315479502409, got 11315479502670)",
+        "Event 25: gap of 281 IDs (expected 11315479509221, got 11315479509502)",
+        "Event 29: gap of 2 IDs (expected 11315479516554, got 11315479516556)"
+      ],
+      "non_monotonic_timestamps": 0,
+      "stale_events": 0,
+      "max_stale_ms": 0.0,
+      "crossed_book_events": 0,
+      "negative_qty_events": 0,
+      "zero_qty_events": 0,
+      "invalid_trade_sides": 0,
+      "zero_trade_qty": 0,
+      "orphan_updates": 1,
+      "skipped_events": 0,
+      "errors": [],
+      "warnings": [
+        "1755 sequence gaps detected",
+        "1 orphan updates (before snapshot)"
+      ],
+      "passed": true
+    },
+    "20260818-194317": {
+      "session": "20260818-194317",
+      "total_events": 13256,
+      "depth_events": 1749,
+      "trade_events": 535,
+      "snapshot_events": 1,
+      "sequence_gaps": 1747,
+      "sequence_gap_details": [
+        "Event 3: gap of 273 IDs (expected 11315494176593, got 11315494176866)",
+        "Event 5: gap of 127 IDs (expected 11315494186159, got 11315494186286)",
+        "Event 7: gap of 99 IDs (expected 11315494194232, got 11315494194331)",
+        "Event 9: gap of 181 IDs (expected 11315494202811, got 11315494202992)",
+        "Event 13: gap of 172 IDs (expected 11315494208986, got 11315494209158)"
+      ],
+      "non_monotonic_timestamps": 0,
+      "stale_events": 0,
+      "max_stale_ms": 0.0,
+      "crossed_book_events": 0,
+      "negative_qty_events": 0,
+      "zero_qty_events": 0,
+      "invalid_trade_sides": 0,
+      "zero_trade_qty": 0,
+      "orphan_updates": 1,
+      "skipped_events": 0,
+      "errors": [],
+      "warnings": [
+        "1747 sequence gaps detected",
+        "1 orphan updates (before snapshot)"
+      ],
+      "passed": true
+    },
+    "20260818-194618": {
+      "session": "20260818-194618",
+      "total_events": 21614,
+      "depth_events": 1737,
+      "trade_events": 618,
+      "snapshot_events": 1,
+      "sequence_gaps": 1732,
+      "sequence_gap_details": [
+        "Event 5: gap of 177 IDs (expected 11315507898850, got 11315507899027)",
+        "Event 7: gap of 281 IDs (expected 11315507905423, got 11315507905704)",
+        "Event 8: gap of 128 IDs (expected 11315507912899, got 11315507913027)",
+        "Event 10: gap of 55 IDs (expected 11315507920461, got 11315507920516)",
+        "Event 30: gap of 197 IDs (expected 11315507926691, got 11315507926888)"
+      ],
+      "non_monotonic_timestamps": 0,
+      "stale_events": 0,
+      "max_stale_ms": 0.0,
+      "crossed_book_events": 0,
+      "negative_qty_events": 0,
+      "zero_qty_events": 0,
+      "invalid_trade_sides": 0,
+      "zero_trade_qty": 0,
+      "orphan_updates": 1,
+      "skipped_events": 0,
+      "errors": [],
+      "warnings": [
+        "1732 sequence gaps detected",
+        "1 orphan updates (before snapshot)"
+      ],
+      "passed": true
+    },
+    "20260818-194920": {
+      "session": "20260818-194920",
+      "total_events": 24123,
+      "depth_events": 1759,
+      "trade_events": 716,
+      "snapshot_events": 1,
+      "sequence_gaps": 1757,
+      "sequence_gap_details": [
+        "Event 5: gap of 136 IDs (expected 11315522260039, got 11315522260175)",
+        "Event 14: gap of 38 IDs (expected 11315522266704, got 11315522266742)",
+        "Event 24: gap of 148 IDs (expected 11315522274290, got 11315522274438)",
+        "Event 25: gap of 77 IDs (expected 11315522280864, got 11315522280941)",
+        "Event 38: gap of 161 IDs (expected 11315522287736, got 11315522287897)"
+      ],
+      "non_monotonic_timestamps": 0,
+      "stale_events": 0,
+      "max_stale_ms": 0.0,
+      "crossed_book_events": 0,
+      "negative_qty_events": 0,
+      "zero_qty_events": 0,
+      "invalid_trade_sides": 0,
+      "zero_trade_qty": 0,
+      "orphan_updates": 1,
+      "skipped_events": 0,
+      "errors": [],
+      "warnings": [
+        "1757 sequence gaps detected",
+        "1 orphan updates (before snapshot)"
+      ],
+      "passed": true
+    },
+    "20260818-195221": {
+      "session": "20260818-195221",
+      "total_events": 17414,
+      "depth_events": 1754,
+      "trade_events": 561,
+      "snapshot_events": 1,
+      "sequence_gaps": 1751,
+      "sequence_gap_details": [
+        "Event 2: gap of 78 IDs (expected 11315539051057, got 11315539051135)",
+        "Event 3: gap of 61 IDs (expected 11315539059054, got 11315539059115)",
+        "Event 4: gap of 116 IDs (expected 11315539067911, got 11315539068027)",
+        "Event 12: gap of 717 IDs (expected 11315539077582, got 11315539078299)",
+        "Event 553: gap of 556 IDs (expected 11315539092206, got 11315539092762)"
+      ],
+      "non_monotonic_timestamps": 0,
+      "stale_events": 0,
+      "max_stale_ms": 0.0,
+      "crossed_book_events": 0,
+      "negative_qty_events": 0,
+      "zero_qty_events": 0,
+      "invalid_trade_sides": 0,
+      "zero_trade_qty": 0,
+      "orphan_updates": 1,
+      "skipped_events": 0,
+      "errors": [],
+      "warnings": [
+        "1751 sequence gaps detected",
+        "1 orphan updates (before snapshot)"
+      ],
+      "passed": true
+    },
+    "20260818-212451": {
+      "session": "20260818-212451",
+      "total_events": 11360,
+      "depth_events": 1758,
+      "trade_events": 342,
+      "snapshot_events": 1,
+      "sequence_gaps": 1755,
+      "sequence_gap_details": [
+        "Event 4: gap of 147 IDs (expected 11315915935112, got 11315915935259)",
+        "Event 7: gap of 104 IDs (expected 11315915938595, got 11315915938699)",
+        "Event 10: gap of 51 IDs (expected 11315915942896, got 11315915942947)",
+        "Event 18: gap of 93 IDs (expected 11315915946749, got 11315915946842)",
+        "Event 22: gap of 19 IDs (expected 11315915950547, got 11315915950566)"
+      ],
+      "non_monotonic_timestamps": 0,
+      "stale_events": 0,
+      "max_stale_ms": 0.0,
+      "crossed_book_events": 0,
+      "negative_qty_events": 0,
+      "zero_qty_events": 0,
+      "invalid_trade_sides": 0,
+      "zero_trade_qty": 0,
+      "orphan_updates": 1,
+      "skipped_events": 0,
+      "errors": [],
+      "warnings": [
+        "1755 sequence gaps detected",
+        "1 orphan updates (before snapshot)"
+      ],
+      "passed": true
+    },
+    "20260818-212752": {
+      "session": "20260818-212752",
+      "total_events": 7622,
+      "depth_events": 1759,
+      "trade_events": 188,
+      "snapshot_events": 1,
+      "sequence_gaps": 1753,
+      "sequence_gap_details": [
+        "Event 2: gap of 23 IDs (expected 11315926434618, got 11315926434641)",
+        "Event 7: gap of 37 IDs (expected 11315926437408, got 11315926437445)",
+        "Event 8: gap of 108 IDs (expected 11315926441110, got 11315926441218)",
+        "Event 9: gap of 114 IDs (expected 11315926444678, got 11315926444792)",
+        "Event 10: gap of 55 IDs (expected 11315926448006, got 11315926448061)"
+      ],
+      "non_monotonic_timestamps": 0,
+      "stale_events": 0,
+      "max_stale_ms": 0.0,
+      "crossed_book_events": 0,
+      "negative_qty_events": 0,
+      "zero_qty_events": 0,
+      "invalid_trade_sides": 0,
+      "zero_trade_qty": 0,
+      "orphan_updates": 1,
+      "skipped_events": 0,
+      "errors": [],
+      "warnings": [
+        "1753 sequence gaps detected",
+        "1 orphan updates (before snapshot)"
+      ],
+      "passed": true
+    },
+    "20260818-213053": {
+      "session": "20260818-213053",
+      "total_events": 10983,
+      "depth_events": 1753,
+      "trade_events": 345,
+      "snapshot_events": 1,
+      "sequence_gaps": 1741,
+      "sequence_gap_details": [
+        "Event 2: gap of 50 IDs (expected 11315936495232, got 11315936495282)",
+        "Event 15: gap of 133 IDs (expected 11315936502294, got 11315936502427)",
+        "Event 17: gap of 109 IDs (expected 11315936508487, got 11315936508596)",
+        "Event 18: gap of 19 IDs (expected 11315936513536, got 11315936513555)",
+        "Event 19: gap of 96 IDs (expected 11315936517845, got 11315936517941)"
+      ],
+      "non_monotonic_timestamps": 0,
+      "stale_events": 0,
+      "max_stale_ms": 0.0,
+      "crossed_book_events": 0,
+      "negative_qty_events": 0,
+      "zero_qty_events": 0,
+      "invalid_trade_sides": 0,
+      "zero_trade_qty": 0,
+      "orphan_updates": 1,
+      "skipped_events": 0,
+      "errors": [],
+      "warnings": [
+        "1741 sequence gaps detected",
+        "1 orphan updates (before snapshot)"
+      ],
+      "passed": true
+    },
+    "20260818-213354": {
+      "session": "20260818-213354",
+      "total_events": 7853,
+      "depth_events": 1747,
+      "trade_events": 269,
+      "snapshot_events": 1,
+      "sequence_gaps": 1741,
+      "sequence_gap_details": [
+        "Event 5: gap of 43 IDs (expected 11315945909396, got 11315945909439)",
+        "Event 10: gap of 143 IDs (expected 11315945915410, got 11315945915553)",
+        "Event 11: gap of 113 IDs (expected 11315945920763, got 11315945920876)",
+        "Event 12: gap of 91 IDs (expected 11315945927291, got 11315945927382)",
+        "Event 15: gap of 187 IDs (expected 11315945934279, got 11315945934466)"
+      ],
+      "non_monotonic_timestamps": 0,
+      "stale_events": 0,
+      "max_stale_ms": 0.0,
+      "crossed_book_events": 0,
+      "negative_qty_events": 0,
+      "zero_qty_events": 0,
+      "invalid_trade_sides": 0,
+      "zero_trade_qty": 0,
+      "orphan_updates": 1,
+      "skipped_events": 0,
+      "errors": [],
+      "warnings": [
+        "1741 sequence gaps detected",
+        "1 orphan updates (before snapshot)"
+      ],
+      "passed": true
+    },
+    "20260818-213655": {
+      "session": "20260818-213655",
+      "total_events": 20433,
+      "depth_events": 1757,
+      "trade_events": 711,
+      "snapshot_events": 1,
+      "sequence_gaps": 1751,
+      "sequence_gap_details": [
+        "Event 7: gap of 59 IDs (expected 11315955475023, got 11315955475082)",
+        "Event 13: gap of 79 IDs (expected 11315955479282, got 11315955479361)",
+        "Event 15: gap of 28 IDs (expected 11315955483947, got 11315955483975)",
+        "Event 17: gap of 93 IDs (expected 11315955487918, got 11315955488011)",
+        "Event 18: gap of 157 IDs (expected 11315955491490, got 11315955491647)"
+      ],
+      "non_monotonic_timestamps": 0,
+      "stale_events": 0,
+      "max_stale_ms": 0.0,
+      "crossed_book_events": 0,
+      "negative_qty_events": 0,
+      "zero_qty_events": 0,
+      "invalid_trade_sides": 0,
+      "zero_trade_qty": 0,
+      "orphan_updates": 1,
+      "skipped_events": 0,
+      "errors": [],
+      "warnings": [
+        "1751 sequence gaps detected",
+        "1 orphan updates (before snapshot)"
+      ],
+      "passed": true
+    },
+    "20260818-213956": {
+      "session": "20260818-213956",
+      "total_events": 15399,
+      "depth_events": 1735,
+      "trade_events": 442,
+      "snapshot_events": 1,
+      "sequence_gaps": 1731,
+      "sequence_gap_details": [
+        "Event 4: gap of 58 IDs (expected 11315966373810, got 11315966373868)",
+        "Event 6: gap of 93 IDs (expected 11315966378080, got 11315966378173)",
+        "Event 19: gap of 170 IDs (expected 11315966382124, got 11315966382294)",
+        "Event 69: gap of 311 IDs (expected 11315966416174, got 11315966416485)",
+        "Event 78: gap of 64 IDs (expected 11315966440773, got 11315966440837)"
+      ],
+      "non_monotonic_timestamps": 0,
+      "stale_events": 0,
+      "max_stale_ms": 0.0,
+      "crossed_book_events": 0,
+      "negative_qty_events": 0,
+      "zero_qty_events": 0,
+      "invalid_trade_sides": 0,
+      "zero_trade_qty": 0,
+      "orphan_updates": 1,
+      "skipped_events": 0,
+      "errors": [],
+      "warnings": [
+        "1731 sequence gaps detected",
+        "1 orphan updates (before snapshot)"
+      ],
+      "passed": true
+    },
+    "20260818-214257": {
+      "session": "20260818-214257",
+      "total_events": 57876,
+      "depth_events": 1760,
+      "trade_events": 1621,
+      "snapshot_events": 1,
+      "sequence_gaps": 1755,
+      "sequence_gap_details": [
+        "Event 2: gap of 85 IDs (expected 11315977897386, got 11315977897471)",
+        "Event 4: gap of 11 IDs (expected 11315977901320, got 11315977901331)",
+        "Event 5: gap of 73 IDs (expected 11315977905848, got 11315977905921)",
+        "Event 7: gap of 75 IDs (expected 11315977909549, got 11315977909624)",
+        "Event 8: gap of 99 IDs (expected 11315977913433, got 11315977913532)"
+      ],
+      "non_monotonic_timestamps": 0,
+      "stale_events": 0,
+      "max_stale_ms": 0.0,
+      "crossed_book_events": 0,
+      "negative_qty_events": 0,
+      "zero_qty_events": 0,
+      "invalid_trade_sides": 0,
+      "zero_trade_qty": 0,
+      "orphan_updates": 1,
+      "skipped_events": 0,
+      "errors": [],
+      "warnings": [
+        "1755 sequence gaps detected",
+        "1 orphan updates (before snapshot)"
+      ],
+      "passed": true
+    },
+    "20260818-214558": {
+      "session": "20260818-214558",
+      "total_events": 39543,
+      "depth_events": 1748,
+      "trade_events": 1119,
+      "snapshot_events": 1,
+      "sequence_gaps": 1742,
+      "sequence_gap_details": [
+        "Event 3: gap of 132 IDs (expected 11315993558857, got 11315993558989)",
+        "Event 13: gap of 210 IDs (expected 11315993566995, got 11315993567205)",
+        "Event 14: gap of 43 IDs (expected 11315993574944, got 11315993574987)",
+        "Event 29: gap of 113 IDs (expected 11315993583760, got 11315993583873)",
+        "Event 32: gap of 29 IDs (expected 11315993592513, got 11315993592542)"
+      ],
+      "non_monotonic_timestamps": 0,
+      "stale_events": 0,
+      "max_stale_ms": 0.0,
+      "crossed_book_events": 0,
+      "negative_qty_events": 0,
+      "zero_qty_events": 0,
+      "invalid_trade_sides": 0,
+      "zero_trade_qty": 0,
+      "orphan_updates": 1,
+      "skipped_events": 0,
+      "errors": [],
+      "warnings": [
+        "1742 sequence gaps detected",
+        "1 orphan updates (before snapshot)"
+      ],
+      "passed": true
+    },
+    "20260818-214859": {
+      "session": "20260818-214859",
+      "total_events": 32301,
+      "depth_events": 1745,
+      "trade_events": 644,
+      "snapshot_events": 1,
+      "sequence_gaps": 1737,
+      "sequence_gap_details": [
+        "Event 2: gap of 22 IDs (expected 11316008117857, got 11316008117879)",
+        "Event 61: gap of 197 IDs (expected 11316008131068, got 11316008131265)",
+        "Event 129: gap of 275 IDs (expected 11316008145825, got 11316008146100)",
+        "Event 139: gap of 467 IDs (expected 11316008160034, got 11316008160501)",
+        "Event 145: gap of 124 IDs (expected 11316008170357, got 11316008170481)"
+      ],
+      "non_monotonic_timestamps": 0,
+      "stale_events": 0,
+      "max_stale_ms": 0.0,
+      "crossed_book_events": 0,
+      "negative_qty_events": 0,
+      "zero_qty_events": 0,
+      "invalid_trade_sides": 0,
+      "zero_trade_qty": 0,
+      "orphan_updates": 1,
+      "skipped_events": 0,
+      "errors": [],
+      "warnings": [
+        "1737 sequence gaps detected",
+        "1 orphan updates (before snapshot)"
+      ],
+      "passed": true
+    },
+    "20260818-215200": {
+      "session": "20260818-215200",
+      "total_events": 17529,
+      "depth_events": 1743,
+      "trade_events": 795,
+      "snapshot_events": 1,
+      "sequence_gaps": 1739,
+      "sequence_gap_details": [
+        "Event 4: gap of 29 IDs (expected 11316020678520, got 11316020678549)",
+        "Event 18: gap of 202 IDs (expected 11316020685035, got 11316020685237)",
+        "Event 25: gap of 112 IDs (expected 11316020693336, got 11316020693448)",
+        "Event 27: gap of 90 IDs (expected 11316020703521, got 11316020703611)",
+        "Event 31: gap of 99 IDs (expected 11316020712314, got 11316020712413)"
+      ],
+      "non_monotonic_timestamps": 0,
+      "stale_events": 0,
+      "max_stale_ms": 0.0,
+      "crossed_book_events": 0,
+      "negative_qty_events": 0,
+      "zero_qty_events": 0,
+      "invalid_trade_sides": 0,
+      "zero_trade_qty": 0,
+      "orphan_updates": 1,
+      "skipped_events": 0,
+      "errors": [],
+      "warnings": [
+        "1739 sequence gaps detected",
+        "1 orphan updates (before snapshot)"
+      ],
+      "passed": true
+    },
+    "20260818-231922": {
+      "session": "20260818-231922",
+      "total_events": 14443,
+      "depth_events": 1738,
+      "trade_events": 396,
+      "snapshot_events": 1,
+      "sequence_gaps": 1732,
+      "sequence_gap_details": [
+        "Event 4: gap of 106 IDs (expected 11316360881925, got 11316360882031)",
+        "Event 5: gap of 75 IDs (expected 11316360888595, got 11316360888670)",
+        "Event 9: gap of 619 IDs (expected 11316360895004, got 11316360895623)",
+        "Event 15: gap of 127 IDs (expected 11316360902689, got 11316360902816)",
+        "Event 20: gap of 188 IDs (expected 11316360909640, got 11316360909828)"
+      ],
+      "non_monotonic_timestamps": 0,
+      "stale_events": 0,
+      "max_stale_ms": 0.0,
+      "crossed_book_events": 0,
+      "negative_qty_events": 0,
+      "zero_qty_events": 0,
+      "invalid_trade_sides": 0,
+      "zero_trade_qty": 0,
+      "orphan_updates": 1,
+      "skipped_events": 0,
+      "errors": [],
+      "warnings": [
+        "1732 sequence gaps detected",
+        "1 orphan updates (before snapshot)"
+      ],
+      "passed": true
+    },
+    "20260818-232223": {
+      "session": "20260818-232223",
+      "total_events": 15916,
+      "depth_events": 1749,
+      "trade_events": 603,
+      "snapshot_events": 1,
+      "sequence_gaps": 1745,
+      "sequence_gap_details": [
+        "Event 4: gap of 240 IDs (expected 11316372548056, got 11316372548296)",
+        "Event 8: gap of 288 IDs (expected 11316372555757, got 11316372556045)",
+        "Event 15: gap of 240 IDs (expected 11316372563573, got 11316372563813)",
+        "Event 25: gap of 66 IDs (expected 11316372570608, got 11316372570674)",
+        "Event 47: gap of 186 IDs (expected 11316372579628, got 11316372579814)"
+      ],
+      "non_monotonic_timestamps": 0,
+      "stale_events": 0,
+      "max_stale_ms": 0.0,
+      "crossed_book_events": 0,
+      "negative_qty_events": 0,
+      "zero_qty_events": 0,
+      "invalid_trade_sides": 0,
+      "zero_trade_qty": 0,
+      "orphan_updates": 1,
+      "skipped_events": 0,
+      "errors": [],
+      "warnings": [
+        "1745 sequence gaps detected",
+        "1 orphan updates (before snapshot)"
+      ],
+      "passed": true
+    },
+    "20260818-232524": {
+      "session": "20260818-232524",
+      "total_events": 18225,
+      "depth_events": 1760,
+      "trade_events": 422,
+      "snapshot_events": 1,
+      "sequence_gaps": 1751,
+      "sequence_gap_details": [
+        "Event 34: gap of 181 IDs (expected 11316385366658, got 11316385366839)",
+        "Event 66: gap of 109 IDs (expected 11316385377868, got 11316385377977)",
+        "Event 115: gap of 82 IDs (expected 11316385387380, got 11316385387462)",
+        "Event 126: gap of 485 IDs (expected 11316385402529, got 11316385403014)",
+        "Event 132: gap of 216 IDs (expected 11316385416178, got 11316385416394)"
+      ],
+      "non_monotonic_timestamps": 0,
+      "stale_events": 0,
+      "max_stale_ms": 0.0,
+      "crossed_book_events": 0,
+      "negative_qty_events": 0,
+      "zero_qty_events": 0,
+      "invalid_trade_sides": 0,
+      "zero_trade_qty": 0,
+      "orphan_updates": 1,
+      "skipped_events": 0,
+      "errors": [],
+      "warnings": [
+        "1751 sequence gaps detected",
+        "1 orphan updates (before snapshot)"
+      ],
+      "passed": true
+    },
+    "20260818-232825": {
+      "session": "20260818-232825",
+      "total_events": 1924,
+      "depth_events": 512,
+      "trade_events": 76,
+      "snapshot_events": 1,
+      "sequence_gaps": 511,
+      "sequence_gap_details": [
+        "Event 3: gap of 67 IDs (expected 11316396477360, got 11316396477427)",
+        "Event 11: gap of 6 IDs (expected 11316396484537, got 11316396484543)",
+        "Event 26: gap of 258 IDs (expected 11316396497007, got 11316396497265)",
+        "Event 28: gap of 109 IDs (expected 11316396511936, got 11316396512045)",
+        "Event 29: gap of 150 IDs (expected 11316396520289, got 11316396520439)"
+      ],
+      "non_monotonic_timestamps": 0,
+      "stale_events": 0,
+      "max_stale_ms": 0.0,
+      "crossed_book_events": 0,
+      "negative_qty_events": 0,
+      "zero_qty_events": 0,
+      "invalid_trade_sides": 0,
+      "zero_trade_qty": 0,
+      "orphan_updates": 1,
+      "skipped_events": 0,
+      "errors": [],
+      "warnings": [
+        "511 sequence gaps detected",
+        "1 orphan updates (before snapshot)"
+      ],
+      "passed": true
+    },
+    "20260818-232919": {
+      "session": "20260818-232919",
+      "total_events": 7,
+      "depth_events": 2,
+      "trade_events": 0,
+      "snapshot_events": 1,
+      "sequence_gaps": 1,
+      "sequence_gap_details": [
+        "Event 4: gap of 77 IDs (expected 11316399462964, got 11316399463041)"
+      ],
+      "non_monotonic_timestamps": 0,
+      "stale_events": 0,
+      "max_stale_ms": 0.0,
+      "crossed_book_events": 0,
+      "negative_qty_events": 0,
+      "zero_qty_events": 0,
+      "invalid_trade_sides": 0,
+      "zero_trade_qty": 0,
+      "orphan_updates": 1,
+      "skipped_events": 0,
+      "errors": [],
+      "warnings": [
+        "1 sequence gaps detected",
+        "1 orphan updates (before snapshot)"
+      ],
+      "passed": true
+    }
+  },
+  "total_events": 466688,
+  "total_errors": 0,
+  "total_warnings": 54,
+  "all_passed": true
+}

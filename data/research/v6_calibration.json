@@ -1,0 +1,59 @@
+{
+ "features": [
+  "ofi_l1",
+  "ofi_norm_l1",
+  "qi_l1",
+  "di_l5",
+  "di_l10",
+  "mpd_bps",
+  "spread_bps",
+  "bid_cancel_bps",
+  "ask_add_bps",
+  "cancel_pressure",
+  "tfi_500",
+  "liq_depletion",
+  "log_depth1",
+  "log_depth5",
+  "log_event_rate",
+  "depth_slope_bps",
+  "vol_500",
+  "ofi_slope",
+  "ofi_persistence",
+  "di_l1_3",
+  "di_l4_7",
+  "di_l8_10",
+  "imbalance_slope",
+  "vpin_500",
+  "trade_size_kyle",
+  "signed_vol_momentum",
+  "cvd_slope",
+  "cvd_price_divergence",
+  "cvd_acceleration",
+  "absorption_proxy",
+  "depth_recovery_rate",
+  "impact_per_volume",
+  "price_response_to_ofi",
+  "microprice_momentum",
+  "effective_spread",
+  "contemporaneous_cost_gate",
+  "cost_adjusted_signal",
+  "liq_depletion"
+ ],
+ "horizons": [
+  250,
+  500,
+  1000
+ ],
+ "250": {
+  "r2_train": 0.49562333499197064,
+  "n_train": 18118
+ },
+ "500": {
+  "r2_train": 0.4935731459453061,
+  "n_train": 18118
+ },
+ "1000": {
+  "r2_train": 0.4670523808483026,
+  "n_train": 18118
+ }
+}

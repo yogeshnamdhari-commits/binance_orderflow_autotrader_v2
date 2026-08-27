@@ -1,0 +1,160 @@
+{
+ "generated_at": "2026-08-19T16:04:27.847512+00:00",
+ "baseline": "ORDERFLOW_BASELINE_V5 \u2014 NO LIVE TRADING",
+ "protocol": "Tier A: zero-refit evaluation of frozen 500 ms signal direction at longer holding horizons. No model, feature, or parameter changes.",
+ "signal_definition": "sign(pred_500ms) from v3_model.json applied to OOS. gross = sign(pred_500ms) * r_h.",
+ "preregistered_horizons_ms": [
+  2000,
+  5000,
+  10000,
+  30000
+ ],
+ "gate_bps": 4.6658,
+ "gate_note": "Historical non-contemporaneous taker round-trip cost (4.6658 bps). Derived from execution_calibration.json collected ~42 h BEFORE this OOS window (2026-08-17 18:16 UTC vs OOS 2026-08-19 01:20 UTC). Indicative reference ONLY. Does not establish contemporaneous profitability.",
+ "oos": {
+  "start_ts_ms": 1787082620885,
+  "end_ts_ms": 1787082921993,
+  "span_ms": 301108,
+  "rows": 3889,
+  "median_event_gap_ms": 102.0,
+  "hac_max_lag": 510
+ },
+ "horizons": {
+  "2000": {
+   "horizon_ms": 2000,
+   "n": 3864,
+   "long_n": 2855,
+   "short_n": 1009,
+   "gross_mean_bps": 0.080093,
+   "gross_median_bps": 0.0,
+   "gross_std_bps": 0.433415,
+   "se_classical_bps": 0.006972,
+   "se_hac_bps": 0.032667,
+   "ci_95_hac_low": 0.016064,
+   "ci_95_hac_high": 0.144121,
+   "z_hac": 2.451754,
+   "p_value_hac": 0.014216,
+   "net_mean_bps_taker": -4.585707,
+   "long_gross_mean_bps": 0.021236,
+   "long_net_mean_bps_taker": -4.644564,
+   "short_gross_mean_bps": 0.246629,
+   "short_net_mean_bps_taker": -4.419171,
+   "pct_positive": 0.158385,
+   "regimes": {
+    "high_impact": {
+     "n": 1373,
+     "gross_mean_bps": -0.004472,
+     "net_mean_bps_taker": -4.670272
+    },
+    "normal": {
+     "n": 2491,
+     "gross_mean_bps": 0.126703,
+     "net_mean_bps_taker": -4.539097
+    }
+   },
+   "hac_max_lag": 510
+  },
+  "5000": {
+   "horizon_ms": 5000,
+   "n": 3779,
+   "long_n": 2837,
+   "short_n": 942,
+   "gross_mean_bps": 0.068546,
+   "gross_median_bps": 0.0,
+   "gross_std_bps": 0.514906,
+   "se_classical_bps": 0.008376,
+   "se_hac_bps": 0.037596,
+   "ci_95_hac_low": -0.005141,
+   "ci_95_hac_high": 0.142233,
+   "z_hac": 1.823245,
+   "p_value_hac": 0.068266,
+   "net_mean_bps_taker": -4.597254,
+   "long_gross_mean_bps": 0.006401,
+   "long_net_mean_bps_taker": -4.659399,
+   "short_gross_mean_bps": 0.255706,
+   "short_net_mean_bps_taker": -4.410094,
+   "pct_positive": 0.219635,
+   "regimes": {
+    "high_impact": {
+     "n": 1353,
+     "gross_mean_bps": -0.026992,
+     "net_mean_bps_taker": -4.692792
+    },
+    "normal": {
+     "n": 2426,
+     "gross_mean_bps": 0.121828,
+     "net_mean_bps_taker": -4.543972
+    }
+   },
+   "hac_max_lag": 510
+  },
+  "10000": {
+   "horizon_ms": 10000,
+   "n": 3725,
+   "long_n": 2783,
+   "short_n": 942,
+   "gross_mean_bps": 0.072454,
+   "gross_median_bps": 0.0,
+   "gross_std_bps": 0.642575,
+   "se_classical_bps": 0.010528,
+   "se_hac_bps": 0.057778,
+   "ci_95_hac_low": -0.040791,
+   "ci_95_hac_high": 0.185698,
+   "z_hac": 1.254002,
+   "p_value_hac": 0.209841,
+   "net_mean_bps_taker": -4.593346,
+   "long_gross_mean_bps": 0.015895,
+   "long_net_mean_bps_taker": -4.649905,
+   "short_gross_mean_bps": 0.239546,
+   "short_net_mean_bps_taker": -4.426254,
+   "pct_positive": 0.292617,
+   "regimes": {
+    "high_impact": {
+     "n": 1327,
+     "gross_mean_bps": -0.043925,
+     "net_mean_bps_taker": -4.709725
+    },
+    "normal": {
+     "n": 2398,
+     "gross_mean_bps": 0.136855,
+     "net_mean_bps_taker": -4.528945
+    }
+   },
+   "hac_max_lag": 510
+  },
+  "30000": {
+   "horizon_ms": 30000,
+   "n": 3499,
+   "long_n": 2624,
+   "short_n": 875,
+   "gross_mean_bps": 0.075684,
+   "gross_median_bps": 0.0,
+   "gross_std_bps": 1.086059,
+   "se_classical_bps": 0.01836,
+   "se_hac_bps": 0.205544,
+   "ci_95_hac_low": -0.327182,
+   "ci_95_hac_high": 0.47855,
+   "z_hac": 0.368213,
+   "p_value_hac": 0.712714,
+   "net_mean_bps_taker": -4.590116,
+   "long_gross_mean_bps": 0.014858,
+   "long_net_mean_bps_taker": -4.650942,
+   "short_gross_mean_bps": 0.258092,
+   "short_net_mean_bps_taker": -4.407708,
+   "pct_positive": 0.419548,
+   "regimes": {
+    "high_impact": {
+     "n": 1219,
+     "gross_mean_bps": -0.084557,
+     "net_mean_bps_taker": -4.750357
+    },
+    "normal": {
+     "n": 2280,
+     "gross_mean_bps": 0.161357,
+     "net_mean_bps_taker": -4.504443
+    }
+   },
+   "hac_max_lag": 510
+  }
+ }
+}

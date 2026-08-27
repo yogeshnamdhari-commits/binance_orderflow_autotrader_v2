@@ -1,0 +1,139 @@
+{
+  "experiment_id": "EXP-018",
+  "audit_status": "FIXED-AND-RERUN",
+  "final_economic_validation": true,
+  "n_events": 270558,
+  "split": "631301 train / 270558 test (chronological 70/30)",
+  "bootstrap": {
+    "method": "bootstrap_with_replacement (subsampled, block_size=1 captures ~2s dependence)",
+    "block_size": 1,
+    "n_iterations": 5000,
+    "subsample_size": 50000,
+    "overlap_pct": 39.113754218149964,
+    "median_gap_ms": 20601,
+    "rationale": "39.1% events overlap within 10s; sub-sampled bootstrap on 50k events for computational tractability; median gap=20601ms"
+  },
+  "ci_95": {
+    "h022_gross_dp": [
+      0.4299094230698911,
+      0.4837853252075729
+    ],
+    "h022_maker_net": [
+      -1.5700905769301088,
+      -1.516214674792427
+    ],
+    "h022_taker_net": [
+      -3.5846905769301083,
+      -3.530814674792427
+    ],
+    "h022_incremental": [
+      0.00489910976142308,
+      0.008343801883005849
+    ],
+    "h022_incremental_excludes_zero": true,
+    "baseline_gross_dp": [
+      0.4235722539328838,
+      0.47663756405690444
+    ],
+    "baseline_taker_net": [
+      -3.5910277460671156,
+      -3.5379624359430957
+    ],
+    "baseline_maker_net": [
+      -1.5764277460671163,
+      -1.5233624359430955
+    ],
+    "h018_incremental": [
+      7.738711902119944e-05,
+      0.0002956368082368363
+    ],
+    "h020_incremental": [
+      6.17284001691587e-14,
+      6.94999613415348e-14
+    ],
+    "h021_incremental": [
+      -0.0005342492200366672,
+      -0.0001527103468803154
+    ]
+  },
+  "fee_sensitivity": {
+    "h022_gross_dp": 0.4577444791972137,
+    "maker_base_2_0": -1.5422555208027862,
+    "taker_base_4_0146": -3.556855520802786,
+    "moderately_worse_4_5": -4.042255520802787,
+    "materially_worse_6_0": -5.542255520802787
+  },
+  "break_even": {
+    "h022_gross": 0.4577444791972137,
+    "margin_maker": -1.5422555208027862,
+    "margin_taker": -3.556855520802786
+  },
+  "results": {
+    "A_baseline": {
+      "dp": 0.4509288363978635,
+      "auc": 0.6638014331213534,
+      "net_maker": -1.5490711636021364,
+      "net_taker": -3.563671163602136
+    },
+    "H018_funding": {
+      "dp": 0.4510939883327934,
+      "auc": 0.6630329602070346,
+      "incremental_dp": 0.00016515193492988578,
+      "net_taker": -3.563506011667206,
+      "coefficients": [
+        0.6950594446235564,
+        -0.00399269132879152,
+        -0.0018248780229632184
+      ]
+    },
+    "H020_basis": {
+      "dp": 0.45092883639792936,
+      "auc": 0.6638014331213534,
+      "incremental_dp": 6.583622536027178e-14,
+      "net_taker": -3.5636711636020704,
+      "coefficients": [
+        0.6950834986986227,
+        0.0
+      ]
+    },
+    "H021_eth": {
+      "dp": 0.45067641966137284,
+      "auc": 0.6638744017852157,
+      "incremental_dp": -0.0002524167364906793,
+      "net_taker": -3.563923580338627,
+      "coefficients": [
+        0.6950425417393657,
+        0.004051870792942167,
+        -0.004902984065176483
+      ]
+    },
+    "H022_combined": {
+      "dp": 0.4577444791972137,
+      "auc": 0.6633226309766653,
+      "incremental_dp": 0.006815642799350208,
+      "net_taker": -3.556855520802786,
+      "coefficients": [
+        0.7002079112390276,
+        -0.004513992953953599,
+        0.003226220659733843,
+        0.0,
+        0.021210763312709713,
+        0.021210763312709713,
+        0.0029347679122519333,
+        -0.006732606607346333,
+        -0.009957675045446169
+      ]
+    }
+  },
+  "economic_verdict": {
+    "statistical_signal": true,
+    "reproducible": true,
+    "derivatives_add_incremental": "Technically tiny (+0.007 bps), statistically positive but economically negligible (0.17% of taker cost)",
+    "positive_net_expectancy": false,
+    "maker_viable": false,
+    "taker_viable": false,
+    "deployment_viable": false,
+    "deployable_edge": false,
+    "verdict": "NO_DEPLOYABLE_EDGE_WITH_CURRENT_INFORMATION_SET"
+  }
+}

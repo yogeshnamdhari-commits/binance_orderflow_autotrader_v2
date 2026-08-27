@@ -1,0 +1,12 @@
+{
+  "title": "Incremental Information Report (V6 over V5)",
+  "generated_at": "2026-08-19T20:29:02.259716+00:00",
+  "v5_v6_prediction_correlation": 0.552484,
+  "v6_residual_correlation_with_y": 0.1271,
+  "v6_residual_t_stat": 7.9817,
+  "v6_residual_p_value": 0.0,
+  "v5_explained_variance": 0.0,
+  "v6_explained_variance": 0.0,
+  "incremental_r2": 0.0,
+  "interpretation": "V6 contains statistically significant incremental information over V5 (p < 0.0001), but the incremental gross expectancy is only ~0.0078 bps. This is completely overwhelmed by realistic execution costs of ~4.66 bps taker / ~3.44 bps maker."
+}
