@@ -127,14 +127,25 @@ class SessionRecorder:
     def record_raw(self, raw_json: str, receive_ns: int | None = None) -> None:
         if self._events is None or self._manifest is None:
             raise RuntimeError("session is not started")
-        normalized = normalize_ws_event(raw_json, receive_ns)
-        row = {
-            "receive_ns": normalized.receive_time_ns,
-            "stream": normalized.stream,
-            "event_type": normalized.event_type,
-            "event_time_ms": normalized.event_time_ms,
-            "raw_json": normalized.raw_json,
-        }
+        receive_time_ns = time.time_ns() if receive_ns is None else int(receive_ns)
+        try:
+            normalized = normalize_ws_event(raw_json, receive_time_ns)
+            row = {
+                "receive_ns": normalized.receive_time_ns,
+                "stream": normalized.stream,
+                "event_type": normalized.event_type,
+                "event_time_ms": normalized.event_time_ms,
+                "raw_json": normalized.raw_json,
+            }
+        except Exception as exc:
+            row = {
+                "receive_ns": receive_time_ns,
+                "stream": None,
+                "event_type": None,
+                "event_time_ms": None,
+                "raw_json": raw_json,
+                "parse_error": type(exc).__name__ + ": " + str(exc),
+            }
         self._events.write(json.dumps(row, ensure_ascii=False, separators=(",", ":")) + "\n")
         self._events.flush()
         self._manifest["event_count"] += 1
