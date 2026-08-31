@@ -79,11 +79,13 @@ class V10BookReplay:
                 asks,
                 "FIRST_EVENT_DOES_NOT_BRIDGE_SNAPSHOT",
             )
-        if first_pu is not None and first_pu != snapshot_id:
+        first_bridges_snapshot = first_U <= snapshot_id + 1 <= first_u
+        first_continues_snapshot = first_pu is not None and first_pu == snapshot_id
+        if not (first_bridges_snapshot or first_continues_snapshot):
             return ReplayResult(ReplayStatus.GAP, snapshot_id, bids, asks, "PU_MISMATCH")
 
         previous_u = snapshot_id
-        for event in pending[first_index:]:
+        for offset, event in enumerate(pending[first_index:]):
             try:
                 U = int(event["U"])
                 u = int(event["u"])
@@ -96,9 +98,9 @@ class V10BookReplay:
                 return ReplayResult(ReplayStatus.MALFORMED, previous_u, bids, asks, "U_GT_U")
             if u <= previous_u:
                 continue
-            if pu is not None and pu != previous_u:
+            if offset > 0 and pu is not None and pu != previous_u:
                 return ReplayResult(ReplayStatus.GAP, previous_u, bids, asks, "PU_MISMATCH")
-            if pu is None and U > previous_u + 1:
+            if offset > 0 and pu is None and U > previous_u + 1:
                 return ReplayResult(ReplayStatus.GAP, previous_u, bids, asks, "UPDATE_ID_GAP")
 
             try:
