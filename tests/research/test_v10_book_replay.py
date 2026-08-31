@@ -6,7 +6,7 @@ def test_replay_requires_snapshot_continuity_and_applies_depth_updates():
     snapshot = {"lastUpdateId": 100, "bids": [[100, 2]], "asks": [[101, 3]]}
     events = [
         {"e": "depthUpdate", "U": 99, "u": 100, "pu": 98, "b": [], "a": []},
-        {"e": "depthUpdate", "U": 101, "u": 105, "pu": 100, "b": [[100, "1"]], "a": [[102, "2"]]},
+        {"e": "depthUpdate", "U": 95, "u": 105, "pu": 94, "b": [[100, "1"]], "a": [[102, "2"]]},
         {"e": "depthUpdate", "U": 106, "u": 110, "pu": 105, "b": [[99, "4"]], "a": [[101, "0"]]},
     ]
     result = replay.replay(snapshot, events)
