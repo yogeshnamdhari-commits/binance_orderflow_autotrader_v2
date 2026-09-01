@@ -22,7 +22,8 @@ def test_pipeline_returns_chronological_oos_folds():
         inventory_cost_bps=0.0, exit_cost_bps=0.5,
         cancellation_cost_bps=0.1,
     )
-    assert len(result) == 4
+    # 12 periods: start=0 (0+4+1+2=7<=12), start=2 (9<=12), start=4 (11<=12), start=6 (13>12)
+    assert len(result) == 3
     for fold in result:
         assert fold["train_end"] < fold["oos_start"]
         assert fold["oos_orders"] == 2
