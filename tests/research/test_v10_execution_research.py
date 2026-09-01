@@ -56,8 +56,13 @@ def test_execution_fold_keeps_ex_ante_expected_ev_separate_from_realized_ev():
         cancellation_cost_bps=0.1,
     )
     assert result["oos_orders"] == 2
-    assert result["mean_predicted_fill_probability"] == 0.25
+    # Bucket 0 (q=0): both filled -> P(fill)=1.0; Bucket 1 (q=1): none filled -> P(fill)=0.0
+    assert result["mean_predicted_fill_probability"] == 0.5
+    # KM at horizon=2.0: 2 fills by t=2 out of 4, with censoring -> 0.5
     assert result["predicted_horizon_fill_probability"] == 0.5
+    # Adverse for filled train in bucket 0: mean([1.0, 3.0]) = 2.0; bucket 1: 0.0 -> mean=1.0
     assert result["mean_predicted_adverse_selection_bps"] == 1.0
-    assert np.isclose(result["mean_oos_expected_ev_bps"], 0.275)
+    # Expected EV: q=0 -> 1.0*(4.0-2.0-0.5)-0.1=1.4; q=1 -> 0.0*(4.0-0.0-0.5)-0.1=-0.1 -> mean=0.65
+    assert np.isclose(result["mean_oos_expected_ev_bps"], 0.65)
+    # Realized EV: q=0 -> 1.0*(4.0-2.0-0.5)-0.1=1.4; q=1 -> 0.0*(4.0-4.0-0.5)-0.1=-0.1 -> mean=0.65
     assert np.isclose(result["mean_oos_realized_ev_bps"], 0.65)
