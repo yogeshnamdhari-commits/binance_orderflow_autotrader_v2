@@ -13,6 +13,18 @@ Research-only. This document does **not** authorize live trading.
 5. **Walk-forward OOS:** fit calibration only on chronological training data; evaluate on later data separated by an embargo.
 6. **Deployment gate:** no implementation/live trading unless the complete OOS economic result survives the predefined statistical and cost gates.
 
+## Integrated evaluation implementation
+
+`app/v10_execution_research.py` now provides a leakage-safe fold evaluator that combines:
+
+- train-only queue-conditioned fill calibration;
+- train-only queue-conditioned adverse-selection calibration using filled observations;
+- Kaplan–Meier fill-time estimation from training observations;
+- explicit ex-ante expected EV using predicted fill/adverse-selection quantities;
+- separate ex-post realized EV using the actual OOS fill and markout labels.
+
+The two EV quantities are intentionally kept separate. A realized OOS result is evidence about execution outcomes; it must not be fed back into the ex-ante decision model or used to tune parameters.
+
 ## Why survival analysis is included
 
 Orders that do not fill before the evaluation horizon are right-censored observations. Treating every censored order as a binary zero-time outcome discards information about the time-to-fill process. `app/v10_fill_survival.py` therefore provides a Kaplan–Meier estimator of the fill-time distribution. This is deliberately a transparent non-parametric baseline before considering higher-capacity models.
