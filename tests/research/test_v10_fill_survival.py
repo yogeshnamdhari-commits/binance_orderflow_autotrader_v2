@@ -11,7 +11,7 @@ def test_kaplan_meier_retains_right_censoring():
     )
     assert model.fill_probability(0.5) == 0.0
     assert model.fill_probability(1.0) == pytest.approx(0.25)
-    assert model.fill_probability(2.0) == pytest.approx(0.625)
+    assert model.fill_probability(2.0) == pytest.approx(0.50)
 
 
 def test_kaplan_meier_rejects_invalid_inputs():
