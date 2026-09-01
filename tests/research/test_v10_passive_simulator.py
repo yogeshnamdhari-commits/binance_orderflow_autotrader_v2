@@ -1,3 +1,4 @@
+import pytest
 from app.v10_passive_simulator import simulate_passive_order
 
 
@@ -12,7 +13,7 @@ def test_simulator_accounts_for_partial_fill_and_economic_terms():
         cancellation_cost_bps=0.1,
     )
     assert result["filled_fraction"] == 0.5
-    assert result["net_ev_bps"] == 0.95
+    assert result["net_ev_bps"] == pytest.approx(0.95)
 
 
 def test_unfilled_order_only_pays_cancellation_cost():

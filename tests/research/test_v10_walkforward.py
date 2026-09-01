@@ -5,7 +5,8 @@ from app.v10_mm_walkforward import make_splits
 def test_walkforward_has_train_then_embargo_then_oos():
     idx = pd.date_range("2026-01-01", periods=20, freq="min", tz="UTC")
     splits = list(make_splits(idx, train_size=8, embargo=2, test_size=4, step=4))
-    assert len(splits) == 3
+    # 20 periods: start=0 (0+8+2+4=14<=20), start=4 (4+8+2+4=18<=20), start=8 (8+8+2+4=22>20)
+    assert len(splits) == 2
     train, test = splits[0]
     assert train[-1] < test[0]
     assert (test[0] - train[-1]).total_seconds() >= 3 * 60

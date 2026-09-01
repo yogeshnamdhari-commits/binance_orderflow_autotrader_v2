@@ -13,8 +13,11 @@ def test_queue_conditioned_survival_uses_train_only_and_fallback():
     })
     model = fit_queue_survival(train, bins=[0.0, 5.0, 20.0])
     pred = predict_queue_fill_probability(model, np.array([0.0, 10.0, 99.0]), 1.0)
-    assert pred[0] == pytest.approx(1.0)
+    # Bucket 0 (q=0): 1 fill at t=1, 1 censored at t=2 -> KM fill prob at t=1 = 0.5
+    assert pred[0] == pytest.approx(0.5)
+    # Bucket 1 (q=10): 0 fills at t=1, 1 fill at t=2 -> KM fill prob at t=1 = 0.0
     assert pred[1] == pytest.approx(0.0)
+    # q=99 out of range -> uses fallback (all data): 1/4 fill at t=1 -> 0.25
     assert pred[2] == pytest.approx(0.25)
 
 
