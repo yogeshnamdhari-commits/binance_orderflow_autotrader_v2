@@ -46,3 +46,12 @@ def test_replay_skips_events_already_covered_by_snapshot():
     assert result.status == ReplayStatus.OK
     assert result.last_update_id == 105
     assert result.bids == {100: 1}
+
+
+def test_replay_accepts_first_event_linked_by_pu_to_snapshot():
+    replay = V10BookReplay()
+    snapshot = {"lastUpdateId": 100, "bids": [[100, 2]], "asks": [[101, 3]]}
+    result = replay.replay(snapshot, [{"U": 105, "u": 110, "pu": 100, "b": [[99, 1]], "a": []}])
+    assert result.status == ReplayStatus.OK
+    assert result.last_update_id == 110
+    assert result.bids == {100: 2, 99: 1}
