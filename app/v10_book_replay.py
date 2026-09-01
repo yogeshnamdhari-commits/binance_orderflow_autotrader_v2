@@ -71,7 +71,9 @@ class V10BookReplay:
         except (KeyError, TypeError, ValueError):
             return ReplayResult(ReplayStatus.MALFORMED, snapshot_id, bids, asks, "INVALID_EVENT_SEQUENCE")
 
-        if not (first_U <= snapshot_id + 1 <= first_u):
+        first_bridges_snapshot = first_U <= snapshot_id + 1 <= first_u
+        first_continues_snapshot = first_pu is not None and first_pu == snapshot_id
+        if not (first_bridges_snapshot or first_continues_snapshot):
             return ReplayResult(
                 ReplayStatus.NO_BRIDGING_EVENT,
                 snapshot_id,
@@ -79,10 +81,6 @@ class V10BookReplay:
                 asks,
                 "FIRST_EVENT_DOES_NOT_BRIDGE_SNAPSHOT",
             )
-        first_bridges_snapshot = first_U <= snapshot_id + 1 <= first_u
-        first_continues_snapshot = first_pu is not None and first_pu == snapshot_id
-        if not (first_bridges_snapshot or first_continues_snapshot):
-            return ReplayResult(ReplayStatus.GAP, snapshot_id, bids, asks, "PU_MISMATCH")
 
         previous_u = snapshot_id
         for offset, event in enumerate(pending[first_index:]):
