@@ -9,6 +9,7 @@ data/hist/
 data/raw/
 data/archives/
 data/normalized/
+data/v10/
 
 # Large data formats anywhere else
 *.parquet
