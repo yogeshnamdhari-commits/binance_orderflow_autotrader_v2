@@ -23,7 +23,29 @@ def test_build_fill_observation_preserves_partial_fill_and_adverse_selection():
     assert row["order_id"] == "o1"
     assert row["fill_fraction"] == 1 / 3
     assert row["time_to_first_fill_ns"] == 500
-    assert row["adverse_selection_bps"] > 0
+    # Regression: for a bid, price drop after fill is adverse (positive bps).
+    # forward_mid=99.90 < mid_after_fill=100.0 means the market moved against us.
+    assert row["adverse_selection_bps"] == 10.0
+
+
+def test_build_fill_observation_adverse_selection_ask_side():
+    """Regression: for an ask, price rise after fill is adverse (positive bps)."""
+    row = build_fill_observation(
+        order_id="o2",
+        signal_time_ns=1_000,
+        order_time_ns=1_500,
+        side="ask",
+        quoted_price=Decimal("100"),
+        quantity=Decimal("2"),
+        queue_ahead=Decimal("0"),
+        filled=Decimal("2"),
+        first_fill_time_ns=2_000,
+        mid_at_order=Decimal("100.0"),
+        mid_after_fill=Decimal("100.0"),
+        forward_mid=Decimal("100.10"),
+    )
+    # forward_mid=100.10 > mid_after_fill=100.0 means the market rose after we sold → adverse
+    assert row["adverse_selection_bps"] == 10.0
 
 
 def test_empirical_summary_reports_fill_rate_and_partial_rate():

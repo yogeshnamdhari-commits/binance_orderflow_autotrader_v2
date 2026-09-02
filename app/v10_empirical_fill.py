@@ -58,7 +58,7 @@ def build_fill_observation(
     fill_fraction = float(filled / quantity)
     time_to_first_fill_ns = None if first_fill_time_ns is None else int(first_fill_time_ns - order_time_ns)
     post_fill_return_bps = float((_decimal(forward_mid) / _decimal(mid_after_fill) - Decimal("1")) * Decimal("10000"))
-    adverse_selection_bps = post_fill_return_bps if side == "bid" else -post_fill_return_bps
+    adverse_selection_bps = -post_fill_return_bps if side == "bid" else post_fill_return_bps
 
     return {
         "order_id": order_id,
