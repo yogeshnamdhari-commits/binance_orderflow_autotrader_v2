@@ -17,7 +17,7 @@ def test_build_fill_observation_preserves_partial_fill_and_adverse_selection():
         filled=Decimal("1"),
         first_fill_time_ns=2_000,
         mid_at_order=Decimal("100.0"),
-        mid_after_fill=Decimal("99.95"),
+        mid_after_fill=Decimal("100.0"),
         forward_mid=Decimal("99.90"),
     )
     assert row["order_id"] == "o1"
