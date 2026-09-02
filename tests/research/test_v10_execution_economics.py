@@ -1,3 +1,5 @@
+import pytest
+
 from app.v10_execution_economics import (
     FillObservation,
     PassiveQuote,
@@ -13,19 +15,19 @@ def test_kaplan_meier_counts_censored_orders_correctly():
     result = kaplan_meier_fill_probability(observations, horizon=2.5)
     assert result.n == 3
     assert result.events == 1
-    assert result.probability == 2.0 / 3.0
+    assert result.probability == pytest.approx(1.0 / 3.0)
 
 
 def test_adverse_selection_is_signed_by_passive_side():
-    assert adverse_selection_bps("BUY", 100.0, 100.10) == -10.0
-    assert adverse_selection_bps("BUY", 100.0, 99.90) == 10.0
-    assert adverse_selection_bps("SELL", 100.0, 100.10) == 10.0
+    assert adverse_selection_bps("BUY", 100.0, 100.10) == pytest.approx(-10.0)
+    assert adverse_selection_bps("BUY", 100.0, 99.90) == pytest.approx(10.0)
+    assert adverse_selection_bps("SELL", 100.0, 100.10) == pytest.approx(10.0)
 
 
 def test_passive_order_ev_includes_fill_probability_and_costs():
     quote = PassiveQuote(side="BUY", price=99.95, mid=100.0, maker_fee_bps=1.0)
     ev = passive_order_ev_bps(quote, fill_probability=0.5, adverse_selection_cost_bps=2.0)
-    assert ev == 1.0
+    assert ev == pytest.approx(1.0)
 
 
 def test_walk_forward_folds_are_strictly_chronological_and_non_overlapping():
@@ -38,9 +40,5 @@ def test_walk_forward_folds_are_strictly_chronological_and_non_overlapping():
 
 
 def test_fill_observation_requires_positive_horizon():
-    try:
+    with pytest.raises(ValueError):
         FillObservation(fill_time_ms=0.0, filled=True)
-    except ValueError:
-        pass
-    else:
-        raise AssertionError("zero fill time must be rejected")
