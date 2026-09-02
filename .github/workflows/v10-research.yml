@@ -17,6 +17,6 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install test dependencies
-        run: python -m pip install --upgrade pip pytest
-      - name: Run V10 research tests
-        run: python -m pytest -q tests/research/test_v10_execution_economics.py tests/research/test_v10_fill_model.py
+        run: python -m pip install --upgrade pip pytest pandas numpy websocket-client
+      - name: Run complete V10 research test suite
+        run: python -m pytest -q tests/research/test_v10_*.py
