@@ -68,12 +68,12 @@ def generate_synthetic_capture(
         bids.append(_DepthLevel(_round_price(mid - tick_size * (i + 1), tick_size), _round_qty(rng.uniform(0.5, 5.0), qty_step)))
         asks.append(_DepthLevel(_round_price(mid + tick_size * (i + 1), tick_size), _round_qty(rng.uniform(0.5, 5.0), qty_step)))
 
-    def _snapshot() -> dict:
-        return {
-            "lastUpdateId": update_id,
-            "bids": [[b.price, b.qty] for b in bids],
-            "asks": [[a.price, a.qty] for a in asks],
-        }
+    snapshot = {
+        "lastUpdateId": update_id,
+        "bids": [[b.price, b.qty] for b in bids],
+        "asks": [[a.price, a.qty] for a in asks],
+    }
+    (session_dir / "snapshot.json").write_text(json.dumps(snapshot, indent=2), encoding="utf-8")
 
     def _depth_event(U: int, u: int, pu: int, b_updates: list[list[float]], a_updates: list[list[float]]) -> str:
         return json.dumps({
