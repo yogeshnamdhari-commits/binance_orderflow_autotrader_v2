@@ -8,11 +8,11 @@ import argparse
 import re
 import time
 from pathlib import Path
-from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+from urllib.parse import urlsplit, urlunsplit
 
 from .v10_recorder import V10Recorder
 
-DEFAULT_WS = "wss://fstream.binance.com/stream"
+DEFAULT_WS = "wss://fstream.binance.com/ws"
 DEFAULT_STREAMS = ["btcusdt@depth@100ms", "btcusdt@trade", "btcusdt@bookTicker"]
 
 
@@ -20,10 +20,8 @@ def build_ws_url(base_url: str, streams: list[str]) -> str:
     if not streams:
         raise ValueError("at least one stream is required")
     parts = urlsplit(base_url)
-    query = dict(parse_qsl(parts.query, keep_blank_values=True))
-    query["streams"] = "/".join(streams)
-    query["timeUnit"] = "MICROSECOND"
-    return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query), parts.fragment))
+    combined = "/".join(streams)
+    return urlunsplit((parts.scheme, parts.netloc, f"{parts.path}/{combined}", "", parts.fragment))
 
 
 def parse_duration_seconds(value: str) -> int:

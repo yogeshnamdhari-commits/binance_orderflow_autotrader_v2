@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Callable
-from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+from urllib.parse import urlsplit, urlunsplit
 
 from .v10_market_data import DepthSequenceValidator, SessionRecorder, normalize_ws_event
 
@@ -41,33 +41,36 @@ class V10Recorder:
 
     def build_stream_url(self) -> str:
         parts = urlsplit(self.ws_url)
-        query = dict(parse_qsl(parts.query, keep_blank_values=True))
-        query["streams"] = "/".join(self.streams)
-        query["timeUnit"] = "MICROSECOND"
-        return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query), parts.fragment))
+        combined = "/".join(self.streams)
+        return urlunsplit((parts.scheme, parts.netloc, f"{parts.path}/{combined}", "", parts.fragment))
 
     def start(self, start_ns: int | None = None) -> Path:
         return self.session.start(start_ns=start_ns)
 
     def handle_message(self, raw_json: str, receive_ns: int | None = None) -> None:
         receive_ns = self.clock_ns() if receive_ns is None and self.clock_ns is not None else receive_ns
-        self.session.record_raw(raw_json, receive_ns=receive_ns)
         self._diagnostics["total_events"] += 1
         try:
             event = normalize_ws_event(raw_json, receive_ns=receive_ns)
         except Exception:
             self._diagnostics["parse_errors"] += 1
+            self.session.record_raw(raw_json, receive_ns=receive_ns)
             return
 
         if event.event_type == "depthUpdate":
             self._diagnostics["depth_events"] += 1
+            self.session.record_raw(raw_json, receive_ns=receive_ns, stream_override="btcusdt@depth@100ms")
             status = self.depth_validator.observe(event.payload.get("data", event.payload))
             if status.state == "GAP":
                 self._diagnostics["gaps"] += 1
         elif event.event_type in ("trade", "aggTrade"):
             self._diagnostics["trade_events"] += 1
+            self.session.record_raw(raw_json, receive_ns=receive_ns, stream_override="btcusdt@trade")
         elif event.event_type == "bookTicker":
             self._diagnostics["book_ticker_events"] += 1
+            self.session.record_raw(raw_json, receive_ns=receive_ns, stream_override="btcusdt@bookTicker")
+        else:
+            self.session.record_raw(raw_json, receive_ns=receive_ns)
 
     def mark_reconnect(self) -> None:
         self._diagnostics["reconnect_boundaries"] += 1
