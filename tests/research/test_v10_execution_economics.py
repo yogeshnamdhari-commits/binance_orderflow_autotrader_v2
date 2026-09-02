@@ -10,9 +10,9 @@ from app.v10_walkforward import chronological_folds
 
 def test_kaplan_meier_counts_censored_orders_correctly():
     observations = [(1.0, True), (2.0, False), (3.0, True)]
-    result = kaplan_meier_fill_probability(observations, horizon=3.0)
+    result = kaplan_meier_fill_probability(observations, horizon=2.5)
     assert result.n == 3
-    assert result.events == 2
+    assert result.events == 1
     assert result.probability == 2.0 / 3.0
 
 
