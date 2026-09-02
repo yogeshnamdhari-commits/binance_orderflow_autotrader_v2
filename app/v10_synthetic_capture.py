@@ -39,13 +39,13 @@ def generate_synthetic_capture(
     tick_size: float = 0.1,
     qty_step: float = 0.001,
     seed: int = 42,
+    start_ns: int = 1_700_000_000_000_000_000,
 ) -> Path:
     """Generate a deterministic synthetic BTCUSDT capture session.
 
-    The generator produces a realistic sequence of depth updates and trades
-    with proper Binance sequencing (U, u, pu continuity). It writes the
-    session using the real V10 SessionRecorder so the output is indistinguishable
-    from a real capture session.
+    ``start_ns`` controls the session's synthetic receive/event clock. It is
+    exposed so chronological OOS tests can create non-overlapping sessions.
+    The generator remains research-only and does not connect to Binance.
     """
     import random
 
@@ -53,12 +53,12 @@ def generate_synthetic_capture(
 
     streams = ["btcusdt@depth@100ms", "btcusdt@trade", "btcusdt@bookTicker"]
     recorder = SessionRecorder(output_dir, "BTCUSDT", streams, session_id=session_id)
-    session_dir = recorder.start(start_ns=1_000_000_000_000)
+    session_dir = recorder.start(start_ns=start_ns)
 
     mid = float(start_mid)
     update_id = 1000
     trade_id = 5000
-    event_time_ms = 1_700_000_000_000
+    event_time_ms = start_ns // 1_000_000
     previous_u = 999
 
     bids: list[_DepthLevel] = []
