@@ -26,7 +26,8 @@ from app.v10_synthetic_capture import generate_synthetic_capture
 
 
 BASE_NS = 1_700_000_000_000_000_000
-SESSION_NS = 10_000_000_000
+# Each synthetic session lasts roughly 25-35 seconds with these event counts.
+SESSION_NS = 60_000_000_000
 
 
 def _session(tmp_path: Path, name: str, offset: int) -> Path:
