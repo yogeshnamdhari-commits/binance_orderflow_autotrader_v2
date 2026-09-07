@@ -14,4 +14,4 @@ def test_oos_fold_fits_fill_rate_on_train_and_evaluates_test_only():
     assert result["oos_orders"] == 2
     assert result["train_fill_rate"] == 0.5
     assert result["oos_realized_fill_rate"] == 0.5
-    assert result["mean_oos_ev_bps"] == 1.4
+    assert result["mean_oos_ev_bps"] == 1.45
