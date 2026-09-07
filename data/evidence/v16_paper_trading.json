@@ -1,0 +1,6 @@
+{
+  "experiment": "V16",
+  "paper_trading_enabled": false,
+  "status": "BLOCKED",
+  "reason": "forward_validation PASS \u2014 paper trading next step before production authorization"
+}
