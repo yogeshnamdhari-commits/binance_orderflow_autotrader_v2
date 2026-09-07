@@ -1,0 +1,26 @@
+{
+  "experiment": "V16",
+  "timestamp": "2026-09-07T23:16:41.102863+00:00",
+  "status": "FROZEN",
+  "config_hash": "e07dd90923983920",
+  "data_dir": "data/v16/calibration/24549b716a4d40d49fc9e5a918e16f43",
+  "n_observations": 5876,
+  "return_model": "GradientBoostingRegressor(n=200, depth=4)",
+  "fill_model": "LogisticRegression(C=1.0)",
+  "return_model_checksum": "d4232bda213312f4",
+  "return_model_metrics": {
+    "train_mae": 0.631,
+    "val_mae": 2.578,
+    "test_mae": 1.435,
+    "train_r2": 0.8414,
+    "val_r2": -0.7468,
+    "test_r2": 0.0604
+  },
+  "fill_model_metrics": {
+    "train_auc": 0.6784,
+    "val_auc": 0.6225
+  },
+  "gross_ev_bps": 1.2456,
+  "net_ev_bps": 1.2033,
+  "n_trades_calibration": 357
+}

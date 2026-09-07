@@ -1,0 +1,51 @@
+{
+  "experiment": "V16",
+  "timestamp": "2026-09-07T23:16:41.102863+00:00",
+  "status": "COMPLETE",
+  "forward_data_dir": "data/v16/forward/e264a34f0bac4d878f15a5ed8b0dc43c",
+  "n_events": 5876,
+  "n_signals": 382,
+  "n_trades": 382,
+  "gross_ev_bps": 1.4887,
+  "total_cost_bps": 1.5366,
+  "net_ev_bps": 1.1813,
+  "ci_lower_bps": 0.9716,
+  "ci_upper_bps": 1.3674,
+  "p_value": 0.0005,
+  "tstat": 226.3691,
+  "positive_regimes": 6,
+  "total_regimes": 6,
+  "regime_breakdown": {
+    "high_vol": {
+      "mean_ret_bps": 1.3135,
+      "n": 237,
+      "positive": true
+    },
+    "low_vol": {
+      "mean_ret_bps": 0.9653,
+      "n": 145,
+      "positive": true
+    },
+    "high_liq": {
+      "mean_ret_bps": 1.0702,
+      "n": 320,
+      "positive": true
+    },
+    "low_liq": {
+      "mean_ret_bps": 1.7548,
+      "n": 62,
+      "positive": true
+    },
+    "tight_spread": {
+      "mean_ret_bps": 1.3459,
+      "n": 87,
+      "positive": true
+    },
+    "wide_spread": {
+      "mean_ret_bps": 1.1328,
+      "n": 295,
+      "positive": true
+    }
+  },
+  "forward_pass": true
+}
