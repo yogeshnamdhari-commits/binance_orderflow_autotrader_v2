@@ -1,0 +1,44 @@
+{
+  "experiment": "V15",
+  "regime_tests": [
+    {
+      "regime": "high_vol",
+      "mean_ret_bps": -1.6869,
+      "n": 265,
+      "positive": false
+    },
+    {
+      "regime": "low_vol",
+      "mean_ret_bps": -1.6869,
+      "n": 265,
+      "positive": false
+    },
+    {
+      "regime": "high_liq",
+      "mean_ret_bps": -1.6195,
+      "n": 176,
+      "positive": false
+    },
+    {
+      "regime": "low_liq",
+      "mean_ret_bps": -1.8202,
+      "n": 89,
+      "positive": false
+    },
+    {
+      "regime": "tight_spread",
+      "mean_ret_bps": -1.5787,
+      "n": 145,
+      "positive": false
+    },
+    {
+      "regime": "wide_spread",
+      "mean_ret_bps": -1.8176,
+      "n": 120,
+      "positive": false
+    }
+  ],
+  "positive_regimes": 0,
+  "total_regimes": 6,
+  "status": "FAIL \u2014 0/6 regimes positive"
+}
