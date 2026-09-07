@@ -97,3 +97,8 @@ data/v10_calibration/*/snapshot.json
 data/live/*/*.jsonl
 data/v14/forward_extended/*/events.jsonl
 data/v14/forward_extended/*/snapshot.json
+data/v15/forward/*/snapshot.json
+data/v15/calibration/*/events.jsonl
+data/v15/forward/*/events.jsonl
+data/v15/calibration/*/snapshot.json
+data/v15/forward/*/snapshot.json

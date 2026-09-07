@@ -1,0 +1,19 @@
+{
+  "experiment": "V15",
+  "maker_rebate_bps": -2.0,
+  "taker_fee_bps": 5.0,
+  "slippage_bps": 0.1,
+  "adverse_selection_bps": 0.3,
+  "latency_bps": 0.1,
+  "exit_cost_bps": 3.0,
+  "maker_entry_cost_bps": -1.5,
+  "taker_entry_cost_bps": 5.5,
+  "total_roundtrip_cost_bps_maker": 1.5,
+  "total_roundtrip_cost_bps_taker": 8.5,
+  "observed_total_cost_bps": 1.6057,
+  "v14_comparison": {
+    "v14_total_cost_bps": 3.25,
+    "v15_total_cost_bps": 1.61,
+    "cost_reduction_pct": 50.5
+  }
+}

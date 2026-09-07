@@ -1,30 +1,30 @@
 {
-  "experiment": "V14",
-  "timestamp": "2026-09-07T21:30:00Z",
-  "config_hash": "12e0e1775ee6b46d",
+  "experiment": "V15",
+  "timestamp": "2026-09-08T01:30:00Z",
+  "config_hash": "aa505ca8abe09376",
   "result": "FAIL",
   "production_authorized": false,
   "live_order_submission": false,
   "answers": {
     "1_does_orderflow_contain_predictive_information": {
       "answer": "PARTIAL",
-      "evidence": "V14 AUC=0.666 on 360s forward, but AUC=0.4515 on 900s forward (below random). Signal does not generalize across time periods.",
-      "qualification": "Some short-term ranking power but no stable predictive structure"
+      "evidence": "V15 GBR model predicts return magnitude with train R2=0.82, but val R2=-0.37 (severe overfitting). Signal does not generalize to forward data.",
+      "qualification": "In-sample signal exists but does not generalize"
     },
     "2_does_information_survive_execution_costs": {
       "answer": "NO",
-      "evidence": "V14 net EV=-0.015bps after 3.25bps maker/taker cost (900s forward). Even prob>0.6 signals yield net=-3.27bps across 229 trades.",
-      "qualification": "Gross EV ~0 bps at 10s horizon; cannot cover even reduced costs"
+      "evidence": "V15 forward net EV=-1.69 bps after 1.61 bps maker/taker cost. Gross EV=1.37 bps but costs exceed predicted returns.",
+      "qualification": "Execution-aware router cannot overcome fundamental signal weakness"
     },
     "3_is_edge_statistically_distinguishable_from_zero": {
       "answer": "NO",
-      "evidence": "Permutation p=0.884, 19 trades in 900s forward, mean return ~0.06bps/trade",
-      "qualification": "Edge indistinguishable from zero"
+      "evidence": "Permutation p=0.991, CI [-2.11,-1.02] bps (entirely negative), 265 trades",
+      "qualification": "Edge indistinguishable from zero, actually negative"
     },
     "4_is_edge_robust_across_regimes": {
       "answer": "NO",
-      "evidence": "1/6 regimes positive (900s forward), 4/6 positive (360s forward) \u2014 inconsistent",
-      "qualification": "NOT_STARTED \u2014 insufficient sample size (19 trades)"
+      "evidence": "0/6 regimes positive in forward (high_vol, low_vol, high_liq, low_liq, tight_spread, wide_spread)",
+      "qualification": "No regime shows positive return"
     },
     "5_does_paper_trading_confirm_simulated_economics": {
       "answer": "NOT_APPLICABLE",
@@ -33,30 +33,31 @@
     },
     "6_is_production_authorization_justified": {
       "answer": "NO",
-      "evidence": "forward_validation FAIL, statistical_significance FAIL",
+      "evidence": "forward_validation FAIL, statistical_significance FAIL, 0/6 regimes positive",
       "qualification": "LIVE_ORDER_SUBMISSION hard-disabled"
     }
   },
   "experiments": {
     "V12": "FAIL \u2014 net EV -4.49 bps (taker, 14.52 bps cost)",
     "V13": "FAIL \u2014 AUC 0.72, net EV negative after 14.52 bps cost (2s horizon)",
-    "V14": "FAIL \u2014 AUC 0.45-0.67, net EV ~0 after 3.25 bps maker/taker cost (10s horizon)"
+    "V14": "FAIL \u2014 AUC 0.45-0.67, net EV ~0 after 3.25 bps maker/taker cost (10s horizon)",
+    "V15": "FAIL \u2014 GBR return magnitude, net EV -1.69 bps after 1.61 bps cost, 0/6 regimes positive"
   },
-  "root_cause": "Order-flow signal at tested horizons (500ms, 2s, 10s) has statistical ranking content but zero or negative economic value. BTC price moves at these horizons (std 1.7-2.3 bps) are smaller than execution costs (3.25-14.5 bps). Signal captures direction but not payoff magnitude. Statistical significance (AUC > 0.5) does not imply economic value.",
+  "root_cause": "Order-flow signal at tested horizons (500ms, 2s, 10s) has in-sample statistical content but zero or negative economic value after execution costs. BTC price moves at these horizons (std 1.7-2.3 bps) are smaller than execution costs (1.6-14.5 bps). The GBR model (V15) overfits to calibration data (R2 train=0.82, test=-0.04) and fails to generalize to forward data. Even with execution-aware routing and regime filtering, predicted return magnitudes do not materialize as actual profits.",
   "tests": {
-    "passed": 358,
+    "passed": 381,
     "failed": 3,
     "skipped": 1,
     "regressions": 0,
-    "note": "3 failures are pre-existing V9 issues; 18 new V14 tests added, all pass"
+    "note": "3 failures are pre-existing V9 issues; 10 new V15 tests added, all pass"
   },
   "artifacts": {
-    "frozen_model": "archive/v14/v14_frozen_model.joblib (immutable, checksum-verified)",
-    "calibration_data": "data/v14/calibration/a12385f... (3519 books, 9925 trades, 360s)",
-    "forward_data": "data/v14/forward/414394b... (3521 books, 6233 trades, 360s) + forward_extended/faa90fa... (52038 events, 900s)",
-    "evidence": "data/evidence/v14_*.json (8 files)",
-    "docs": "archive/v14/V14_*_*.md (3 files)",
-    "tests": "tests/v14/test_v14_pipeline.py (18 tests)"
+    "frozen_model": "archive/v15/v15_frozen_model.joblib (immutable, checksum c48e95d537822367)",
+    "calibration_data": "data/v15/calibration/5483f2f... (5866 books, 21374 trades, 600s)",
+    "forward_data": "data/v15/forward/236aab1... (5871 books, 6812 trades, 600s)",
+    "evidence": "data/evidence/v15_*.json (7 files)",
+    "docs": "archive/v15/V15_*_*.md (2 files)",
+    "tests": "tests/v15/test_v15_pipeline.py (10 tests)"
   },
   "next_steps": "None. Production remains LOCKED. No live orders will be submitted.",
   "branch": "v15-autonomous-completion",

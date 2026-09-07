@@ -1,0 +1,64 @@
+{
+  "timestamp": "2026-09-07T16:40:00.318763+00:00",
+  "experiment": "V15",
+  "parent_experiment": "V14",
+  "status": "PRE-REGISTERED",
+  "hypothesis": "A regime-aware execution router that predicts return magnitude (not just direction) and dynamically selects maker vs taker based on predicted net edge vs all-in cost will achieve positive risk-adjusted net executable expectancy on BTCUSDT 10s order-flow data. V14 proved order-flow has ranking information (AUC 0.666) but zero economic value because (a) the model predicted direction not magnitude, and (b) the confidence gate filtered out almost all trades. V15 directly predicts return magnitude and only trades when predicted return exceeds all-in cost + safety margin.",
+  "scientific_basis": [
+    "V14: AUC 0.666 direction ranking, but return calibration bins all negative \u2014 model ranks but cannot predict magnitude",
+    "V14: 10s BTC returns std = 2.26 bps, mean ~0 \u2014 execution cost 3.25 bps exceeds typical return",
+    "V15 directly predicts return magnitude (regression) instead of calibrating from direction bins",
+    "Regime filter (high vol + high liquidity) concentrates trades where order flow has stronger signal",
+    "Maker execution reduces cost floor to 0.25 bps entry; taker only when predicted return > taker cost",
+    "Safety margin: require predicted return > all-in cost + 1.0 bps buffer"
+  ],
+  "architecture": {
+    "features": "10 order-flow features (reuse V14) + 3 regime features (vol, liquidity, spread)",
+    "model": "GradientBoostingRegressor (predicts return magnitude in bps)",
+    "execution_router": "Dynamic maker/taker selection based on predicted return vs cost thresholds",
+    "regime_filter": "Only trade in high-vol (top 50%) AND high-liquidity (top 50%) regimes",
+    "safety_margin_bps": 1.0,
+    "horizons_tested": [
+      2000,
+      5000,
+      10000
+    ],
+    "primary_horizon_ms": 10000
+  },
+  "execution_assumptions": {
+    "maker_rebate_bps": -2.0,
+    "taker_fee_bps": 5.0,
+    "slippage_bps": 0.1,
+    "adverse_selection_bps": 0.3,
+    "latency_bps": 0.1,
+    "exit_cost_bps": 3.0,
+    "maker_fill_probability": 0.75,
+    "safety_margin_bps": 1.0,
+    "total_roundtrip_cost_bps_maker": 1.6,
+    "total_roundtrip_cost_bps_taker": 8.5
+  },
+  "acceptance_thresholds": {
+    "forward_net_ev_bps": "> 0",
+    "ci_95_lower": "> 0",
+    "p_value": "< 0.05",
+    "positive_regimes": ">= 4/6",
+    "min_trades": 50,
+    "gross_ev_per_trade_bps": "> 3.0"
+  },
+  "failure_conditions": [
+    "net_ev <= 0",
+    "CI includes zero",
+    "p >= 0.05",
+    "< 4/6 regimes positive",
+    "< 50 trades in forward",
+    "AUC direction < 0.55 (no ranking power)"
+  ],
+  "data_rules": [
+    "V15 calibration uses ONLY data/v15/calibration/",
+    "V14 data is EXCLUDED from calibration",
+    "Forward capture must start AFTER calibration ends",
+    "Model frozen before any forward data is seen",
+    "No forward-data contamination"
+  ],
+  "config_hash": "aa505ca8abe09376"
+}
