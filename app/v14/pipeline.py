@@ -42,25 +42,39 @@ def _make_feature_target(data_dir: str, horizon_ms: int) -> pd.DataFrame:
 def _bootstrap_ci(returns_bps: np.ndarray, n_boot: int = 10000, block_size: int = 19,
                   alpha: float = 0.05, rng: np.random.Generator | None = None) -> dict:
     rng = rng or np.random.default_rng(42)
-    r = np.asarray(returns_bps)
+    r = np.asarray(returns_bps, dtype=float)
     r = r[~np.isnan(r)]
     if len(r) == 0:
         return {"mean_bps": 0.0, "ci_lower_bps": 0.0, "ci_upper_bps": 0.0, "tstat": 0.0, "p_value": 1.0, "n": 0}
     mean = float(np.mean(r))
-    if len(r) < block_size:
-        block_size = max(1, len(r) // 2)
-    # block bootstrap (time dependence)
-    n_blocks = int(np.ceil(len(r) / block_size))
-    idxs = rng.integers(0, len(r) - block_size + 1, size=(n_boot, n_blocks))
-    block_means = np.array([
-        np.concatenate([r[i:i + block_size] for i in idxs[b]]).mean()
-        for b in range(n_boot)
-    ])
+    n = len(r)
+    if n < 10:
+        bs = max(1, n // 3)
+    elif n < 50:
+        bs = max(1, n // 5)
+    else:
+        bs = min(block_size, n // 4)
+    bs = max(1, bs)
+    n_blocks = max(1, int(np.ceil(n / bs)))
+    if n_blocks > 1 and n - bs + 1 > 0:
+        idxs = rng.integers(0, n - bs + 1, size=(n_boot, n_blocks))
+        block_means = np.array([
+            np.concatenate([r[i:i + bs] for i in idxs[b]]).mean()
+            for b in range(n_boot)
+        ])
+    else:
+        block_means = np.array([rng.choice(r, size=max(1, n // 2), replace=True).mean() for _ in range(n_boot)])
     ci_lower = float(np.percentile(block_means, alpha / 2 * 100))
     ci_upper = float(np.percentile(block_means, (1 - alpha / 2) * 100))
-    sem = float(np.std(block_means, ddof=1) / np.sqrt(n_boot)) if n_boot > 1 else 0.0
-    tstat = mean / sem if sem > 0 else 0.0
-    p_value = float(2 * (1 - 0.5 * (1 + np.sign(abs(tstat)) * 0)))  # placeholder; use scipy below
+    sem_block = float(np.std(block_means, ddof=1))
+    sem = sem_block / np.sqrt(n) if sem_block > 0 and n > 0 else 0.0
+    if sem > 0:
+        from scipy import stats as sp_stats
+        tstat = mean / sem
+        p_value = float(2 * (1 - sp_stats.t.cdf(abs(tstat), df=n - 1)))
+    else:
+        tstat = 0.0
+        p_value = 1.0
     # permutation test
     perm_stats = []
     for _ in range(2000):

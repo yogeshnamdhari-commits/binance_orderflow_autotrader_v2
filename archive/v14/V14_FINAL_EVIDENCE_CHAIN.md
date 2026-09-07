@@ -21,11 +21,18 @@
 - Events: 3519 depthUpdate, 9925 trades, 99902 bookTicker
 - Start: ns 1788785859113448000, End: ns 1788786221312518000
 
-### Forward
+### Forward (initial)
 - Session: `data/v14/forward/414394bfed5140a0894b3d6343c2b7e4`
 - Duration: 360s
 - Events: 3521 depthUpdate, 6233 trades, 82148 bookTicker
 - Start: ns 1788786920131567000, End: ns 1788787281457295000
+
+### Forward (extended)
+- Session: `data/v14/forward_extended/faa90fa70ed44497b1a7118c62c4486c`
+- Duration: 900s (3x the initial forward window for statistical power)
+- Events: 52038 total
+- Start: ns 1788796309302236000, End: ns 1788796549420243000
+- Same frozen V14 model applied to extended forward data
 
 ### Data Integrity Checks
 - **Temporal separation**: Gap of 698.8s between calibration end and forward start → PASS

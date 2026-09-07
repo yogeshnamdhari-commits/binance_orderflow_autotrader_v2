@@ -26,7 +26,7 @@
     },
     "forward_validation": {
       "status": "FAIL",
-      "detail": "net_ev=0.01 ci_lo=-2.55 p=1.0000 regimes=4/6"
+      "detail": "net_ev=-0.02 ci_lo=-2.71 p=0.8836 regimes=1/6"
     },
     "execution_cost_validation": {
       "status": "PASS",
@@ -38,7 +38,7 @@
     },
     "statistical_significance": {
       "status": "FAIL",
-      "detail": "p=1.0000 ci_lo=-2.55"
+      "detail": "p=0.8836 ci_lo=-2.71"
     },
     "paper_trading": {
       "status": "BLOCKED"

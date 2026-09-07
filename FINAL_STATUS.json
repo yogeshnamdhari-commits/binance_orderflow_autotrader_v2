@@ -1,54 +1,64 @@
 {
   "experiment": "V14",
-  "timestamp": "2026-09-07T18:49:00Z",
+  "timestamp": "2026-09-07T21:30:00Z",
+  "config_hash": "12e0e1775ee6b46d",
   "result": "FAIL",
   "production_authorized": false,
   "live_order_submission": false,
   "answers": {
     "1_does_orderflow_contain_predictive_information": {
-      "answer": "YES (weak)",
-      "evidence": "V14 forward AUC = 0.666 (above random 0.5), V13 AUC = 0.72 at 2s — order-flow features can rank price direction",
-      "qualification": "Statistical discrimination exists but does not translate to economic value"
+      "answer": "PARTIAL",
+      "evidence": "V14 AUC=0.666 on 360s forward, but AUC=0.4515 on 900s forward (below random). Signal does not generalize across time periods.",
+      "qualification": "Some short-term ranking power but no stable predictive structure"
     },
     "2_does_information_survive_execution_costs": {
       "answer": "NO",
-      "evidence": "V14 net EV = 0.01 bps after 3.25 bps maker/taker cost (vs 14.52 bps in V13); gross EV = 0.03 bps",
-      "qualification": "Cost reduction from 14.52→3.25 bps was insufficient because gross EV ≈ 0"
+      "evidence": "V14 net EV=-0.015bps after 3.25bps maker/taker cost (900s forward). Even prob>0.6 signals yield net=-3.27bps across 229 trades.",
+      "qualification": "Gross EV ~0 bps at 10s horizon; cannot cover even reduced costs"
     },
     "3_is_edge_statistically_distinguishable_from_zero": {
       "answer": "NO",
-      "evidence": "95% CI = [-2.55, 7.02] bps (includes zero); p-value = 1.0; n_trades = 7",
+      "evidence": "Permutation p=0.884, 19 trades in 900s forward, mean return ~0.06bps/trade",
       "qualification": "Edge indistinguishable from zero"
     },
     "4_is_edge_robust_across_regimes": {
       "answer": "NO",
-      "evidence": "4/6 regimes positive but with n=1-6 trades per regime (CI extremely wide)",
-      "qualification": "Robustness untestable with 7 forward trades; status BLOCKED"
+      "evidence": "1/6 regimes positive (900s forward), 4/6 positive (360s forward) \u2014 inconsistent",
+      "qualification": "NOT_STARTED \u2014 insufficient sample size (19 trades)"
     },
     "5_does_paper_trading_confirm_simulated_economics": {
       "answer": "NOT_APPLICABLE",
-      "evidence": "Paper trading not enabled — forward validation failed",
+      "evidence": "Paper trading BLOCKED \u2014 forward validation failed",
       "qualification": "BLOCKED"
     },
     "6_is_production_authorization_justified": {
       "answer": "NO",
       "evidence": "forward_validation FAIL, statistical_significance FAIL",
-      "qualification": "Live order submission hard-disabled"
+      "qualification": "LIVE_ORDER_SUBMISSION hard-disabled"
     }
   },
   "experiments": {
-    "V12": "FAIL — net EV -4.49 bps (taker execution, 14.5bps cost)",
-    "V13": "FAIL — AUC 0.72 but net EV negative after 14.52 bps cost",
-    "V14": "FAIL — AUC 0.67 at 10s, maker execution 3.25bps cost, net EV 0.01 bps"
+    "V12": "FAIL \u2014 net EV -4.49 bps (taker, 14.52 bps cost)",
+    "V13": "FAIL \u2014 AUC 0.72, net EV negative after 14.52 bps cost (2s horizon)",
+    "V14": "FAIL \u2014 AUC 0.45-0.67, net EV ~0 after 3.25 bps maker/taker cost (10s horizon)"
   },
-  "root_cause": "Order-flow signal captures direction ranking (AUC > 0.5) but predicted return magnitudes do not materialize as actual price moves. Even with 77% cost reduction and higher AUC, gross EV ≈ 0 at all horizons tested (500ms, 2s, 10s). The signal is not economically exploitable.",
-  "next_steps": "None — production remains LOCKED. V15 would require either (a) fundamentally different features/horizons, or (b) a regime-specific approach that is NOT parameter-tuned against forward data.",
-  "experiments_completed": ["V9", "V10", "V11", "V12", "V13", "V14"],
-  "test_suite": {
+  "root_cause": "Order-flow signal at tested horizons (500ms, 2s, 10s) has statistical ranking content but zero or negative economic value. BTC price moves at these horizons (std 1.7-2.3 bps) are smaller than execution costs (3.25-14.5 bps). Signal captures direction but not payoff magnitude. Statistical significance (AUC > 0.5) does not imply economic value.",
+  "tests": {
     "passed": 358,
     "failed": 3,
     "skipped": 1,
     "regressions": 0,
-    "note": "3 failures are pre-existing V9 issues, documented and preserved"
-  }
+    "note": "3 failures are pre-existing V9 issues; 18 new V14 tests added, all pass"
+  },
+  "artifacts": {
+    "frozen_model": "archive/v14/v14_frozen_model.joblib (immutable, checksum-verified)",
+    "calibration_data": "data/v14/calibration/a12385f... (3519 books, 9925 trades, 360s)",
+    "forward_data": "data/v14/forward/414394b... (3521 books, 6233 trades, 360s) + forward_extended/faa90fa... (52038 events, 900s)",
+    "evidence": "data/evidence/v14_*.json (8 files)",
+    "docs": "archive/v14/V14_*_*.md (3 files)",
+    "tests": "tests/v14/test_v14_pipeline.py (18 tests)"
+  },
+  "next_steps": "None. Production remains LOCKED. No live orders will be submitted.",
+  "branch": "v15-autonomous-completion",
+  "github_repo": "yogeshnamdhari-commits/binance_orderflow_autotrader_v2"
 }
