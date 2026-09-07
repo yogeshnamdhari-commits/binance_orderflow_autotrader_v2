@@ -76,3 +76,11 @@ Thumbs.db
 *.pickle
 *.pkl
 *.joblib
+
+# V14/V10 raw capture data — keep local, never commit (large binary market data)
+data/v14/calibration/*/events.jsonl
+data/v14/forward/*/events.jsonl
+data/v14/calibration/*/snapshot.json
+data/v14/forward/*/snapshot.json
+archive/v10/calibration_sessions/*/events.jsonl
+archive/v10/calibration_sessions/*/snapshot.json
