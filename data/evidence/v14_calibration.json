@@ -1,0 +1,123 @@
+{
+  "experiment": "V14",
+  "timestamp": "2026-09-07T13:12:30.417646+00:00",
+  "status": "FROZEN",
+  "config_hash": "12e0e1775ee6b46d",
+  "feature_names": [
+    "book_imbalance_l1",
+    "book_imbalance_l5",
+    "aggressive_trade_imbalance",
+    "microprice_deviation_bps",
+    "depth_pressure",
+    "trade_intensity",
+    "spread_bps",
+    "vol_regime",
+    "signed_vol_imbalance",
+    "liquidity_state"
+  ],
+  "feature_names_hash": "fe40a4d883c8ae9a",
+  "train_data_hash": "dfad00fdd771d75e",
+  "train_data_session": "data/v14/calibration",
+  "model_path": "archive/v14/v14_frozen_model.joblib",
+  "model_checksum": "120fc58494860a5419488d4391a950b6d6180c3b5bddf2817f72c333cac45d76",
+  "model_architecture": "LogisticRegression(C=1.0)",
+  "calibration_metrics": {
+    "train_auc": 0.6987400693745105,
+    "val_auc": 0.535834065969848,
+    "test_auc": 0.34781170572055287,
+    "n_train": 2465,
+    "n_val": 527,
+    "n_test": 527,
+    "n_positive": 810,
+    "n_negative": 1655,
+    "brier": 0.23852570455572583
+  },
+  "baseline_naive_ev_bps": -0.2721459547775268,
+  "baseline_simple_ev_bps": -1.906648878754135,
+  "breakeven_cost_bps": 3.25,
+  "calibration_gross_ev_bps": 0.0026914175016518396,
+  "calibration_net_ev_bps": -0.004699145318132128,
+  "calibration_total_cost_bps": 3.25,
+  "calibration_total_cost_bps_actual": 0.016624040920716114,
+  "n_trades_calibration": 9,
+  "n_observations": 3519,
+  "elapsed_s": 4.93,
+  "return_calibration": {
+    "0.050-0.100": {
+      "mean_ret_bps": -0.6183035847118922,
+      "count": 103
+    },
+    "0.100-0.150": {
+      "mean_ret_bps": -0.6350978550060568,
+      "count": 253
+    },
+    "0.150-0.200": {
+      "mean_ret_bps": -0.5397710188226089,
+      "count": 440
+    },
+    "0.200-0.250": {
+      "mean_ret_bps": -0.19900877536504613,
+      "count": 597
+    },
+    "0.250-0.300": {
+      "mean_ret_bps": -0.5388164443011344,
+      "count": 494
+    },
+    "0.300-0.350": {
+      "mean_ret_bps": -0.17756612811464237,
+      "count": 598
+    },
+    "0.350-0.400": {
+      "mean_ret_bps": -0.4143833326198441,
+      "count": 293
+    },
+    "0.400-0.450": {
+      "mean_ret_bps": -0.0416886969521584,
+      "count": 163
+    },
+    "0.450-0.500": {
+      "mean_ret_bps": 0.26848427014595255,
+      "count": 228
+    },
+    "0.500-0.550": {
+      "mean_ret_bps": 0.3539131086963383,
+      "count": 131
+    },
+    "0.550-0.600": {
+      "mean_ret_bps": -0.25322790932562145,
+      "count": 46
+    },
+    "0.600-0.650": {
+      "mean_ret_bps": 0.6088847655118449,
+      "count": 23
+    },
+    "0.650-0.700": {
+      "mean_ret_bps": 0.13387077014867693,
+      "count": 10
+    },
+    "0.700-0.750": {
+      "mean_ret_bps": -0.7707545247194312,
+      "count": 4
+    },
+    "0.750-0.800": {
+      "mean_ret_bps": -3.9664616929445193,
+      "count": 4
+    },
+    "0.800-0.850": {
+      "mean_ret_bps": 6.333563385647312,
+      "count": 4
+    },
+    "0.850-0.900": {
+      "mean_ret_bps": -3.033496585276265,
+      "count": 1
+    },
+    "0.900-0.950": {
+      "mean_ret_bps": 1.4062612081036,
+      "count": 3
+    },
+    "0.950-1.000": {
+      "mean_ret_bps": 1.2664204205192988,
+      "count": 25
+    }
+  }
+}

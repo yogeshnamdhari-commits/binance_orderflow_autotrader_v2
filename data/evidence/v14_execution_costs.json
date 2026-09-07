@@ -1,0 +1,32 @@
+{
+  "experiment": "V14",
+  "execution_engine": "V14ExecutionSim (maker/taker-aware)",
+  "maker_entry_cost_bps": -0.7,
+  "taker_entry_cost_bps": 5.6,
+  "maker_fill_probability": 0.75,
+  "expected_entry_cost_bps": 0.25,
+  "exit_cost_bps": 3.0,
+  "total_roundtrip_cost_bps": 3.25,
+  "v13_comparison": {
+    "v13_total_cost_bps": 14.52,
+    "v14_total_cost_bps": 3.25,
+    "cost_reduction_bps": 11.27,
+    "cost_reduction_pct": 77.6,
+    "v13_entry_cost_bps": 11.52,
+    "v14_entry_cost_bps": 0.25
+  },
+  "breakeven_analysis": {
+    "breakeven_gross_ev_per_trade_bps": 3.25,
+    "v14_observed_gross_ev_bps": 0.028,
+    "breakeven_signal_edge_bps": 3.25,
+    "observed_signal_edge_bps": 0.028,
+    "breakeven_met": false
+  },
+  "assumptions_verified": {
+    "maker_rebate_claimed": true,
+    "no_automatic_spread_capture": true,
+    "fill_probability_configurable": true,
+    "conservative_slippage": true,
+    "adverse_selection_modeled": true
+  }
+}

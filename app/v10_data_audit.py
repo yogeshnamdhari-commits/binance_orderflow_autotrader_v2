@@ -14,10 +14,14 @@ def audit_session(session_dir: str | Path) -> dict[str, Any]:
     session_dir = Path(session_dir)
     manifest_path = session_dir / "manifest.json"
     events_path = session_dir / "events.jsonl"
+    snapshot_path = session_dir / "snapshot.json"
 
     result: dict[str, Any] = {
         "manifest_present": manifest_path.is_file(),
         "events_present": events_path.is_file(),
+        "snapshot_present": snapshot_path.is_file(),
+        "snapshot_bridge_pass": False,
+        "snapshot_bridge_gap": 0,
         "event_count": 0,
         "malformed_rows": 0,
         "raw_event_parse_errors": 0,
@@ -39,6 +43,14 @@ def audit_session(session_dir: str | Path) -> dict[str, Any]:
     if not manifest_path.is_file() or not events_path.is_file():
         return result
 
+    snapshot_last_update_id: int | None = None
+    if snapshot_path.is_file():
+        try:
+            snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
+            snapshot_last_update_id = int(snapshot.get("lastUpdateId", -1))
+        except (OSError, json.JSONDecodeError, ValueError, TypeError):
+            snapshot_last_update_id = None
+
     try:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         manifest_ok = (
@@ -55,6 +67,7 @@ def audit_session(session_dir: str | Path) -> dict[str, Any]:
     last_event_time: dict[str, int] = {}
     raw_hashes: set[str] = set()
     duplicate_count = 0
+    bridge_checked = False
 
     try:
         lines = events_path.read_text(encoding="utf-8").splitlines()
@@ -121,6 +134,25 @@ def audit_session(session_dir: str | Path) -> dict[str, Any]:
         elif status.state == "MALFORMED":
             result["depth_malformed_count"] += 1
 
+        if snapshot_last_update_id is not None and not bridge_checked:
+            data = event.payload.get("data", event.payload)
+            try:
+                U = int(data["U"])
+                u = int(data["u"])
+                if U <= snapshot_last_update_id + 1 <= u:
+                    result["snapshot_bridge_pass"] = True
+                elif U > snapshot_last_update_id + 1:
+                    result["snapshot_bridge_pass"] = False
+                    result["snapshot_bridge_gap"] = max(
+                        result["snapshot_bridge_gap"], U - snapshot_last_update_id - 1
+                    )
+            except (KeyError, TypeError, ValueError):
+                pass
+            bridge_checked = True
+
+    if snapshot_last_update_id is not None and not bridge_checked:
+        result["snapshot_bridge_pass"] = False
+
     result["duplicate_raw_count"] = duplicate_count
     result["parse_integrity_pass"] = result["malformed_rows"] == 0 and result["raw_event_parse_errors"] == 0
     result["timestamp_monotonicity_pass"] = (
@@ -139,6 +171,7 @@ def audit_session(session_dir: str | Path) -> dict[str, Any]:
             "duplicate_raw_pass",
             "required_metadata_pass",
             "depth_continuity_pass",
+            "snapshot_bridge_pass",
         )
     )
     return result

@@ -1,0 +1,15 @@
+{
+  "timestamp": "2026-09-07T12:04:41.083978+00:00",
+  "git_revision": "19953b6",
+  "software_version": "V13-capture/1.0",
+  "data_source": "Binance Futures public REST + WebSocket",
+  "symbol": "BTCUSDT",
+  "calibration_session": "9484a1232867436594ade32320e8cf3c",
+  "forward_session": "6270a46989f64509b8d85d05c3730233",
+  "temporal_separation": "FORWARD starts after CALIBRATION ends",
+  "calibration_start_ns": 1788781920066176000,
+  "calibration_end_ns": 1788782160765070000,
+  "forward_start_ns": 1788782253990306000,
+  "forward_end_ns": 1788782494858190000,
+  "config_hash": "14dfaab9e88f47bf"
+}

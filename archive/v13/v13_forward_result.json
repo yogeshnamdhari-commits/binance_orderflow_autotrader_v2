@@ -1,0 +1,86 @@
+{
+  "version": "V13",
+  "experiment_id": "V13-20260907",
+  "timestamp": "2026-09-07T12:03:16.048409+00:00",
+  "status": "FAIL",
+  "config_hash": "14dfaab9e88f47bf",
+  "horizon_ms": 2000,
+  "n_orders": 2327,
+  "n_filled": 2210,
+  "mean_net_ev_bps": -5.918885939399179,
+  "std_net_ev_bps": 2.1977557742027383,
+  "gross_ev_bps": -0.15526334000482414,
+  "total_cost_bps": 14.520911027090374,
+  "funding_income_bps": -0.016396197736898967,
+  "ci_95_lower": -6.005860682995429,
+  "ci_95_upper": -5.8292141058572025,
+  "t_stat": -129.8869133728241,
+  "p_value": 1.0,
+  "cohens_d": -2.692571252688292,
+  "perm_pvalue": 1.0,
+  "significant": false,
+  "regimes": {
+    "spread_regime": {
+      "high_spread": {
+        "n": 1238,
+        "mean_net_ev_bps": -6.705116901463272,
+        "positive_rate": 0.0024232633279483036
+      },
+      "low_spread": {
+        "n": 1089,
+        "mean_net_ev_bps": -5.025080676740459,
+        "positive_rate": 0.0009182736455463728
+      }
+    },
+    "vol_regime": {
+      "high_vol": {
+        "n": 1164,
+        "mean_net_ev_bps": -5.579861580312291,
+        "positive_rate": 0.000859106529209622
+      },
+      "low_vol": {
+        "n": 1163,
+        "mean_net_ev_bps": -6.258201806963359,
+        "positive_rate": 0.0025795356835769563
+      }
+    },
+    "time_regime": {
+      "early": {
+        "n": 776,
+        "mean_net_ev_bps": -5.813520255879912,
+        "positive_rate": 0.003865979381443299
+      },
+      "mid": {
+        "n": 775,
+        "mean_net_ev_bps": -5.836406669003465,
+        "positive_rate": 0.0
+      },
+      "late": {
+        "n": 776,
+        "mean_net_ev_bps": -6.106624605594579,
+        "positive_rate": 0.001288659793814433
+      }
+    }
+  },
+  "gate_conditions": {
+    "sufficient_observations": true,
+    "net_ev_positive": false,
+    "statistically_significant": false,
+    "ci_excludes_zero": false,
+    "effect_size_sufficient": true,
+    "permutation_significant": false
+  },
+  "economic_decomposition": {
+    "signal_edge_bps": -0.13886714226792518,
+    "funding_income_bps": -0.016396197736898967,
+    "gross_ev_bps": -0.15526334000482414,
+    "total_cost_bps": 14.520911027090374,
+    "net_ev_bps": -5.918885939399179
+  },
+  "funding": {
+    "n_funding_points": 1,
+    "mean_funding_rate_8h": 3.113e-05
+  },
+  "calibration_val_auc": 0.7201704545454546,
+  "calibration_test_auc": 0.6361851519084224
+}

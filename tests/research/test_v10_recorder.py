@@ -3,11 +3,12 @@ from urllib.parse import parse_qs, urlsplit
 from app.v10_recorder import V10Recorder
 
 
-def test_build_stream_url_requests_microsecond_timestamps():
-    recorder = V10Recorder("BTCUSDT", "/tmp/v10", "wss://fstream.binance.com/stream", ["btcusdt@depth@100ms"])
-    query = parse_qs(urlsplit(recorder.build_stream_url()).query)
-    assert query["timeUnit"] == ["MICROSECOND"]
-    assert query["streams"] == ["btcusdt@depth@100ms"]
+def test_build_stream_url_uses_combined_stream_format():
+    recorder = V10Recorder("BTCUSDT", "/tmp/v10", "wss://fstream.binance.com", ["btcusdt@depth@100ms", "btcusdt@trade"])
+    url = recorder.build_stream_url()
+    assert "/stream?streams=" in url
+    assert "btcusdt@depth@100ms" in url
+    assert "btcusdt@trade" in url
 
 
 def test_handle_message_updates_diagnostics_without_transforming_raw_event(tmp_path):

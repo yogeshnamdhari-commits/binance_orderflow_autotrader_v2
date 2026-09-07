@@ -1,0 +1,10 @@
+{
+  "artifacts": [
+    {
+      "path": "archive/v12/v12_frozen_model.joblib",
+      "sha256": "90ddd4858b78545b3800e14d2c69b6552e20a512fd18f021ddd922952662d767",
+      "immutable": true,
+      "status": "FROZEN"
+    }
+  ]
+}

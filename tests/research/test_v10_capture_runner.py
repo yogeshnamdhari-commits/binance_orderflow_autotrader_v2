@@ -1,15 +1,17 @@
 from pathlib import Path
 
-from app.v10_capture import build_ws_url, parse_duration_seconds
+from app.v10_capture import build_ws_url, parse_duration_seconds, DEFAULT_WS
 
 
-def test_build_ws_url_uses_combined_stream_endpoint_and_microseconds():
+def test_build_ws_url_uses_combined_stream_endpoint():
     url = build_ws_url(
-        "wss://fstream.binance.com/stream",
+        DEFAULT_WS,
         ["btcusdt@depth@100ms", "btcusdt@trade", "btcusdt@bookTicker"],
     )
-    assert "streams=btcusdt%40depth%40100ms%2Fbtcusdt%40trade%2Fbtcusdt%40bookTicker" in url
-    assert "timeUnit=MICROSECOND" in url
+    assert "/stream?streams=" in url
+    assert "btcusdt@depth@100ms" in url
+    assert "btcusdt@trade" in url
+    assert "btcusdt@bookTicker" in url
 
 
 def test_duration_parser_supports_seconds_minutes_hours():

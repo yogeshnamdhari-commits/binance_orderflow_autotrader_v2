@@ -1,0 +1,44 @@
+{
+  "archive_timestamp": "2026-09-05T00:14:08.537872+00:00",
+  "version": "V10",
+  "status": "FAILED_FOR_PRODUCTION",
+  "reason": "Economic assumptions misaligned with BTCUSDT market reality. spread_capture_bps=2.0 not achievable by passive strategy. Actual spread=0.013 bps.",
+  "artifacts": {
+    "frozen_calibration": "archive/v10/v10_frozen_calibration.json",
+    "forward_validation": "archive/v10/v10_forward_validation_result.json",
+    "execution_cost_report": "archive/v10/v10_execution_cost_report.json",
+    "realistic_execution_cost": "archive/v10/v10_realistic_execution_cost_report.json",
+    "regime_report": "archive/v10/v10_regime_report.json",
+    "statistical_robustness": "archive/v10/v10_statistical_robustness_report.json",
+    "evidence_chain": "archive/v10/V10_FINAL_EVIDENCE_CHAIN_REPORT.md",
+    "calibration_sessions": "archive/v10/calibration_sessions/",
+    "forward_session": "archive/v10/a81b222592ed47f3ad4a357b0d0f6845/"
+  },
+  "key_metrics": {
+    "historical_oos_ev_bps": 0.1854,
+    "historical_oos_fill_rate": 0.616,
+    "historical_oos_observations": 1062,
+    "config_spread_capture_bps": 2.0,
+    "config_fee_rebate_bps": 0.5,
+    "actual_market_spread_bps": 0.013,
+    "actual_maker_rebate_bps": -0.02,
+    "realistic_net_ev_bps": -0.406,
+    "config_net_ev_bps": 1.304,
+    "breakeven_spread_capture_bps": 0.57,
+    "forward_observations": 28,
+    "forward_fill_rate": 0.679,
+    "statistical_significance": "NOT_SIGNIFICANT",
+    "permutation_pvalue": 0.789,
+    "bootstrap_ci_95": [
+      -0.0033,
+      0.0174
+    ]
+  },
+  "blockers": [
+    "Original OOS calibration data permanently unavailable",
+    "Calibration temporally AFTER forward session",
+    "Strategy economics fundamentally misaligned with BTCUSDT market",
+    "Net EV negative with realistic execution assumptions",
+    "Statistical significance not achieved"
+  ]
+}

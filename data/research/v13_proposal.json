@@ -1,0 +1,26 @@
+{
+  "timestamp": "2026-09-07T10:55:50Z",
+  "experiment": "V13",
+  "parent": "V12",
+  "status": "PROPOSED \u2014 NOT_EXECUTED",
+  "hypotheses": [
+    "H1: The 500ms prediction horizon is too short for order-flow signal; a 5s\u201330s horizon will show positive gross EV.",
+    "H2: A regime filter (only trade when depth imbalance > 1.5 std AND no major funding event) will improve signal precision.",
+    "H3: A maker/taker-aware policy (submit passive limit posts at the queue, not aggressive market orders) will reduce effective cost below 14.46 bps."
+  ],
+  "planned_changes": [
+    "Extend prediction_horizon_ms from 500ms to 5000ms",
+    "Add regime filter: trade only in low-volatility, adequate-depth windows",
+    "Switch execution from market-sweep to passive queue-placement (maker rebates)",
+    "New calibration dataset: capture fresh 30-min Binance session",
+    "New frozen model with distinct config_hash and model_checksum"
+  ],
+  "data_needed": "New real BTCUSDT capture (30+ min) for calibration; separate 30+ min for forward \u2014 NOT the V12 forward data.",
+  "prohibition": "Under no circumstance will V12 forward data be reused for V13 calibration. V13 model_hash will differ.",
+  "requires": [
+    "New real market data capture",
+    "Fresh calibration",
+    "Independent forward period"
+  ],
+  "estimated_next_steps": "capture_new_data -> calibrate_v13 -> freeze -> forward_validate_v13"
+}

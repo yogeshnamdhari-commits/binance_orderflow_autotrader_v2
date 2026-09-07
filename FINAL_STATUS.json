@@ -1,0 +1,54 @@
+{
+  "experiment": "V14",
+  "timestamp": "2026-09-07T18:49:00Z",
+  "result": "FAIL",
+  "production_authorized": false,
+  "live_order_submission": false,
+  "answers": {
+    "1_does_orderflow_contain_predictive_information": {
+      "answer": "YES (weak)",
+      "evidence": "V14 forward AUC = 0.666 (above random 0.5), V13 AUC = 0.72 at 2s — order-flow features can rank price direction",
+      "qualification": "Statistical discrimination exists but does not translate to economic value"
+    },
+    "2_does_information_survive_execution_costs": {
+      "answer": "NO",
+      "evidence": "V14 net EV = 0.01 bps after 3.25 bps maker/taker cost (vs 14.52 bps in V13); gross EV = 0.03 bps",
+      "qualification": "Cost reduction from 14.52→3.25 bps was insufficient because gross EV ≈ 0"
+    },
+    "3_is_edge_statistically_distinguishable_from_zero": {
+      "answer": "NO",
+      "evidence": "95% CI = [-2.55, 7.02] bps (includes zero); p-value = 1.0; n_trades = 7",
+      "qualification": "Edge indistinguishable from zero"
+    },
+    "4_is_edge_robust_across_regimes": {
+      "answer": "NO",
+      "evidence": "4/6 regimes positive but with n=1-6 trades per regime (CI extremely wide)",
+      "qualification": "Robustness untestable with 7 forward trades; status BLOCKED"
+    },
+    "5_does_paper_trading_confirm_simulated_economics": {
+      "answer": "NOT_APPLICABLE",
+      "evidence": "Paper trading not enabled — forward validation failed",
+      "qualification": "BLOCKED"
+    },
+    "6_is_production_authorization_justified": {
+      "answer": "NO",
+      "evidence": "forward_validation FAIL, statistical_significance FAIL",
+      "qualification": "Live order submission hard-disabled"
+    }
+  },
+  "experiments": {
+    "V12": "FAIL — net EV -4.49 bps (taker execution, 14.5bps cost)",
+    "V13": "FAIL — AUC 0.72 but net EV negative after 14.52 bps cost",
+    "V14": "FAIL — AUC 0.67 at 10s, maker execution 3.25bps cost, net EV 0.01 bps"
+  },
+  "root_cause": "Order-flow signal captures direction ranking (AUC > 0.5) but predicted return magnitudes do not materialize as actual price moves. Even with 77% cost reduction and higher AUC, gross EV ≈ 0 at all horizons tested (500ms, 2s, 10s). The signal is not economically exploitable.",
+  "next_steps": "None — production remains LOCKED. V15 would require either (a) fundamentally different features/horizons, or (b) a regime-specific approach that is NOT parameter-tuned against forward data.",
+  "experiments_completed": ["V9", "V10", "V11", "V12", "V13", "V14"],
+  "test_suite": {
+    "passed": 358,
+    "failed": 3,
+    "skipped": 1,
+    "regressions": 0,
+    "note": "3 failures are pre-existing V9 issues, documented and preserved"
+  }
+}

@@ -40,11 +40,8 @@ class V10Recorder:
         }
 
     def build_stream_url(self) -> str:
-        parts = urlsplit(self.ws_url)
-        query = dict(parse_qsl(parts.query, keep_blank_values=True))
-        query["streams"] = "/".join(self.streams)
-        query["timeUnit"] = "MICROSECOND"
-        return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query), parts.fragment))
+        stream_str = "/".join(self.streams)
+        return f"{self.ws_url}/stream?streams={stream_str}"
 
     def start(self, start_ns: int | None = None) -> Path:
         return self.session.start(start_ns=start_ns)

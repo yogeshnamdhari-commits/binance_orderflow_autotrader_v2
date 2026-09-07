@@ -1,0 +1,85 @@
+{
+  "schema_version": "v10.forward.frozen.v2",
+  "frozen_at": "2026-09-04T18:31:00+00:00",
+  "description": "V10 frozen model package for forward validation. Forward test is BLOCKED pending data availability.",
+  "status": "DATA_UNAVAILABLE",
+  "pipeline_components": {
+    "v10_empirical_adapter": "COMPLETE - load_session_events, load_session_snapshot, build_incremental_book, simulate_passive_orders",
+    "v10_data_audit": "COMPLETE - audit_session with snapshot_bridge_pass and snapshot_bridge_gap",
+    "v10_oos": "COMPLETE - validate_session, evaluate_sessions, SessionValidation, OOSResult",
+    "v10_forward_validator": "COMPLETE - FrozenModelConfig, V10ForwardValidator, run_forward_validation",
+    "v10_forward_pipeline": "COMPLETE - run_forward_pipeline, discover_sessions, get_forward_sessions"
+  },
+  "oosp_validation_reference": {
+    "gate": "PASS",
+    "folds": 10,
+    "total_oos_observations": 1062,
+    "positive_folds": "10/10",
+    "weighted_mean_ev_bps": 0.1854,
+    "ci_low_bps": 0.1310,
+    "ci_high_bps": 0.2385,
+    "t_test_p": 0.0000849,
+    "wilcoxon_p": 0.001953,
+    "max_fold_share": 0.1657,
+    "note": "OOS result from prior session - V10 sessions not currently available in this workspace"
+  },
+  "oos_sessions_reference": [
+    {"session_id": "2cfa591f0f2e4f65a76cccffcd910882", "start_ns": 1788378083815249000, "mid_price": 77173, "fill_rate": 0.0, "n_obs": 48},
+    {"session_id": "9611cb84d6844ba5ab22495b9b7a1bad", "start_ns": 1788378903746172000, "mid_price": 77133, "fill_rate": 0.167, "n_obs": 48},
+    {"session_id": "30eeb5fd6fd1425fad2091298f0eacd5", "start_ns": 1788389100247261000, "mid_price": 77050, "fill_rate": 0.146, "n_obs": 48},
+    {"session_id": "8412eaecf28c455380239df135409d66", "start_ns": 1788389252905986000, "mid_price": 77034, "fill_rate": 0.083, "n_obs": 48},
+    {"session_id": "bc5fe2f225e846a697eaedec128d80bf", "start_ns": 1788389978455581000, "mid_price": 76999, "fill_rate": 0.142, "n_obs": 176},
+    {"session_id": "e4ab9b7d472f40b9b2da10bb7b15c424", "start_ns": 1788390092230101000, "mid_price": 77000, "fill_rate": 0.121, "n_obs": 174},
+    {"session_id": "afa346b1b2554151b2589bec7b36e60a", "start_ns": 1788390571427818000, "mid_price": 77180, "fill_rate": 0.110, "n_obs": 118},
+    {"session_id": "4fcd4683d05d467ba2aeb3169274cde7", "start_ns": 1788390973010133000, "mid_price": 77155, "fill_rate": 0.046, "n_obs": 108},
+    {"session_id": "ce6a89a93caa41d3a9339fb4f9f23739", "start_ns": 1788391072808112000, "mid_price": 77117, "fill_rate": 0.194, "n_obs": 108},
+    {"session_id": "f43bbb40c0904713be01cf8741e6c973", "start_ns": 1788395180213292000, "mid_price": 77040, "fill_rate": 0.119, "n_obs": 118},
+    {"session_id": "ca63035637e34c408e20f420c9c09522", "start_ns": 1788395843660664000, "mid_price": 76999, "fill_rate": 0.250, "n_obs": 116}
+  ],
+  "data_availability": {
+    "v10_capture_sessions": "NOT FOUND - data/v10/ does not exist in current workspace",
+    "forward_test_data": "NOT FOUND - no sessions with start_ns > 1788395843660664000",
+    "workspace_audit_time": "2026-09-04T18:31:00+00:00",
+    "sessions_discovered": 0
+  },
+  "forward_test_status": "BLOCKED",
+  "blocking_reason": "V10 capture sessions are not available. Cannot run independent forward validation without genuinely unseen Binance order-flow data.",
+  "required_to_proceed": [
+    "Collect new V10 Binance capture sessions using app.v10_capture.run_capture()",
+    "Sessions must have start_ns > 1788395843660664000 (after last OOS session)",
+    "Each session must contain: manifest.json, events.jsonl, snapshot.json",
+    "Sessions must pass capture integrity audit (snapshot_bridge_pass, depth_continuity_pass)",
+    "Sessions must be provably independent of OOS training/test data (no temporal overlap)"
+  ],
+  "frozen_config": {
+    "bins": [0.0, 0.01, 0.05, 0.1, 0.25, 0.5, 1.0, "inf"],
+    "survival_horizon_ms": 1000.0,
+    "spread_capture_bps": 2.0,
+    "fee_rebate_bps": 0.5,
+    "inventory_cost_bps": 0.2,
+    "exit_cost_bps": 0.3,
+    "cancellation_cost_bps": 0.05,
+    "order_quantity_btc": 0.01,
+    "decision_every_n": 10,
+    "horizon_ms": 1000
+  },
+  "forward_metrics_to_record": [
+    "predicted_fill_probability",
+    "actual_fill_fraction",
+    "expected_ev_bps",
+    "realized_ev_bps",
+    "spread_at_decision_bps",
+    "slippage_bps",
+    "execution_latency_ms",
+    "fees_bps",
+    "adverse_selection_bps",
+    "calibration_drift_fill",
+    "calibration_drift_ev",
+    "regime_performance"
+  ],
+  "test_suite": {
+    "total_research_tests": 68,
+    "forward_validator_tests": 10,
+    "status": "ALL PASSING"
+  }
+}

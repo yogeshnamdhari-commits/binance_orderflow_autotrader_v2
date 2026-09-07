@@ -1,0 +1,56 @@
+{
+  "experiment": "V14",
+  "timestamp": "2026-09-07T13:22:40.931722+00:00",
+  "status": "COMPLETE",
+  "forward_data_dir": "data/v14/forward",
+  "n_events": 1162,
+  "n_signals": 7,
+  "n_trades": 7,
+  "auc": 0.6659774012995003,
+  "gross_ev_bps": 0.028335574014063232,
+  "fees_bps": 0.030120481927710843,
+  "maker_rebate_bps": -0.009036144578313253,
+  "spread_cost_bps": 1.1248421606873924,
+  "slippage_cost_bps": 0.2,
+  "adverse_selection_bps": 0.6,
+  "latency_cost_bps": 0.2,
+  "total_cost_bps": 3.25,
+  "net_ev_bps": 0.0115397083809883,
+  "ci_lower_bps": -2.5535410696062137,
+  "ci_upper_bps": 7.019408213048686,
+  "p_value": 1.0,
+  "tstat": 56.4714428966391,
+  "n_traded": 6,
+  "regime_breakdown": {
+    "high_vol": {
+      "mean_ret_bps": 2.713338213065513,
+      "n": 5,
+      "positive": true
+    },
+    "low_vol": {
+      "mean_ret_bps": -0.16908963500014806,
+      "n": 1,
+      "positive": false
+    },
+    "high_spread": {
+      "mean_ret_bps": 2.232933571721236,
+      "n": 6,
+      "positive": true
+    },
+    "high_intensity": {
+      "mean_ret_bps": 1.7398672184030473,
+      "n": 3,
+      "positive": true
+    },
+    "low_intensity": {
+      "mean_ret_bps": 2.7259999250394245,
+      "n": 3,
+      "positive": true
+    }
+  },
+  "positive_regimes": 4,
+  "total_regimes": 6,
+  "elapsed_s": 1.14,
+  "breakeven_cost_bps": 3.25,
+  "forward_pass": false
+}

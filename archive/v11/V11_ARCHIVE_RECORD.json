@@ -1,0 +1,43 @@
+{
+  "archive_timestamp": "2026-09-05T03:55:00+00:00",
+  "version": "V11",
+  "status": "FAILED_FOR_PRODUCTION",
+  "reason": "Gradient-boosted order-flow signal produces negative gross EV in forward data. Model overfits to calibration noise. Net EV negative after taker execution costs.",
+  "artifacts": {
+    "pre_registered_protocol": "archive/v11/V11_PRE_REGISTERED_PROTOCOL.md",
+    "calibration_artifact": "archive/v11/v11_calibration_artifact.json",
+    "frozen_model": "archive/v11/v11_frozen_model.joblib",
+    "forward_validation": "archive/v11/v11_forward_result.json",
+    "calibration_sessions": "data/v11_calibration/",
+    "forward_sessions": "data/v11_forward/"
+  },
+  "key_metrics": {
+    "calibration_observations": 2298,
+    "forward_observations": 1159,
+    "train_auc": 0.6669,
+    "val_auc": 0.6148,
+    "test_auc": 0.5974,
+    "forward_gross_ev_bps": -0.5388,
+    "forward_net_ev_bps": -1.7116,
+    "total_cost_bps": 1.0526,
+    "fill_probability": 0.172,
+    "breakeven_return_bps": 35.47,
+    "actual_market_spread_bps": 0.013,
+    "taker_fee_bps": 5.0,
+    "statistical_significance": "NOT_SIGNIFICANT",
+    "permutation_pvalue": 1.0,
+    "bootstrap_ci_95": [
+      -1.9288,
+      -1.4951
+    ],
+    "cohens_d": -0.4492
+  },
+  "blockers": [
+    "Gross EV negative in forward data (-0.5388 bps)",
+    "Net EV negative after execution costs (-1.7116 bps)",
+    "Model predictions negatively correlated with actual returns (r=-0.0424)",
+    "Return calibration bins unstable across calibration/forward",
+    "Breakeven return (35.47 bps) far exceeds model capability",
+    "Statistical significance not achieved (p=1.0, CI excludes positive)"
+  ]
+}

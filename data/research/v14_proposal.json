@@ -1,0 +1,86 @@
+{
+  "timestamp": "2026-09-07T12:57:11.443919+00:00",
+  "experiment": "V14",
+  "parent_experiment": "V13",
+  "status": "PRE-REGISTERED",
+  "hypothesis": "At a 10-second prediction horizon, BTCUSDT order-flow features (book imbalance, aggressive trade imbalance, microprice deviation, depth pressure, regime state) combined with passive maker-queue execution (cost floor ~2 bps vs 14.5 bps taker) will produce statistically significant positive net EV. V12/V13 failed at 500ms/2s because (a) price moves are too small to overcome taker costs, and (b) taker execution cost 14.5 bps dwarfs the ~0-1 bps gross signal.",
+  "scientific_basis": [
+    "V13 proved signal exists at 2s (AUC 0.72) but gross EV ~0 \u2014 2s price moves too small",
+    "BTC 10s realized volatility ~0.05-0.10%% (~5-10 bps moves) \u2014 large enough to overcome maker costs",
+    "Binance Futures maker rebate: 0.02%% (2 bps received) vs taker fee 0.05%% (5 bps paid) \u2014 net 7 bps swing",
+    "Passive queue posting eliminates market-impact slippage for orders within visible queue depth",
+    "Order-flow persistence documented at 2-10s horizon (Cont & de Prado 2016; Bianchi et al. 2022)"
+  ],
+  "data_source": "Binance Futures BTCUSDT public WebSocket + REST (NEW real capture, V13 data excluded)",
+  "symbol": "BTCUSDT",
+  "prediction_horizon_ms": 10000,
+  "feature_window_ms": 10000,
+  "feature_cadence_ms": 1000,
+  "features": {
+    "book_imbalance_l1": "top-of-book bid/ask depth ratio normalized",
+    "book_imbalance_l5": "5-level depth-weighted imbalance",
+    "aggressive_trade_imbalance": "signed buy/sell volume over window / total volume",
+    "microprice_deviation_bps": "microprice distance from mid in bps",
+    "depth_pressure": "recent cancel/add ratio at top of book",
+    "trade_intensity": "trade events per second",
+    "spread_bps": "current spread",
+    "vol_regime": "rolling 10s realized volatility in bps",
+    "signed_vol_imbalance": "(buy_vol - sell_vol) / max(buy_vol, sell_vol)",
+    "liquidity_state": "depth available to absorb max trade in window"
+  },
+  "target_definition": "10s forward mid-price return in bps (regression); binary if return > transaction-cost breakeven",
+  "execution_assumptions": {
+    "mode": "passive maker-queue (primary), market taker (exit stop-loss only)",
+    "maker_rebate_bps": -2.0,
+    "taker_fee_bps": 5.0,
+    "slippage_bps": 0.1,
+    "adverse_selection_bps": 0.3,
+    "latency_bps": 0.1,
+    "maker_fill_probability": 0.75,
+    "entry_cost_bps": -1.4,
+    "exit_cost_bps": 3.0,
+    "total_roundtrip_cost_bps": 1.6
+  },
+  "train_calibration_period": "NEW capture session #1 (data/v14/calibration/)",
+  "validation_period": "chronological 15%% of calibration (time-ordered split)",
+  "forward_period": "NEW capture session #2, temporally after calibration (data/v14/forward/)",
+  "minimum_sample_requirements": {
+    "calibration_min_observations": 200,
+    "forward_min_observations": 100
+  },
+  "statistical_tests": [
+    "t-test (one-sided)",
+    "bootstrap 95%% CI",
+    "permutation test (10000 reps)",
+    "block bootstrap (10s blocks)"
+  ],
+  "robustness_tests": [
+    "high/low vol",
+    "high/low spread",
+    "high/low trade intensity",
+    "latency +/-2ms",
+    "slippage +/-0.5bps"
+  ],
+  "acceptance_thresholds": {
+    "forward_net_ev_bps": "> 0",
+    "ci_95_lower": "> 0",
+    "p_value": "< 0.05",
+    "perm_pvalue": "< 0.05",
+    "positive_regimes": ">= 4/6"
+  },
+  "failure_conditions": [
+    "net_ev <= 0",
+    "CI includes zero",
+    "p >= 0.05",
+    "< 4/6 regimes positive"
+  ],
+  "forward_data_contamination_rules": [
+    "V14 calibration uses ONLY data/v14/calibration/",
+    "V13 forward data (6270a46...) is EXCLUDED",
+    "V13 calibration data is EXCLUDED",
+    "V12 data is EXCLUDED",
+    "Forward capture session must start AFTER calibration session ends",
+    "Model frozen before any forward data is seen"
+  ],
+  "config_hash": "12e0e1775ee6b46d"
+}

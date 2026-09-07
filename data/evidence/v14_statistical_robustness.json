@@ -1,0 +1,17 @@
+{
+  "experiment": "V14",
+  "test": "block_bootstrap_95_ci",
+  "n_trades": 7,
+  "block_size_s": 10,
+  "n_bootstrap": 5000,
+  "mean_net_ev_bps": 0.0115,
+  "ci_lower_bps": -2.5535,
+  "ci_upper_bps": 7.0194,
+  "ci_includes_zero": true,
+  "tstat": 0.0256,
+  "p_value": 1.0,
+  "interpretation": "The 95% confidence interval [-2.55, 7.02] includes zero. The observed net EV of 0.01 bps is NOT statistically distinguishable from zero. The p-value of 1.0 confirms no detectable edge.",
+  "effective_sample_size_note": "With only 7 trades, the effective sample size for block bootstrap is extremely low. Any positive point estimate is indistinguishable from noise.",
+  "multiple_testing_note": "10 tests were evaluated (model + 4 feature groups + execution). Bonferroni correction would require p < 0.005. No comparison is significant.",
+  "conclusion": "FAIL — edge is not statistically distinguishable from zero after costs"
+}

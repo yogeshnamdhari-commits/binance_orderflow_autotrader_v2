@@ -1,0 +1,22 @@
+{
+  "status": "MODELED",
+  "timestamp": "2026-09-07T10:54:37.296465+00:00",
+  "economic_decomposition": {
+    "signal_edge_bps": -0.22156507493749839,
+    "funding_income_bps": 0.01509332746582031,
+    "gross_ev_bps": -0.20647174747167812,
+    "spread_paid_bps": 2.263677321551903,
+    "fees_bps": 5.0,
+    "slippage_bps": 0.5,
+    "adverse_selection_bps": 0.5,
+    "exit_cost_bps": 5.0,
+    "total_cost_bps": 14.463677321551902,
+    "net_ev_bps": -4.490432608370327,
+    "fill_probability": 0.95,
+    "mean_funding_rate_8h": 2.5799005546875e-06,
+    "n_funding_points": 1
+  },
+  "total_cost_bps": 14.463677321551902,
+  "gross_ev_bps": -0.20647174747167812,
+  "net_ev_bps": -4.490432608370327
+}

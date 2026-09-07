@@ -1,0 +1,89 @@
+{
+  "version": "V12",
+  "timestamp": "2026-09-07T10:53:43.242544+00:00",
+  "status": "FAIL",
+  "n_orders": 576,
+  "n_filled": 547,
+  "mean_net_ev_bps": -4.490432608370327,
+  "std_net_ev_bps": 3.796666271087337,
+  "gross_ev_bps": -0.20647174747167812,
+  "total_cost_bps": 14.463677321551902,
+  "funding_income_bps": 0.01509332746582031,
+  "ci_95_lower": -4.808173254479827,
+  "ci_95_upper": -4.183850911819468,
+  "t_stat": -28.36087862203149,
+  "p_value": 1.0,
+  "cohens_d": -1.1817032759179786,
+  "perm_pvalue": 1.0,
+  "significant": false,
+  "regimes": {
+    "spread_regime": {
+      "high_spread": {
+        "n": 384,
+        "mean_net_ev_bps": -5.441817829959745,
+        "positive_rate": 0.0
+      },
+      "low_spread": {
+        "n": 192,
+        "mean_net_ev_bps": -2.5876621651914897,
+        "positive_rate": 0.0
+      }
+    },
+    "vol_regime": {
+      "high_vol": {
+        "n": 288,
+        "mean_net_ev_bps": -5.114806989883625,
+        "positive_rate": 0.0
+      },
+      "low_vol": {
+        "n": 288,
+        "mean_net_ev_bps": -3.866058226857029,
+        "positive_rate": 0.0
+      }
+    },
+    "time_regime": {
+      "early": {
+        "n": 192,
+        "mean_net_ev_bps": -3.809801923889332,
+        "positive_rate": 0.0
+      },
+      "mid": {
+        "n": 192,
+        "mean_net_ev_bps": -4.911105678603536,
+        "positive_rate": 0.0
+      },
+      "late": {
+        "n": 192,
+        "mean_net_ev_bps": -4.750390222618111,
+        "positive_rate": 0.0
+      }
+    }
+  },
+  "gate_conditions": {
+    "sufficient_observations": true,
+    "net_ev_positive": false,
+    "statistically_significant": false,
+    "ci_excludes_zero": false,
+    "effect_size_sufficient": true,
+    "permutation_significant": false
+  },
+  "economic_decomposition": {
+    "signal_edge_bps": -0.22156507493749839,
+    "funding_income_bps": 0.01509332746582031,
+    "gross_ev_bps": -0.20647174747167812,
+    "spread_paid_bps": 2.263677321551903,
+    "fees_bps": 5.0,
+    "slippage_bps": 0.5,
+    "adverse_selection_bps": 0.5,
+    "exit_cost_bps": 5.0,
+    "total_cost_bps": 14.463677321551902,
+    "net_ev_bps": -4.490432608370327,
+    "fill_probability": 0.95,
+    "mean_funding_rate_8h": 2.5799005546875e-06,
+    "n_funding_points": 1
+  },
+  "funding": {
+    "n_funding_points": 1,
+    "mean_funding_rate_8h": 2.5799005546875e-06
+  }
+}

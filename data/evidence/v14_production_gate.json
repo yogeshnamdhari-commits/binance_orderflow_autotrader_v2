@@ -1,0 +1,60 @@
+{
+  "experiment": "V14",
+  "gate_status": "FAIL",
+  "production_authorized": false,
+  "live_order_submission": false,
+  "checks": {
+    "calibration_data_present": {
+      "status": "PASS"
+    },
+    "forward_data_present": {
+      "status": "PASS"
+    },
+    "forward_temporal_separation": {
+      "status": "PASS",
+      "detail": "cal_end=1788786221312518000 < fwd_start=1788786920131567000"
+    },
+    "frozen_artifact_exists": {
+      "status": "PASS"
+    },
+    "frozen_artifact_integrity": {
+      "status": "PASS",
+      "detail": "model=120fc58494860a54... stored=120fc58494860a5419488d4391a950b6d6180c3b5bddf2817f72c333cac45d76"
+    },
+    "frozen_artifact_immutable": {
+      "status": "PASS"
+    },
+    "forward_validation": {
+      "status": "FAIL",
+      "detail": "net_ev=0.01 ci_lo=-2.55 p=1.0000 regimes=4/6"
+    },
+    "execution_cost_validation": {
+      "status": "PASS",
+      "detail": "total_cost=3.25 bps (< 5.0 required)"
+    },
+    "robustness": {
+      "status": "BLOCKED",
+      "reason": "not implemented for V14"
+    },
+    "statistical_significance": {
+      "status": "FAIL",
+      "detail": "p=1.0000 ci_lo=-2.55"
+    },
+    "paper_trading": {
+      "status": "BLOCKED"
+    },
+    "risk_controls": {
+      "status": "PASS"
+    },
+    "config_integrity": {
+      "status": "PASS",
+      "detail": "12e0e1775ee6b46d"
+    },
+    "live_order_submission": {
+      "status": "FAIL",
+      "hard_disabled": true,
+      "reason": "always disabled during research/paper validation"
+    }
+  },
+  "config_hash": "12e0e1775ee6b46d"
+}

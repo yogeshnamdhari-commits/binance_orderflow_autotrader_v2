@@ -1,0 +1,83 @@
+{
+  "version": "V12",
+  "timestamp": "2026-09-07T10:53:41.187871+00:00",
+  "status": "CALIBRATED",
+  "protocol": {
+    "horizon_ms": 500,
+    "taker_fee_bps": 5.0,
+    "maker_fee_bps": 2.0,
+    "slippage_bps": 0.5,
+    "adverse_selection_bps": 0.5,
+    "latency_bps": 0.1,
+    "exit_cost_bps": 5.0,
+    "funding_threshold_bps": 5.0,
+    "min_observations_calibration": 100,
+    "min_observations_forward": 100,
+    "alpha": 0.05,
+    "min_effect_size": 0.2,
+    "model": "LogisticRegression",
+    "features": [
+      "ofi_l1",
+      "ofi_norm_l1",
+      "qi_l1",
+      "di_l5",
+      "di_l10",
+      "mpd_bps",
+      "spread_bps",
+      "bid_cancel_bps",
+      "ask_add_bps",
+      "cancel_pressure",
+      "tfi_500",
+      "liq_depletion",
+      "log_depth1",
+      "log_depth5",
+      "log_event_rate",
+      "depth_slope_bps",
+      "vol_500"
+    ]
+  },
+  "config_hash": "245e936752e5923f",
+  "sessions": {
+    "51be6aeca0b2491fbb7a9255e07696f5": {
+      "checksum": "4420580b603207f2"
+    },
+    "a81b222592ed47f3ad4a357b0d0f6845": {
+      "checksum": "81a3a364f56adad0"
+    }
+  },
+  "n_sessions": 2,
+  "n_observations": 325,
+  "metrics": {
+    "train_auc": 0.7676865792455885,
+    "val_auc": 0.5014245014245015,
+    "test_auc": 0.2619047619047619,
+    "n_train": 229,
+    "n_val": 48,
+    "n_test": 48,
+    "n_positive": 102,
+    "n_negative": 223,
+    "brier": 0.33369492751070423,
+    "return_bins": 19
+  },
+  "model_path": "archive/v12/v12_frozen_model.joblib",
+  "model_checksum": "90ddd4858b78545b3800e14d2c69b6552e20a512fd18f021ddd922952662d767",
+  "feature_names": [
+    "ofi_l1",
+    "ofi_norm_l1",
+    "qi_l1",
+    "di_l5",
+    "di_l10",
+    "mpd_bps",
+    "spread_bps",
+    "bid_cancel_bps",
+    "ask_add_bps",
+    "cancel_pressure",
+    "tfi_500",
+    "liq_depletion",
+    "log_depth1",
+    "log_depth5",
+    "log_event_rate",
+    "depth_slope_bps",
+    "vol_500"
+  ]
+}

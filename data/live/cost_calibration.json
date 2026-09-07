@@ -1,0 +1,97 @@
+{
+  "n_samples": 1765,
+  "window_seconds": 1797.2,
+  "ts_start": 1787163380606,
+  "ts_end": 1787165177793,
+  "spread": {
+    "mean_bps": 0.015,
+    "median_bps": 0.0146,
+    "p90_bps": 0.0147,
+    "p99_bps": 0.0147,
+    "max_bps": 0.6738,
+    "pct_spread_le_1_0": 100.0,
+    "pct_spread_le_1_5": 100.0,
+    "pct_spread_le_1_9": 100.0,
+    "pct_spread_le_2_1": 100.0,
+    "pct_spread_le_2_3": 100.0
+  },
+  "depth": {
+    "bb_qty_usd_mean": 6.72,
+    "bb_qty_usd_median": 5.09,
+    "ba_qty_usd_mean": 9.5,
+    "ba_qty_usd_median": 4.65,
+    "bid_depth5_btc_mean": 7.3385586,
+    "ask_depth5_btc_mean": 11.6024244,
+    "imb5_mean": 0.005151
+  },
+  "slip": {
+    "1000": {
+      "buy_median_bps": 0.0073,
+      "buy_p90_bps": 0.0073,
+      "sell_median_bps": -0.0073,
+      "sell_p90_bps": -0.0073,
+      "pct_depth_insufficient": 0.11
+    },
+    "5000": {
+      "buy_median_bps": 0.0073,
+      "buy_p90_bps": 0.0073,
+      "sell_median_bps": -0.0073,
+      "sell_p90_bps": -0.0073,
+      "pct_depth_insufficient": 0.28
+    },
+    "10000": {
+      "buy_median_bps": 0.0073,
+      "buy_p90_bps": 0.0073,
+      "sell_median_bps": -0.0073,
+      "sell_p90_bps": -0.0073,
+      "pct_depth_insufficient": 0.68
+    },
+    "25000": {
+      "buy_median_bps": 0.0073,
+      "buy_p90_bps": 0.0073,
+      "sell_median_bps": -0.0073,
+      "sell_p90_bps": -0.0073,
+      "pct_depth_insufficient": 2.27
+    },
+    "50000": {
+      "buy_median_bps": 0.0073,
+      "buy_p90_bps": 0.0073,
+      "sell_median_bps": -0.0073,
+      "sell_p90_bps": -0.0073,
+      "pct_depth_insufficient": 4.02
+    }
+  },
+  "effective_roundtrip_taker": {
+    "1000": {
+      "taker_rt_median_bps": 4.0146,
+      "taker_rt_p90_bps": 4.0146,
+      "pct_rt_le_delta_breakeven": 0.0
+    },
+    "5000": {
+      "taker_rt_median_bps": 4.0146,
+      "taker_rt_p90_bps": 4.0146,
+      "pct_rt_le_delta_breakeven": 0.0
+    },
+    "10000": {
+      "taker_rt_median_bps": 4.0146,
+      "taker_rt_p90_bps": 4.0146,
+      "pct_rt_le_delta_breakeven": 0.0
+    },
+    "25000": {
+      "taker_rt_median_bps": 4.0146,
+      "taker_rt_p90_bps": 4.0146,
+      "pct_rt_le_delta_breakeven": 0.0
+    },
+    "50000": {
+      "taker_rt_median_bps": 4.0146,
+      "taker_rt_p90_bps": 4.0146,
+      "pct_rt_le_delta_breakeven": 0.0
+    }
+  },
+  "maker": {
+    "fee_rt_mean_bps": 2.0,
+    "fee_rt_vip10_bnb_bps": 1.6,
+    "fill_probe": "not directly measurable from public depth-only feed; needs order-level execution log"
+  },
+  "delta_breakeven_bps": 2.0
+}

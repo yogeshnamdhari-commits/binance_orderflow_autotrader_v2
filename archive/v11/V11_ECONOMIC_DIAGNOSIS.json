@@ -1,0 +1,46 @@
+{
+  "timestamp": "2026-09-05T03:55:00+00:00",
+  "version": "V11",
+  "status": "FAILED_FOR_PRODUCTION",
+  "root_cause": "Gradient-boosted model overfits to calibration noise; predictions are unstable and negatively correlated with actual returns in forward data. Economic mechanism (confidence-thresholded taker execution) fails because signal magnitude is negative and far below breakeven.",
+  "assumption_errors": {
+    "signal_stability": {
+      "calibration_mean_predicted_return_bps": -0.1345,
+      "forward_mean_predicted_return_bps": 0.1647,
+      "ratio": "direction flipped",
+      "impact": "Model predictions are temporally unstable"
+    },
+    "prediction_accuracy": {
+      "calibration_auc": 0.5974,
+      "forward_correlation": -0.0424,
+      "impact": "Signal has no predictive power in forward data"
+    },
+    "return_calibration": {
+      "bin_stability": "unstable",
+      "outlier_bin_8": 24.4571,
+      "outlier_bin_9": -8.3419,
+      "impact": "Return calibration overfit to calibration sample"
+    },
+    "breakeven_gap": {
+      "model_predicted_return_bps": 0.1647,
+      "breakeven_return_bps": 35.47,
+      "ratio": "215x below breakeven",
+      "impact": "Signal magnitude insufficient to cover execution costs"
+    }
+  },
+  "economic_decomposition": {
+    "forward_gross_ev_bps": -0.5388,
+    "forward_total_cost_bps": 1.0526,
+    "forward_net_ev_bps": -1.7116,
+    "fill_probability": 0.172,
+    "breakeven_return_bps": 35.47,
+    "taker_fee_bps": 5.0,
+    "actual_spread_bps": 0.013
+  },
+  "viability_options": [
+    "Accept that BTCUSDT order-flow signal is economically insufficient",
+    "Research alternative data sources (cross-venue, liquidations, open interest)",
+    "Research longer horizons where moves exceed taker costs",
+    "Accept NO_DEPLOYABLE_EDGE conclusion from prior research"
+  ]
+}

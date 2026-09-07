@@ -1,0 +1,27 @@
+{
+  "timestamp": "2026-09-07T12:05:01.706132+00:00",
+  "experiment": "V13",
+  "parent_experiment": "V12",
+  "outcome": "FAIL",
+  "failure_class": "A partial success / Model economic-value failure",
+  "summary": "V13 improved statistical discrimination (Val AUC 0.72 vs V12 0.50) by using a 2s horizon + order-flow persistence features. However, gross EV remained ~0 (-0.16 bps), so the signal ranks returns correctly but has NO economic value after costs (-5.92 bps net).",
+  "evidence": {
+    "calibration_val_auc": 0.7201704545454546,
+    "calibration_test_auc": 0.6361851519084224,
+    "forward_mean_net_ev_bps": -5.918885939399179,
+    "forward_gross_ev_bps": -0.15526334000482414,
+    "total_cost_bps": 14.520911027090374,
+    "signal_edge_bps": -0.13886714226792518,
+    "positive_regimes": 0,
+    "p_value": 1.0
+  },
+  "dominant_mechanism": "Statistical-discrimination \u2260 economic-value. The V13 model achieves AUC 0.72 on held-out calibration data, but predicted return magnitudes (binned calibration) are near-zero. Even when the model correctly ranks a trade as favorable, the expected return magnitude (~0 bps) is far below the 14.52 bps execution-cost barrier. The 2s holding period is too short for order-flow persistence to generate enough edge to overcome Binance taker fees + slippage.",
+  "eliminated_alternatives": [
+    "NOT overfitting: train AUC (0.715) \u2248 val AUC (0.720); gap is modest",
+    "NOT a data integrity issue: forward data is temporally separated from calibration",
+    "NOT a leakage issue: chronological split, no future features",
+    "NOT an execution-cost inflation: 14.52 bps matches Binance fees + realistic slippage"
+  ],
+  "can_be_corrected_without_oos_contamination": "NO \u2014 forward result reflects genuine lack of economic value. Requires V14 with new hypothesis.",
+  "action": "LOCK V13 result. Propose V14."
+}

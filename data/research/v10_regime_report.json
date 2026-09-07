@@ -1,0 +1,80 @@
+{
+  "timestamp": "2026-09-04T23:41:58.804553+00:00",
+  "forward_session": "a81b222592ed47f3ad4a357b0d0f6845",
+  "n_observations": 28,
+  "regimes": {
+    "spread_medium_spread": {
+      "n_orders": 28,
+      "n_filled": 19,
+      "fill_rate": 0.6785714285714286,
+      "mean_gross_ev_bps": 0.0,
+      "mean_net_ev_bps": 0.007285555882152116,
+      "mean_queue_ahead": 0.8004357142857145
+    },
+    "queue_low_queue": {
+      "n_orders": 12,
+      "n_filled": 9,
+      "fill_rate": 0.75,
+      "mean_gross_ev_bps": 0.0073334812602151205,
+      "mean_net_ev_bps": 0.016047612522153244,
+      "mean_spread_bps": 0.012571737476123751
+    },
+    "queue_medium_queue": {
+      "n_orders": 9,
+      "n_filled": 6,
+      "fill_rate": 0.6666666666666666,
+      "mean_gross_ev_bps": 0.0,
+      "mean_net_ev_bps": 0.007047436936769402,
+      "mean_spread_bps": 0.012571792793127864
+    },
+    "queue_high_queue": {
+      "n_orders": 7,
+      "n_filled": 4,
+      "fill_rate": 0.5714285714285714,
+      "mean_gross_ev_bps": -0.012571682160368778,
+      "mean_net_ev_bps": -0.007428959713786327,
+      "mean_spread_bps": 0.012571697963977954
+    },
+    "side_ask": {
+      "n_orders": 14,
+      "n_filled": 8,
+      "fill_rate": 0.5714285714285714,
+      "mean_gross_ev_bps": -0.006285841080184389,
+      "mean_net_ev_bps": -0.0011431423408894141
+    },
+    "side_bid": {
+      "n_orders": 14,
+      "n_filled": 11,
+      "fill_rate": 0.7857142857142857,
+      "mean_gross_ev_bps": 0.006285841080184389,
+      "mean_net_ev_bps": 0.015714254105193646
+    },
+    "time_early": {
+      "n_orders": 9,
+      "n_filled": 5,
+      "fill_rate": 0.5555555555555556,
+      "mean_gross_ev_bps": 0.0,
+      "mean_net_ev_bps": 0.004825270031551293
+    },
+    "time_late": {
+      "n_orders": 10,
+      "n_filled": 7,
+      "fill_rate": 0.7,
+      "mean_gross_ev_bps": 0.0,
+      "mean_net_ev_bps": 0.007714103603436069
+    },
+    "time_mid": {
+      "n_orders": 9,
+      "n_filled": 7,
+      "fill_rate": 0.7777777777777778,
+      "mean_gross_ev_bps": 0.0,
+      "mean_net_ev_bps": 0.009269677597992998
+    }
+  },
+  "limitations": [
+    "Only 28 observations - regime analysis has limited statistical power",
+    "All observations in single spread regime (0.01-0.05 bps)",
+    "High-queue regime shows negative EV but n=7 (not statistically reliable)",
+    "Regime definitions were pre-specified based on economic dimensions"
+  ]
+}

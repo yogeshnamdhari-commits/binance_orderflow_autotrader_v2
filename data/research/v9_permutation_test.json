@@ -1,0 +1,9 @@
+{
+  "actual_net_bps": -85.15248123912399,
+  "perm_95th_pct": -85.15248123912399,
+  "actual_exceeds_95th": false,
+  "perm_mean": -85.15248123912399,
+  "perm_std": 0.0,
+  "n_permutations": 10000,
+  "note": "Permutation on fold-level gross returns (near-zero), cost subtracted uniformly"
+}

@@ -1,0 +1,80 @@
+{
+  "version": "V11",
+  "timestamp": "2026-09-05T04:02:17.217274+00:00",
+  "status": "FAIL",
+  "n_orders": 1159,
+  "n_filled": 200,
+  "mean_net_ev_bps": -1.7116276965939914,
+  "std_net_ev_bps": 3.8100722170434698,
+  "gross_ev_bps": -0.5387896355546983,
+  "total_cost_bps": 1.0526315789473686,
+  "ci_95_lower": -1.9287606898612677,
+  "ci_95_upper": -1.4951047674553055,
+  "t_stat": -15.29388484596898,
+  "p_value": 1.0,
+  "cohens_d": -0.449237599470536,
+  "perm_pvalue": 1.0,
+  "significant": false,
+  "regimes": {
+    "spread_regime": {
+      "high_spread": {
+        "n": 719,
+        "mean_net_ev_bps": -2.726976799851692,
+        "positive_rate": 0.0
+      },
+      "low_spread": {
+        "n": 440,
+        "mean_net_ev_bps": -0.0524549574069755,
+        "positive_rate": 0.0
+      }
+    },
+    "vol_regime": {
+      "high_vol": {
+        "n": 580,
+        "mean_net_ev_bps": -1.589404357272976,
+        "positive_rate": 0.0
+      },
+      "low_vol": {
+        "n": 579,
+        "mean_net_ev_bps": -1.834062129765302,
+        "positive_rate": 0.0
+      }
+    },
+    "time_regime": {
+      "early": {
+        "n": 387,
+        "mean_net_ev_bps": -1.7959392581362679,
+        "positive_rate": 0.0
+      },
+      "mid": {
+        "n": 386,
+        "mean_net_ev_bps": -1.390089437679899,
+        "positive_rate": 0.0
+      },
+      "late": {
+        "n": 386,
+        "mean_net_ev_bps": -1.9486359702312415,
+        "positive_rate": 0.0
+      }
+    }
+  },
+  "gate_conditions": {
+    "sufficient_observations": true,
+    "net_ev_positive": false,
+    "statistically_significant": false,
+    "ci_excludes_zero": false,
+    "effect_size_sufficient": true,
+    "permutation_significant": false
+  },
+  "economic_decomposition": {
+    "signal_edge_bps": 4.303281296408003,
+    "gross_ev_bps": -0.5387896355546983,
+    "fees_bps": 0.8628127696289906,
+    "slippage_bps": 0.08628127696289906,
+    "adverse_selection_bps": 0.08628127696289906,
+    "total_cost_bps": 1.0526315789473686,
+    "net_ev_bps": -1.5914212145020667,
+    "fill_probability": 0.1725625539257981,
+    "breakeven_return_bps": 35.3495
+  }
+}

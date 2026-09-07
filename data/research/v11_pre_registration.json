@@ -1,0 +1,137 @@
+{
+  "protocol_id": "V11-2026-09-05-001",
+  "version": "V11",
+  "status": "FROZEN",
+  "frozen_at": "2026-09-05T05:38:00+05:30",
+  "objective": "Determine whether a genuinely positive order-flow edge exists on BTCUSDT with realistic execution economics",
+  "background": {
+    "v10_result": "FAILED",
+    "v10_failure_reason": "Economic assumptions misaligned with BTCUSDT market reality. spread_capture_bps=2.0 not achievable by passive strategy. Actual spread=0.013 bps.",
+    "v10_archive": "archive/v10/"
+  },
+  "strategy_design": {
+    "signal": {
+      "type": "logistic_regression",
+      "features": ["order_flow_imbalance", "depth_imbalance", "trade_direction"],
+      "feature_window_ms": 1000,
+      "prediction_horizon_ms": 1000,
+      "target": "price_movement > 0.5 bps in next 1 second",
+      "rationale": "Order flow imbalance predicts short-term price direction. Depth imbalance indicates buying/selling pressure. Trade direction confirms aggression."
+    },
+    "execution": {
+      "modes": ["passive", "aggressive", "mid"],
+      "realistic_assumptions": {
+        "maker_fee_bps": -0.02,
+        "taker_fee_bps": 0.04,
+        "actual_spread_bps": 0.013,
+        "slippage": "conservative estimates based on queue position",
+        "adverse_selection": "measured from data"
+      },
+      "no_assumptions": [
+        "guaranteed passive fills",
+        "guaranteed spread capture",
+        "unrealistic maker rebates",
+        "zero slippage",
+        "zero adverse selection",
+        "instantaneous execution",
+        "favorable queue position without evidence"
+      ]
+    }
+  },
+  "validation_protocol": {
+    "phase_1_calibration": {
+      "data": "New Binance BTCUSDT capture sessions",
+      "sessions": "10+ sessions, 60 seconds each",
+      "temporal_requirement": "Before forward session",
+      "features": "Order flow imbalance, depth imbalance, trade direction",
+      "model": "Logistic regression with L2 regularization",
+      "storage": "data/v11_calibration/"
+    },
+    "phase_2_frozen_artifact": {
+      "freeze_model": true,
+      "record_provenance": true,
+      "compute_integrity_hash": true,
+      "no_forward_data": true,
+      "storage": "data/research/v11_frozen_calibration.json"
+    },
+    "phase_3_forward_test": {
+      "data": "Completely unseen forward session",
+      "temporal_requirement": "start_ns > max(calibration end_ns) + 1 hour",
+      "metrics": [
+        "signal_accuracy",
+        "fill_rate_by_mode",
+        "net_ev_by_mode",
+        "bootstrap_ci_95",
+        "permutation_pvalue",
+        "effect_size"
+      ],
+      "storage": "data/research/v11_forward_validation_result.json"
+    },
+    "phase_4_execution_cost": {
+      "validate_assumptions": true,
+      "measure_actual_spread": true,
+      "sensitivity_analysis": true,
+      "conservative_bounds": true,
+      "storage": "data/research/v11_execution_cost_report.json"
+    },
+    "phase_5_regime": {
+      "predefined_regimes": ["spread", "volatility", "activity", "trending_vs_choppy"],
+      "requirement": "Edge survives in >=3 of 4 regimes with n>=10 per regime",
+      "storage": "data/research/v11_regime_report.json"
+    },
+    "phase_6_statistical": {
+      "bootstrap_samples": 10000,
+      "permutation_samples": 10000,
+      "significance_level": 0.05,
+      "bonferroni_correction": true,
+      "effect_size_minimum": 0.2,
+      "storage": "data/research/v11_statistical_robustness_report.json"
+    }
+  },
+  "pass_requirements": {
+    "all_required": true,
+    "requirements": [
+      "signal_accuracy > 0.5 AND statistically significant",
+      "net_ev > 0 after realistic execution costs",
+      "95_ci_excludes_zero",
+      "edge_survives_in_3_of_4_regimes",
+      "effect_size >= 0.2",
+      "no_data_leakage",
+      "frozen_artifact_integrity_verified",
+      "all_tests_pass"
+    ]
+  },
+  "fail_conditions": {
+    "any_sufficient": true,
+    "conditions": [
+      "signal_accuracy <= 0.5",
+      "net_ev <= 0 with realistic costs",
+      "95_ci_includes_zero",
+      "statistical_significance_not_achieved",
+      "edge_fails_in_2_or_more_regimes",
+      "data_leakage_detected"
+    ]
+  },
+  "data_protocol": {
+    "calibration_storage": "data/v11_calibration/",
+    "forward_storage": "data/v11_forward/",
+    "temporal_separation": "forward start_ns > max(calibration end_ns) + 1 hour",
+    "forward_never_enters": [
+      "feature_engineering_decisions",
+      "threshold_selection",
+      "parameter_tuning",
+      "model_selection",
+      "calibration",
+      "execution_rule_selection"
+    ]
+  },
+  "reproducibility": {
+    "random_seeds": [42],
+    "versions": {
+      "python": "3.13",
+      "pandas": "2.x",
+      "numpy": "1.x",
+      "scikit_learn": "1.x"
+    }
+  }
+}

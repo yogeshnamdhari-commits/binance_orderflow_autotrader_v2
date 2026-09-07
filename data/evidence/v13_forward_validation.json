@@ -1,0 +1,25 @@
+{
+  "status": "FAIL",
+  "timestamp": "2026-09-07T12:04:41.083978+00:00",
+  "n_orders": 2327,
+  "mean_net_ev_bps": -5.918885939399179,
+  "gross_ev_bps": -0.15526334000482414,
+  "total_cost_bps": 14.520911027090374,
+  "ci_95": [
+    -6.005860682995429,
+    -5.8292141058572025
+  ],
+  "p_value": 1.0,
+  "perm_pvalue": 1.0,
+  "cohens_d": -2.692571252688292,
+  "gate_conditions": {
+    "sufficient_observations": true,
+    "net_ev_positive": false,
+    "statistically_significant": false,
+    "ci_excludes_zero": false,
+    "effect_size_sufficient": true,
+    "permutation_significant": false
+  },
+  "calibration_val_auc": 0.7201704545454546,
+  "key_finding": "Val AUC improved to 0.72 (vs V12 0.50) but gross EV remains ~0 \u2014 statistical discrimination does NOT equal economic value"
+}

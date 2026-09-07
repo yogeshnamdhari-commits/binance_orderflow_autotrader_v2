@@ -1,0 +1,12 @@
+{
+  "status": "LOCKED",
+  "timestamp": "2026-09-07T12:04:41.083978+00:00",
+  "live_order_submission": false,
+  "gates": {
+    "data_integrity": "FAIL",
+    "independent_forward_test": "FAIL",
+    "positive_net_ev": "FAIL",
+    "statistical_robustness": "FAIL",
+    "regime_robustness": "FAIL"
+  }
+}

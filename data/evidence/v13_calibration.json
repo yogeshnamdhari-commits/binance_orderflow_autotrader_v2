@@ -1,0 +1,21 @@
+{
+  "status": "CALIBRATED",
+  "timestamp": "2026-09-07T12:04:41.083978+00:00",
+  "config_hash": "14dfaab9e88f47bf",
+  "model_hash": "c059b5352ab9c703c5805fba10e6e99e7cc4c1eeb07adad98130593270f9df0b",
+  "n_observations": 2326,
+  "metrics": {
+    "train_auc": 0.7149770349988759,
+    "val_auc": 0.7201704545454546,
+    "test_auc": 0.6361851519084224,
+    "n_train": 1630,
+    "n_val": 348,
+    "n_test": 348,
+    "n_positive": 713,
+    "n_negative": 917,
+    "brier": 0.20494500783645675
+  },
+  "feature_schema_hash": "c059b5352ab9c703c5805fba10e6e99e7cc4c1eeb07adad98130593270f9df0b",
+  "split": "chronological train/val/test within calibration window",
+  "hypothesis_pre_registered": true
+}

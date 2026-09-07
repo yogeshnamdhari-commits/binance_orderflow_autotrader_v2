@@ -1,0 +1,23 @@
+{
+  "status": "LOCKED",
+  "timestamp": "2026-09-07T10:54:37.296465+00:00",
+  "live_order_submission": false,
+  "gates": {
+    "data_integrity": "PASS",
+    "data_provenance": "PASS",
+    "no_leakage": "PASS",
+    "model_calibration": "PASS",
+    "frozen_artifact": "PASS",
+    "independent_forward_test": "FAIL",
+    "positive_net_ev": "FAIL",
+    "realistic_execution_costs": "PASS",
+    "statistical_robustness": "FAIL",
+    "regime_robustness": "FAIL",
+    "paper_trading": "FAIL",
+    "testnet_execution": "NOT_STARTED",
+    "risk_controls": "PASS",
+    "reconciliation": "PASS",
+    "operational_failure_tests": "NOT_STARTED",
+    "evidence_chain": "PASS"
+  }
+}

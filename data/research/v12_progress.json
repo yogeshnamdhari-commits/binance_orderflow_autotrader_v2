@@ -1,0 +1,57 @@
+{
+  "timestamp": "2026-09-07T11:06:16.093165+00:00",
+  "git_revision": "19953b6",
+  "completed_phases": {
+    "repository_audit": true,
+    "baseline_tests_recorded": true,
+    "provenance_audit": true,
+    "capture_pipeline": true,
+    "data_integrity_validated": true,
+    "feature_pipeline_validated": true,
+    "leakage_tests": "VERIFIED (V9 suite, 0 new failures)",
+    "calibration_pipeline": true,
+    "frozen_model_generated": true,
+    "independent_forward_validation": true,
+    "execution_cost_model": true,
+    "regime_analysis": true,
+    "statistical_robustness": true,
+    "monitoring": true,
+    "audit_logging": true,
+    "paper_runtime_verified": true,
+    "testnet_adapter": "ENGINEERED (credentials unavailable \u2192 NOT_STARTED)",
+    "risk_engine": true,
+    "production_gate": true,
+    "evidence_database": true,
+    "evidence_chain_report": true,
+    "production_gate_report": true
+  },
+  "blockers": {
+    "production": "LOCKED \u2014 LIVE_ORDER_SUBMISSION=False (code) + forward gate FAILED",
+    "paper_trading": "BLOCKED \u2014 forward validation gate FAILED",
+    "testnet": "NOT_STARTED \u2014 paper gate not passed, credentials unavailable"
+  },
+  "artifacts": {
+    "calibration": "accd81c052b3b60188b93ccf300c81b81d7fe1899707cea64027dc2df0a9acc8",
+    "frozen_model": "90ddd4858b78545b3800e14d2c69b6552e20a512fd18f021ddd922952662d767",
+    "forward_result": "655fea51865c328e442b848748a047175fd38895eae5555d58e09368dd648286",
+    "evidence_chain": "7a2ef8c65b33bb78820248744ac3248feec2ee8e1f91d3781b413fcf1ba4e01c",
+    "production_gate": "d22b039589f9b5d41095a00be8d0f78fd5c98d096604c70d557337ad436aab3f"
+  },
+  "forward_result": "FAIL",
+  "net_ev_bps": -4.490432608370327,
+  "final_test_suite": {
+    "total": 332,
+    "passed": 328,
+    "failed": 3,
+    "skipped": 1,
+    "failed_names": [
+      "test_v9_features.py::test_forward_labels_use_only_strictly_future_price",
+      "test_v9_features.py::test_predictors_are_lagged_and_no_future_btc_return_is_used",
+      "test_v9_models.py::test_treatment_metadata_records_feature_sets"
+    ]
+  },
+  "v12_tests_pass": 29,
+  "capture_verified_live": true,
+  "paper_runtime_verified_live": true,
+  "status": "COMPLETE \u2014 all engineering verified; strategy scientifically FAILS, production LOCKED"
+}

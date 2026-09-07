@@ -1,0 +1,63 @@
+{
+  "timestamp": "2026-09-07T12:08:50.478758+00:00",
+  "experiments": {
+    "V12": {
+      "status": "RESEARCH_FAIL",
+      "hypothesis_tested": "500ms order-flow signal + funding income",
+      "val_auc": 0.5014245014245015,
+      "test_auc": 0.2619047619047619,
+      "forward_net_ev_bps": -4.490432608370327,
+      "forward_gross_ev_bps": -0.20647174747167812,
+      "execution_cost_bps": 14.463677321551902,
+      "production": "LOCKED (LIVE_ORDER_SUBMISSION=False + forward gate FAIL)",
+      "model_hash": "90ddd4858b78545b3800e14d2c69b6552e20a512fd18f021ddd922952662d767",
+      "config_hash": "245e936752e5923f"
+    },
+    "V13": {
+      "status": "RESEARCH_FAIL",
+      "hypothesis_tested": "2s order-flow persistence signal (improved AUC)",
+      "val_auc": 0.7201704545454546,
+      "forward_net_ev_bps": -5.918885939399179,
+      "forward_gross_ev_bps": -0.15526334000482414,
+      "execution_cost_bps": 14.520911027090374,
+      "production": "LOCKED (LIVE_ORDER_SUBMISSION=False + forward gate FAIL)",
+      "key_finding": "Statistical discrimination improved (AUC 0.50->0.72) but economic value remains zero. signal \u2260 value."
+    }
+  },
+  "current_status": "RESEARCH_FAIL",
+  "active_experiment": "V14 (proposed)",
+  "tests": {
+    "total": 344,
+    "passed": 340,
+    "failed": 3,
+    "skipped": 1,
+    "failed_names": [
+      "test_v9_features.py::test_forward_labels_use_only_strictly_future_price",
+      "test_v9_features.py::test_predictors_are_lagged_and_no_future_btc_return_is_used",
+      "test_v9_models.py::test_treatment_metadata_records_feature_sets"
+    ]
+  },
+  "next_experiment": "V14 \u2014 passive maker/taker execution to reduce cost floor from 14.5bps to ~3bps",
+  "prohibition": "V13 forward data must NOT be reused for V14 calibration. New real capture required.",
+  "production": "LOCKED",
+  "PRIMARY_BLOCKER": "No order-flow signal at any tested horizon (500ms or 2000ms) generates gross EV exceeding the 14.5 bps execution-cost floor on BTCUSDT. The signal has statistical discrimination at 2s but zero economic value.",
+  "NEXT_ACTION": "Implement V14 with passive maker-queue execution to reduce execution costs below the signal gross EV. Requires new real data capture.",
+  "artifacts": [
+    "archive/v12/v12_frozen_model.joblib",
+    "archive/v12/v12_forward_result.json",
+    "archive/v12/V12_FINAL_EVIDENCE_CHAIN.md",
+    "archive/v12/V12_PRODUCTION_GATE.md",
+    "archive/v13/v13_frozen_model.joblib",
+    "archive/v13/v13_forward_result.json",
+    "archive/v13/v13_calibration_artifact.json",
+    "archive/v13/V13_FINAL_EVIDENCE_CHAIN.md",
+    "archive/v13/V13_PRODUCTION_GATE.md",
+    "data/evidence/ (v12 + v13)",
+    "data/research/v12_failure_diagnosis.json",
+    "data/research/v13_failure_diagnosis.json",
+    "data/research/v13_proposal.json",
+    "data/research/v14_proposal.json",
+    "data/research/v12_repository_inventory.json",
+    "data/research/v12_progress.json"
+  ]
+}
