@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from app.v16.paper_runtime import V16PaperPosition
 from app.v16.production_preflight import ProductionPreflight, PreflightResult
 
 
@@ -47,3 +48,16 @@ def test_preflight_never_reports_ready_with_live_submission_disabled(tmp_path: P
     assert result.ready is False
     assert result.live_order_submission is False
     assert result.checks["live_order_submission"] == "FAIL"
+
+
+def test_paper_position_realized_pnl_is_net_of_entry_and_exit_costs():
+    pos = V16PaperPosition(
+        "BTCUSDT", "LONG", entry_price=100_000.0, qty=0.001,
+        entry_cost_bps=1.0, entry_ts_ms=1_000,
+    )
+    pos.close(exit_price=100_100.0, exit_cost_bps=1.0, exit_ts_ms=2_000)
+
+    assert pos.status == "CLOSED"
+    assert round(pos.realized_pnl_bps, 6) == 8.0
+    assert pos.exit_price == 100_100.0
+    assert pos.exit_ts_ms == 2_000
