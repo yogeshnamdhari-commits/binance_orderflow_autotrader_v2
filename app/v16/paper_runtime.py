@@ -64,21 +64,24 @@ class V16PaperTrader:
         if self._last_mid is not None and self._last_ts_ms is not None:
             self._close_open_positions(self._last_mid, self._last_ts_ms)
         realized = [p.realized_pnl_bps for p in self._closed_positions]
+        realized_mean = float(np.mean(realized)) if realized else 0.0
+        realized_sum = float(np.sum(realized)) if realized else 0.0
+        paper_passed = len(self._closed_positions) >= 100 and realized_mean > 0.0
         result = {
             "experiment": "V16", "timestamp": datetime.now(timezone.utc).isoformat(), "status": "COMPLETE",
             "n_trades": len(self._closed_positions), "n_decisions": len(self._decisions), "n_rejected": len(self._rejected),
             "total_edge_bps": round(float(np.mean([d["predicted_return_bps"] for d in self._decisions])) if self._decisions else 0.0, 4),
             "decision_cost_bps": round(float(np.mean([d["total_cost_bps"] for d in self._decisions])) if self._decisions else 0.0, 4),
-            "net_ev_bps": round(float(np.mean(realized)) if realized else 0.0, 4),
-            "realized_pnl_bps_mean": round(float(np.mean(realized)) if realized else 0.0, 4),
-            "realized_pnl_bps_sum": round(float(np.sum(realized)) if realized else 0.0, 4),
+            "net_ev_bps": round(realized_mean, 4),
+            "realized_pnl_bps_mean": round(realized_mean, 4),
+            "realized_pnl_bps_sum": round(realized_sum, 4),
             "realized_trade_count": len(self._closed_positions), "decisions": self._decisions, "rejected": self._rejected,
             "closed_positions": [{"side": p.side, "entry_price": p.entry_price, "exit_price": p.exit_price, "qty": p.qty,
                                   "entry_ts_ms": p.entry_ts_ms, "exit_ts_ms": p.exit_ts_ms,
                                   "realized_pnl_bps": round(p.realized_pnl_bps, 4), "fees_paid": round(p.fees_paid, 8),
                                   "entry_cost_bps": p.entry_cost_bps, "exit_cost_bps": p.exit_cost_bps}
                                  for p in self._closed_positions],
-            "live_order_submitted": False, "paper_trading_passed": False,
+            "live_order_submitted": False, "paper_trading_passed": paper_passed,
             "performance_basis": "realized_closed_trade_pnl",
         }
         Path("archive/v16/v16_paper_trading_result.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
