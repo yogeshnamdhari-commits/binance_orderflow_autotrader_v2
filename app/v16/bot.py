@@ -1,6 +1,7 @@
 """V16 CLI — run the complete research and deployment-preflight pipeline."""
 from __future__ import annotations
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -10,6 +11,18 @@ from app.v16.config import V16Config
 from app.v16.pipeline import run_pipeline
 from app.v16.gate import V16ProductionGate
 from app.v16.production_preflight import ProductionPreflight
+
+
+def _explicit_production_authorization() -> bool:
+    """Read an explicit operator authorization flag; default is always false."""
+    return os.getenv("V16_PRODUCTION_AUTHORIZED", "0").strip().lower() in {"1", "true", "yes"}
+
+
+def _preflight(cfg: V16Config):
+    return ProductionPreflight(
+        live_order_submission=cfg.live_trading_enabled,
+        production_authorized=_explicit_production_authorization(),
+    ).evaluate()
 
 
 def main():
@@ -31,10 +44,7 @@ def main():
         for name, check in result["checks"].items():
             print(f"  {name}: {check['status']}")
     elif args.action == "preflight":
-        result = ProductionPreflight(
-            live_order_submission=cfg.live_trading_enabled,
-            production_authorized=False,
-        ).evaluate()
+        result = _preflight(cfg)
         print(f"Production preflight: {'READY' if result.ready else 'LOCKED'} | LIVE={result.live_order_submission}")
         for name, status in result.checks.items():
             print(f"  {name}: {status}")
@@ -46,10 +56,7 @@ def main():
         gate = V16ProductionGate(cfg)
         g = gate.evaluate()
         print(f"Gate: {g['gate_status']} | LIVE={g['live_order_submission']}")
-        preflight = ProductionPreflight(
-            live_order_submission=cfg.live_trading_enabled,
-            production_authorized=False,
-        ).evaluate()
+        preflight = _preflight(cfg)
         print(f"Preflight: {'READY' if preflight.ready else 'LOCKED'}")
 
 
