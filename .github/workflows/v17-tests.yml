@@ -17,7 +17,9 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          pip install pytest joblib scikit-learn
-      - name: Run V16/V17 tests
-        run: python -m pytest -q tests/v16
+          pip install -r requirements.txt
+          pip install pytest
+      - name: Run complete V16/V17 test suite
+        run: python -m pytest -q tests/v16 tests/v17
+      - name: Run fail-closed production preflight
+        run: python -m app.v17.preflight
