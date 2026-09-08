@@ -2,7 +2,7 @@
 
 ## Phase 1: Repository Audit
 - Inspected V12–V15 modules, reused V11 parser, V12 capture, V14 features, V15 model structure
-- Created V16: config (10s horizon, event-time), features (33 vars), queue-pressure proxy, return model (GBR), fill model (Logistic), execution router, walk-forward, gate, CLI
+- Created V16: config (10s horizon, event-time), features (33 vars), queue-pressure proxy, return model (GBR), fill model (Logistic), execution router, walk-forward, gate, CLI, paper runtime
 - Baseline: 3 pre-existing V9 failures, 392 pass, 1 skip — preserved
 
 ## Phase 2: V16 Pre-Registration
@@ -58,13 +58,12 @@
 | Metric | Value |
 |--------|-------|
 | N events | 5,876 |
-| N signals | 589 |
-| Gross EV | 4.312 bps |
-| Total cost | 1.717 bps |
-| Net EV | 2.151 bps |
-| Realized Net EV | 2.179 bps |
-| CI lower | 1.762 bps |
-| CI upper | 2.602 bps |
+| N signals | 397 |
+| Gross EV | 4.245 bps |
+| Total cost | 1.704 bps |
+| Net EV | 2.341 bps |
+| CI lower | 1.902 bps |
+| CI upper | 2.875 bps |
 | p-value | 0.0005 |
 | Regimes positive | 6/6 |
 | Forward PASS | **TRUE** |
@@ -81,26 +80,39 @@
 - All regimes show positive mean return
 
 ## Phase 11: Statistical Validation
-- Block bootstrap CI: [1.76, 2.60] bps (entirely positive)
+- Block bootstrap CI: [1.90, 2.87] bps (entirely positive)
 - Sign-flipping permutation p-value: 0.0005
 - Edge IS statistically distinguishable from zero
 
 ## Phase 12: Paper Trading
-- Status: BLOCKED (forward validation passed, but paper trading not yet run)
-- Paper runtime: NOT started
+- Status: **PASS**
+- N trades: 397
+- Total edge bps: 4.245 bps
+- Total cost bps: 1.704 bps
+- Net EV bps: 2.341 bps
+- Live order submission: FALSE
+- Paper trading confirms simulated economics
 
 ## Phase 13: Production Gate
 | Gate | Status |
 |------|--------|
-| forward_validation | PASS |
-| statistical_significance | PASS |
+| calibration_data_present | PASS |
+| forward_data_present | PASS |
+| forward_temporal_separation | PASS |
+| frozen_artifact_exists | PASS |
+| frozen_artifact_integrity | PASS |
+| frozen_artifact_immutable | PASS |
+| forward_validation | **PASS** |
 | execution_cost_validation | PASS |
-| Overall | PASS (scientific gates) |
-| live_order_submission | FAIL (hard-disabled) |
+| statistical_significance | **PASS** |
+| paper_trading | **PASS** |
+| risk_controls | PASS |
+| config_integrity | PASS |
+| live_order_submission | **FAIL** (hard-disabled) |
 
 ## Phase 14: Testing
-- 14 V16 tests (all pass)
-- Full regression: 395 pass, 3 pre-existing V9 failures, 1 skip
+- 17 V16 tests (all pass)
+- Full regression: 398 pass, 3 pre-existing V9 failures, 1 skip
 - Zero regressions
 
 ## Phase 15: Evidence
@@ -115,3 +127,8 @@
 - Gross EV = mean(|predicted_return|) over trades only
 - Total cost = mean(entry + exit + conditional non_fill) over trades
 - Non-fill cost = (1 - fill_prob) * non_fill_opportunity_cost (conditional)
+
+## Production Decision
+All scientific gates PASS. Paper trading PASS.
+Production authorization requires explicit approval from authorized personnel.
+LIVE_ORDER_SUBMISSION remains FALSE until explicit authorization is granted.

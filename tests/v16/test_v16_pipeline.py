@@ -195,3 +195,65 @@ def test_v16_forward_accounting_reconciles():
         assert total_cost < gross, "Total cost must be less than Gross EV for positive Net EV"
         assert net > 0, "Net EV must be positive"
         assert result["ci_lower_bps"] > 0, "CI lower bound must be positive"
+
+
+def test_v16_paper_runtime_initializes():
+    from app.v16.paper_runtime import V16PaperTrader
+    from pathlib import Path
+    cfg = V16Config()
+    return_path = Path("archive/v16/v16_frozen_return_model.joblib")
+    fill_path = Path("archive/v16/v16_frozen_fill_model.joblib")
+    if return_path.exists() and fill_path.exists():
+        trader = V16PaperTrader(cfg, return_path, fill_path)
+        assert trader is not None
+        assert trader._running is False
+        assert len(trader._decisions) == 0
+        assert len(trader._positions) == 0
+    else:
+        pytest.skip("Frozen models not found")
+
+
+def test_v16_paper_runtime_rejects_non_positive():
+    from app.v16.paper_runtime import V16PaperTrader
+    from pathlib import Path
+    cfg = V16Config()
+    return_path = Path("archive/v16/v16_frozen_return_model.joblib")
+    fill_path = Path("archive/v16/v16_frozen_fill_model.joblib")
+    if not return_path.exists() or not fill_path.exists():
+        pytest.skip("Frozen models not found")
+    trader = V16PaperTrader(cfg, return_path, fill_path)
+    trader.start()
+    books = [type('B', (), {
+        'ts_ms': i * 1000, 'bids': {100: 1.0}, 'asks': {100: 1.0},
+        'mid': 100.0, 'spread_bps': 2.0, 'bid_depth1': 1.0, 'ask_depth1': 1.0,
+        'bid_depth5': 1.0, 'ask_depth5': 1.0, 'bid_depth10': 1.0, 'ask_depth10': 1.0,
+        'adds': 1.0, 'cancels': 0.0, 'net': 1.0,
+    })() for i in range(1, 30)]
+    trades = []
+    result = trader.process_event(books, trades)
+    assert result is None  # should reject when predicted return is near zero
+    assert len(trader._rejected) > 0
+
+
+def test_v16_paper_runtime_tracks_positions():
+    from app.v16.paper_runtime import V16PaperTrader
+    from pathlib import Path
+    cfg = V16Config()
+    return_path = Path("archive/v16/v16_frozen_return_model.joblib")
+    fill_path = Path("archive/v16/v16_frozen_fill_model.joblib")
+    if not return_path.exists() or not fill_path.exists():
+        pytest.skip("Frozen models not found")
+    trader = V16PaperTrader(cfg, return_path, fill_path)
+    trader.start()
+    books = [type('B', (), {
+        'ts_ms': i * 1000, 'bids': {100: 1.0}, 'asks': {100: 1.0},
+        'mid': 100.0, 'spread_bps': 2.0, 'bid_depth1': 1.0, 'ask_depth1': 1.0,
+        'bid_depth5': 1.0, 'ask_depth5': 1.0, 'bid_depth10': 1.0, 'ask_depth10': 1.0,
+        'adds': 1.0, 'cancels': 0.0, 'net': 1.0,
+    })() for i in range(1, 30)]
+    trades = []
+    # Process enough events to potentially get a signal
+    for _ in range(5):
+        trader.process_event(books, trades)
+    # Should have some decisions or rejections
+    assert len(trader._decisions) + len(trader._rejected) > 0

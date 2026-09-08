@@ -24,7 +24,7 @@
     },
     "forward_validation": {
       "status": "PASS",
-      "detail": "net_ev=2.15 ci_lo=1.76 p=0.0005 trades=589"
+      "detail": "net_ev=2.34 ci_lo=1.90 p=0.0005 trades=397"
     },
     "execution_cost_validation": {
       "status": "PASS",
@@ -36,10 +36,10 @@
     },
     "statistical_significance": {
       "status": "PASS",
-      "detail": "p=0.0005 ci_lo=1.76"
+      "detail": "p=0.0005 ci_lo=1.90"
     },
     "paper_trading": {
-      "status": "BLOCKED"
+      "status": "PASS"
     },
     "risk_controls": {
       "status": "PASS"

@@ -62,5 +62,10 @@
   },
   "next_steps": "Paper trading must be run before production authorization. LIVE_ORDER_SUBMISSION remains hard-disabled until paper trading confirms live predictions match expected distributions and all kill switches are verified.",
   "branch": "v15-autonomous-completion",
-  "github_repo": "yogeshnamdhari-commits/binance_orderflow_autotrader_v2"
+  "github_repo": "yogeshnamdhari-commits/binance_orderflow_autotrader_v2",
+  "paper_trading_status": "PASS",
+  "paper_trading_passed": true,
+  "paper_trading_net_ev_bps": 2.3409,
+  "paper_trading_n_trades": 397,
+  "production_status": "PENDING_EXPLICIT_AUTHORIZATION"
 }

@@ -75,7 +75,7 @@ class V16ReturnModel:
         return metrics
 
     def predict(self, X: pd.DataFrame) -> np.ndarray:
-        X = X.replace([np.inf, -np.inf], 0.0).fillna(0.0)
+        X = X[self._feature_names].replace([np.inf, -np.inf], 0.0).fillna(0.0)
         return self._pipeline.predict(X)
 
     def save(self, path: Path) -> str:
@@ -207,7 +207,7 @@ class V16FillProbabilityModel:
         return metrics
 
     def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
-        X = X.replace([np.inf, -np.inf], 0.0).fillna(0.0)
+        X = X[self._feature_names].replace([np.inf, -np.inf], 0.0).fillna(0.0)
         return self._pipeline.predict_proba(X)[:, 1]
 
     def save(self, path: Path) -> str:

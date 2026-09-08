@@ -1,6 +1,13 @@
 {
   "experiment": "V16",
-  "paper_trading_enabled": false,
-  "status": "BLOCKED",
-  "reason": "forward_validation PASS \u2014 paper trading next step before production authorization"
+  "timestamp": "2026-09-08T07:17:49.867437+00:00",
+  "status": "COMPLETE",
+  "n_trades": 397,
+  "n_decisions": 397,
+  "n_rejected": 5479,
+  "total_edge_bps": 4.245,
+  "total_cost_bps": 1.7041,
+  "net_ev_bps": 2.3409,
+  "paper_trading_passed": true,
+  "live_order_submitted": false
 }

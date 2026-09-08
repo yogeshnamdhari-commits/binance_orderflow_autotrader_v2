@@ -128,14 +128,22 @@ def _compute_queue_book_features(books: list, trades: list, window_ms: int = 100
         multi_level_imb = (bid_depth_l10 - ask_depth_l10) / (bid_depth_l10 + ask_depth_l10 + 1e-9)
         depth_slope = (bid_depth_l5 / (ask_depth_l5 + 1e-9)) if ask_depth_l5 > 0 else 0.0
 
-        microb = bk.mid
-        if bk.mid and bk.mid > 0:
-            microprice_disp = (microb - bk.mid) / bk.mid * 1e4 if microb else 0.0
+        best_bid = max(bk.bids) if bk.bids else 0.0
+        best_ask = min(bk.asks) if bk.asks else 0.0
+        qb = bk.bids.get(best_bid, 0.0) if best_bid else 0.0
+        qa = bk.asks.get(best_ask, 0.0) if best_ask else 0.0
+        if qb + qa > 0 and bk.mid and bk.mid > 0:
+            microprice = (best_ask * qb + best_bid * qa) / (qb + qa)
+            microprice_disp = (microprice - bk.mid) / bk.mid * 1e4
         else:
             microprice_disp = 0.0
 
-        book_pressure = bk.adds - bk.cancels if hasattr(bk, 'adds') else 0.0
-        book_pressure = book_pressure / (abs(book_pressure) + abs(bk.net) + 1e-9) if hasattr(bk, 'net') and bk.net else 0.0
+        book_pressure = 0.0
+        if hasattr(bk, 'adds') and hasattr(bk, 'cancels'):
+            net_flow = (bk.adds or 0.0) - (bk.cancels or 0.0)
+            gross_flow = abs(bk.adds or 0.0) + abs(bk.cancels or 0.0)
+            if gross_flow > 1e-9:
+                book_pressure = net_flow / gross_flow
 
         queue_imb_change = bid_queue_imb - prev_bid_imb
         prev_bid_imb = bid_queue_imb
@@ -186,12 +194,23 @@ def _compute_dynamics_and_regime(books: list, trades: list, ofi_df: pd.DataFrame
         ofi = ofi_lookup.get(bk.ts_ms, prev_ofi)
         prev_ofi = ofi
 
+        persistence = 0.0
         if len(mids_hist) >= 10:
-            pass  # persistence computed below
+            # Windowed persistence: correlation of last 10 mids vs previous 10 mids
+            if len(mids_hist) >= 20:
+                window_a = mids_hist[-10:]
+                window_b = mids_hist[-20:-10]
+                if len(window_a) == len(window_b):
+                    try:
+                        persistence = float(np.corrcoef(window_a, window_b)[0, 1])
+                        if np.isnan(persistence):
+                            persistence = 0.0
+                    except Exception:
+                        persistence = 0.0
 
-        seg = [m for m in mids_hist[-500:] if m is not None and m > 0]
-        if len(seg) >= 3:
-            rets = np.diff(np.log(np.array(seg)))
+        window_mids = [m for m in mids_hist[-int(window_ms / 1000 * 10):] if m is not None and m > 0]
+        if len(window_mids) >= 3:
+            rets = np.diff(np.log(np.array(window_mids)))
             short_term_vol = float(np.sqrt(np.sum(rets ** 2) * 1e4))
         else:
             short_term_vol = 0.0
@@ -218,6 +237,8 @@ def _compute_dynamics_and_regime(books: list, trades: list, ofi_df: pd.DataFrame
 
 def extract_v16_features(books: list, trades: list, window_ms: int = 10000) -> pd.DataFrame:
     """Extract all V16 event-time features: V14 base + V16-specific."""
+    books = sorted(books, key=lambda b: b.ts_ms)
+    trades = sorted(trades, key=lambda t: t.ts_ms)
     from app.v14.features import extract_v14_features as _extract_v14
     base_df = _extract_v14(books, trades, window_ms)
     if base_df.empty:

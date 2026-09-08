@@ -1,57 +1,57 @@
 {
   "experiment": "V16",
-  "timestamp": "2026-09-08T06:30:07.189531+00:00",
+  "timestamp": "2026-09-08T07:20:16.564199+00:00",
   "status": "COMPLETE",
   "forward_data_dir": "data/v16/forward",
   "n_events": 5876,
-  "n_signals": 589,
-  "n_trades": 589,
-  "gross_ev_bps": 4.312,
-  "total_cost_bps": 1.7168,
-  "net_ev_bps": 2.1507,
-  "realized_net_ev_bps": 2.1793,
-  "ci_lower_bps": 1.7623,
-  "ci_upper_bps": 2.6022,
-  "p_value": 0.0005,
-  "tstat": 243.21832285103267,
-  "realized_ci_lower_bps": 1.792239885620874,
-  "realized_ci_upper_bps": 2.6704795578358573,
+  "n_signals": 397,
+  "n_trades": 397,
+  "gross_ev_bps": 4.245018048066591,
+  "total_cost_bps": 1.7041348249466337,
+  "net_ev_bps": 2.3408577992764408,
+  "realized_net_ev_bps": 2.325877911173482,
+  "ci_lower_bps": 1.9024038609100669,
+  "ci_upper_bps": 2.874481453924893,
+  "p_value": 0.0004997501249375312,
+  "tstat": 187.23353985847038,
+  "realized_ci_lower_bps": 1.8847472347905452,
+  "realized_ci_upper_bps": 2.8789837304015164,
   "realized_p_value": 0.0004997501249375312,
   "positive_regimes": 6,
   "total_regimes": 6,
   "regime_breakdown": {
     "high_vol": {
-      "mean_ret_bps": 2.1444916236703975,
-      "n": 293,
+      "mean_ret_bps": 2.0442328213884413,
+      "n": 197,
       "positive": true
     },
     "low_vol": {
-      "mean_ret_bps": 2.156778988056471,
-      "n": 296,
+      "mean_ret_bps": 2.63303340249612,
+      "n": 200,
       "positive": true
     },
     "high_liq": {
-      "mean_ret_bps": 2.385858296753189,
-      "n": 294,
+      "mean_ret_bps": 2.159506193159432,
+      "n": 198,
       "positive": true
     },
     "low_liq": {
-      "mean_ret_bps": 1.916272159168489,
-      "n": 295,
+      "mean_ret_bps": 2.521298090789847,
+      "n": 199,
       "positive": true
     },
     "tight_spread": {
-      "mean_ret_bps": 2.3158127308997183,
-      "n": 285,
+      "mean_ret_bps": 2.8149032366908022,
+      "n": 194,
       "positive": true
     },
     "wide_spread": {
-      "mean_ret_bps": 1.995842098334612,
-      "n": 304,
+      "mean_ret_bps": 1.8878291546538486,
+      "n": 203,
       "positive": true
     }
   },
-  "elapsed_s": 22.34,
-  "accounting_note": "Gross EV = mean(|predicted_return|) over trades only. Net EV = mean(fill_prob * predicted_return - total_cost) over trades. Realized Net EV = mean(simulated fill P&L) over trades.",
+  "elapsed_s": 22.83,
+  "accounting_note": "Gross EV = mean(|predicted_return|) over trades only. Total cost = mean(entry+exit+conditional non_fill) over trades. Net EV = mean(expected_pnl) over trades. Realized Net EV = mean(simulated fill outcome P&L) over trades.",
   "forward_pass": true
 }
