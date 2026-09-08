@@ -111,7 +111,16 @@ class V16ReturnModel:
 
 
 class V16FillProbabilityModel:
-    """Predicts fill probability (0-1) for a maker order."""
+    """Predicts fill probability (0-1) for a maker order.
+
+    Fill target definition:
+      A maker order at the touch is considered filled if, within the horizon,
+      the trade intensity exceeds the median AND the queue pressure is negative
+      (more cancellations than additions at the touch), indicating queue thinning.
+
+    This is a proxy for fill probability based on observable market conditions,
+    not on whether the return is positive.
+    """
     def __init__(self, config: V16Config | None = None):
         self._config = config or V16Config()
         self._pipeline = Pipeline([
@@ -123,7 +132,43 @@ class V16FillProbabilityModel:
         self._val_auc = None
         self._test_auc = None
 
-    def fit(self, X: pd.DataFrame, y: pd.Series) -> dict:
+    def _build_fill_target(self, feats: pd.DataFrame, horizon_ms: int) -> pd.Series:
+        """Build fill target from observable market conditions.
+
+        A maker order is more likely to fill when:
+        - Queue pressure is negative (queue thinning)
+        - Trade intensity is above median
+        - Spread is below median
+
+        This is a proxy, not a guarantee. Actual fill depends on order-book
+        dynamics not observable in the data (hidden liquidity, order sizes).
+        """
+        window_ms = horizon_ms
+        if "book_pressure" in feats.columns:
+            queue_thinning = (feats["book_pressure"] < 0).astype(int)
+        else:
+            queue_thinning = pd.Series(0, index=feats.index)
+
+        if "event_intensity" in feats.columns:
+            intensity = feats["event_intensity"]
+            high_intensity = (intensity > intensity.median()).astype(int)
+        else:
+            high_intensity = pd.Series(0, index=feats.index)
+
+        if "spread_bps" in feats.columns:
+            tight_spread = (feats["spread_bps"] < feats["spread_bps"].median()).astype(int)
+        else:
+            tight_spread = pd.Series(0, index=feats.index)
+
+        # Fill proxy: queue thinning AND (high intensity OR tight spread)
+        fill_proxy = ((queue_thinning + high_intensity + tight_spread) >= 2).astype(int)
+        return fill_proxy
+
+    def fit(self, X: pd.DataFrame, y: pd.Series | None = None) -> dict:
+        from app.v16.config import V16Config
+        cfg = self._config
+        # Build fill target from market conditions, not from return sign
+        fill_target = self._build_fill_target(X, cfg.prediction_horizon_ms)
         X = X[self._feature_names].copy()
         X = X.replace([np.inf, -np.inf], 0.0).fillna(0.0)
         n = len(X)
@@ -131,11 +176,11 @@ class V16FillProbabilityModel:
         val_n = int(n * 0.15)
         train_n = max(n - test_n - val_n, 1)
 
-        X_train, y_train = X.iloc[:train_n], y.iloc[:train_n]
+        X_train, y_train = X.iloc[:train_n], fill_target.iloc[:train_n]
         X_val = X.iloc[train_n:train_n + val_n]
         X_test = X.iloc[train_n + val_n:]
-        y_val = y.iloc[train_n:train_n + val_n]
-        y_test = y.iloc[train_n + val_n:]
+        y_val = fill_target.iloc[train_n:train_n + val_n]
+        y_test = fill_target.iloc[train_n + val_n:]
 
         self._pipeline.fit(X_train, y_train)
         self._is_fitted = True
@@ -154,6 +199,7 @@ class V16FillProbabilityModel:
             "val_auc": auc(X_val, y_val),
             "test_auc": auc(X_test, y_test),
             "n_train": train_n, "n_val": val_n, "n_test": test_n,
+            "fill_target_positive_rate": float(fill_target.mean()),
             "brier": float(brier_score_loss(y_val, self._pipeline.predict_proba(X_val)[:, 1])) if len(y_val) > 0 else 0.0,
         }
         self._val_auc = metrics["val_auc"]

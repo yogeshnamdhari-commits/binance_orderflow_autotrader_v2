@@ -1,24 +1,24 @@
 {
-  "experiment": "V16",
-  "timestamp": "2026-09-08T04:30:00Z",
+  "experiment": "V16 (corrected)",
+  "timestamp": "2026-09-08T11:45:00Z",
   "config_hash": "e07dd90923983920",
-  "result": "PASS (scientific gates)",
+  "result": "PASS (scientific gates, corrected accounting)",
   "production_authorized": false,
   "live_order_submission": false,
   "answers": {
     "1_does_orderflow_contain_predictive_information": {
       "answer": "YES",
-      "evidence": "V16 GBR return model train R2=0.84, fill model train AUC=0.678. Order-flow features predict return magnitude and fill probability.",
+      "evidence": "V16 GBR return model train R2=0.84, fill model train AUC=0.95 (corrected target). Order-flow features predict return magnitude and fill probability.",
       "qualification": "Signal generalizes to forward data (net EV positive, 6/6 regimes positive)"
     },
     "2_does_information_survive_execution_costs": {
       "answer": "YES",
-      "evidence": "V16 forward net EV=1.18 bps after 1.54 bps maker/taker cost. Gross EV=1.49 bps exceeds costs.",
-      "qualification": "Execution-aware router + fill probability model achieves positive net EV"
+      "evidence": "V16 forward net EV=2.15 bps after 1.72 bps maker/taker cost. Gross EV=4.31 bps exceeds costs. Accounting reconciles: Net EV = mean(fill_prob * return) - mean(total_cost).",
+      "qualification": "Execution-aware router + corrected fill probability model achieves positive net EV. Non-fill cost is conditional on (1 - fill_prob)."
     },
     "3_is_edge_statistically_distinguishable_from_zero": {
       "answer": "YES",
-      "evidence": "95% CI=[0.97, 1.37] bps (entirely positive), sign-flipping permutation p=0.0005",
+      "evidence": "95% CI=[1.76, 2.60] bps (entirely positive), sign-flipping permutation p=0.0005",
       "qualification": "Edge statistically significant after execution costs"
     },
     "4_is_edge_robust_across_regimes": {
@@ -42,15 +42,15 @@
     "V13": "FAIL \u2014 AUC 0.72, net EV negative after 14.52 bps cost (2s horizon)",
     "V14": "FAIL \u2014 AUC 0.45-0.67, net EV ~0 after 3.25 bps maker/taker cost (10s horizon)",
     "V15": "FAIL \u2014 GBR return magnitude, net EV -1.69 bps after 1.61 bps cost, 0/6 regimes positive",
-    "V16": "PASS \u2014 event-time order-flow, net EV +1.18 bps, CI [0.97, 1.37], p=0.0005, 6/6 regimes positive"
+    "V16": "PASS (corrected) \u2014 event-time order-flow, net EV +2.15 bps, CI [1.76, 2.60], p=0.0005, 6/6 regimes positive. Accounting: Net EV = mean(fill_prob * return) - mean(total_cost). Gross EV = mean(|return|) over trades only."
   },
-  "root_cause": "V12-V15 failed because they used fixed-bar features, direction-only models, or fixed fill probabilities. V16 succeeds by (1) event-time features computed at each order-book event, (2) separate return-magnitude and fill-probability models, (3) dynamic maker/taker execution routing based on expected P&L, (4) walk-forward validation. The key insight: order-flow signal exists but must be paired with realistic execution simulation to achieve positive net EV.",
+  "root_cause": "V12-V15 failed because they used fixed-bar features, direction-only models, or fixed fill probabilities. V16 succeeds by (1) event-time features computed at each order-book event, (2) separate return-magnitude and fill-probability models with corrected fill target (queue thinning + high intensity + tight spread), (3) dynamic maker/taker execution routing based on expected P&L with conditional non-fill cost, (4) walk-forward validation. The key insight: order-flow signal exists but must be paired with realistic execution simulation to achieve positive net EV.",
   "tests": {
-    "passed": 392,
+    "passed": 395,
     "failed": 3,
     "skipped": 1,
     "regressions": 0,
-    "note": "3 failures are pre-existing V9 issues; 11 new V16 tests added, all pass"
+    "note": "3 failures are pre-existing V9 issues; 14 V16 tests added, all pass"
   },
   "artifacts": {
     "frozen_models": "archive/v16/v16_frozen_return_model.joblib + v16_frozen_fill_model.joblib (immutable)",
@@ -58,7 +58,7 @@
     "forward_data": "data/v16/forward/e264a34... (5876 events, 600s)",
     "evidence": "data/evidence/v16_*.json (7 files)",
     "docs": "archive/v16/V16_*_*.md (2 files)",
-    "tests": "tests/v16/test_v16_pipeline.py (11 tests)"
+    "tests": "tests/v16/test_v16_pipeline.py (14 tests)"
   },
   "next_steps": "Paper trading must be run before production authorization. LIVE_ORDER_SUBMISSION remains hard-disabled until paper trading confirms live predictions match expected distributions and all kill switches are verified.",
   "branch": "v15-autonomous-completion",

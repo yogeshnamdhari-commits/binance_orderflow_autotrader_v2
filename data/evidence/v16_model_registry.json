@@ -1,10 +1,10 @@
 {
   "experiment": "V16",
   "return_model_type": "GradientBoostingRegressor",
-  "fill_model_type": "LogisticRegression",
+  "fill_model_type": "LogisticRegression(queue_thinning + high_intensity + tight_spread target)",
   "return_model_path": "archive/v16/v16_frozen_return_model.joblib",
   "fill_model_path": "archive/v16/v16_frozen_fill_model.joblib",
-  "return_model_checksum": "d4232bda213312f4",
+  "return_model_checksum": "d4232bda213312f49939481a28724904d5832a1749c8d7459614ba03e1b8b4c4",
   "feature_names": [
     "book_imbalance_l1",
     "book_imbalance_l5",
@@ -41,5 +41,7 @@
     "activity_regime_flag"
   ],
   "config_hash": "e07dd90923983920",
-  "status": "FROZEN"
+  "status": "FROZEN",
+  "timestamp": "2026-09-08T06:30:07.189531+00:00",
+  "fill_model_checksum": "c385d5c3b69aef0a01c01d4481a26d6616e49319e879dfc8e17f62515d32058d"
 }

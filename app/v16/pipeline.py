@@ -101,12 +101,10 @@ def calibrate(config: V16Config) -> dict:
     feats_valid = feats[valid].copy().reset_index(drop=True)
     X = feats_valid[V16_FEATURES].copy()
     y_ret = pd.Series(feats_valid["fwd_ret_bps"].values, index=feats_valid.index)
-    y_fill = (y_ret > 0).astype(int)
-
     return_model = V16ReturnModel(cfg)
     fill_model = V16FillProbabilityModel(cfg)
     return_metrics = return_model.fit(X, y_ret)
-    fill_metrics = fill_model.fit(X, y_fill)
+    fill_metrics = fill_model.fit(X)
 
     pred_returns = return_model.predict(X)
     fill_probs = fill_model.predict_proba(X)
@@ -118,7 +116,8 @@ def calibrate(config: V16Config) -> dict:
 
     if n_trades > 0:
         trade_pnls = np.array([d.expected_pnl_bps for d in trade_decisions])
-        gross_ev = float(np.nanmean(np.abs(pred_returns)))
+        trade_rets = np.array([d.predicted_return_bps for d in trade_decisions])
+        gross_ev = float(np.nanmean(np.abs(trade_rets)))
         net_ev = float(np.nanmean(trade_pnls))
         stat = _bootstrap_ci(trade_pnls, n_boot=5000, rng=np.random.default_rng(cfg.random_state))
     else:
@@ -184,33 +183,56 @@ def forward(config: V16Config, return_model_path: str | None = None, fill_model_
 
     if n_trades > 0:
         trade_pnls = np.array([d.expected_pnl_bps for d in trade_decisions])
-        gross_ev = float(np.nanmean(np.abs(pred_returns)))
+        trade_rets = np.array([d.predicted_return_bps for d in trade_decisions])
+        trade_fps = np.array([d.fill_probability for d in trade_decisions])
+        trade_costs = np.array([d.total_cost_bps for d in trade_decisions])
+
+        # Correct accounting: Gross EV over trades only
+        gross_ev = float(np.nanmean(np.abs(trade_rets)))
         net_ev = float(np.nanmean(trade_pnls))
+        total_cost = float(np.nanmean(trade_costs))
+
+        # Simulate realized fills and compute realized P&L
+        rng = np.random.default_rng(cfg.random_state)
+        fill_outcomes = rng.random(n_trades) < trade_fps
+        realized_rets = np.where(fill_outcomes, trade_rets, 0.0)
+        realized_pnls = np.where(
+            fill_outcomes,
+            trade_rets - trade_costs,
+            -trade_costs,
+        )
+        realized_net_ev = float(np.nanmean(realized_pnls))
+
         stat = _bootstrap_ci(trade_pnls, n_boot=5000, rng=np.random.default_rng(cfg.random_state))
+        realized_stat = _bootstrap_ci(realized_pnls, n_boot=5000, rng=np.random.default_rng(cfg.random_state + 1))
     else:
         gross_ev = 0.0
         net_ev = 0.0
+        total_cost = 0.0
+        realized_net_ev = 0.0
         stat = {"mean_bps": 0.0, "ci_lower_bps": 0.0, "ci_upper_bps": 0.0, "p_value": 1.0, "n": 0}
+        realized_stat = {"mean_bps": 0.0, "ci_lower_bps": 0.0, "ci_upper_bps": 0.0, "p_value": 1.0, "n": 0}
 
-    regimes = {
-        "high_vol": feats["vol_regime"] > feats["vol_regime"].median(),
-        "low_vol": feats["vol_regime"] <= feats["vol_regime"].median(),
-        "high_liq": feats["liquidity_state"] > feats["liquidity_state"].median(),
-        "low_liq": feats["liquidity_state"] <= feats["liquidity_state"].median(),
-        "tight_spread": feats["spread_bps"] < feats["spread_bps"].median(),
-        "wide_spread": feats["spread_bps"] >= feats["spread_bps"].median(),
-    }
+    # Regime breakdown aligned to trade decisions
+    trade_indices = [i for i, d in enumerate(decisions) if d.action in ("MAKER", "TAKER")]
     regime_results = {}
     n_positive_regimes = 0
-    for name, mask in regimes.items():
-        rm = mask.values
-        if rm.sum() > 0 and n_trades > 0:
-            idx = np.where(rm)[0]
-            valid_idx = idx[idx < len(trade_pnls)]
-            if len(valid_idx) > 0:
-                r_rets = trade_pnls[valid_idx]
+    if trade_indices and n_trades > 0:
+        trade_feats = feats.iloc[trade_indices].reset_index(drop=True)
+        regimes = {
+            "high_vol": trade_feats["vol_regime"] > trade_feats["vol_regime"].median(),
+            "low_vol": trade_feats["vol_regime"] <= trade_feats["vol_regime"].median(),
+            "high_liq": trade_feats["liquidity_state"] > trade_feats["liquidity_state"].median(),
+            "low_liq": trade_feats["liquidity_state"] <= trade_feats["liquidity_state"].median(),
+            "tight_spread": trade_feats["spread_bps"] < trade_feats["spread_bps"].median(),
+            "wide_spread": trade_feats["spread_bps"] >= trade_feats["spread_bps"].median(),
+        }
+        for name, mask in regimes.items():
+            rm = mask.values
+            if rm.sum() > 0:
+                r_rets = trade_pnls[rm]
                 mean_ret = float(np.mean(r_rets))
-                regime_results[name] = {"mean_ret_bps": mean_ret, "n": int(len(r_rets)), "positive": mean_ret > 0}
+                regime_results[name] = {"mean_ret_bps": mean_ret, "n": int(rm.sum()), "positive": mean_ret > 0}
                 if mean_ret > 0:
                     n_positive_regimes += 1
 
@@ -223,16 +245,21 @@ def forward(config: V16Config, return_model_path: str | None = None, fill_model_
         "n_signals": n_trades,
         "n_trades": n_trades,
         "gross_ev_bps": gross_ev,
-        "total_cost_bps": float(np.mean([d.total_cost_bps for d in trade_decisions])) if n_trades > 0 else 0.0,
+        "total_cost_bps": total_cost,
         "net_ev_bps": net_ev,
+        "realized_net_ev_bps": realized_net_ev,
         "ci_lower_bps": stat["ci_lower_bps"],
         "ci_upper_bps": stat["ci_upper_bps"],
         "p_value": stat["p_value"],
         "tstat": stat["tstat"],
+        "realized_ci_lower_bps": realized_stat["ci_lower_bps"],
+        "realized_ci_upper_bps": realized_stat["ci_upper_bps"],
+        "realized_p_value": realized_stat["p_value"],
         "positive_regimes": n_positive_regimes,
-        "total_regimes": len(regimes),
+        "total_regimes": len(regime_results) if regime_results else 6,
         "regime_breakdown": regime_results,
         "elapsed_s": round(time.time() - t0, 2),
+        "accounting_note": "Gross EV = mean(|predicted_return|) over trades only. Total cost = mean(entry+exit+conditional non_fill) over trades. Net EV = mean(expected_pnl) over trades. Realized Net EV = mean(simulated fill outcome P&L) over trades.",
         "forward_pass": (net_ev > 0 and stat["ci_lower_bps"] > 0 and stat["p_value"] < 0.05
                          and n_positive_regimes >= 4 and n_trades >= cfg.min_trades_forward),
     }

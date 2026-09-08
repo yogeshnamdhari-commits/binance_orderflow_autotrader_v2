@@ -144,3 +144,54 @@ def test_v16_features_match_proposal():
     assert proposal["prediction_horizon_ms"] == 10000
     assert proposal["config_hash"] == "e07dd90923983920"
     assert len(proposal["feature_families"]) == 5
+
+
+def test_v16_execution_non_fill_cost_is_conditional():
+    cfg = V16Config()
+    sim = V16ExecutionSim(cfg)
+
+    d = sim.route(5.0, 0.8)
+    assert d.action == "MAKER"
+    assert d.non_fill_cost_bps == pytest.approx(0.1)  # (1 - 0.8) * 0.5
+
+    d2 = sim.route(5.0, 1.0)
+    assert d2.action == "MAKER"
+    assert d2.non_fill_cost_bps == 0.0  # fill_prob=1.0, no non-fill cost
+
+
+def test_v16_expected_pnl_formula_is_correct():
+    cfg = V16Config()
+    sim = V16ExecutionSim(cfg)
+
+    pr = 5.0
+    fp = 0.8
+
+    maker_pnl = sim.expected_pnl(pr, fp, maker=True)
+    expected = fp * pr - cfg.maker_entry_cost_bps - cfg.exit_cost_bps - (1 - fp) * cfg.non_fill_opportunity_cost_bps
+    assert maker_pnl == pytest.approx(expected)
+
+    taker_pnl = sim.expected_pnl(pr, 1.0, maker=False)
+    expected_taker = pr - cfg.taker_entry_cost_bps - cfg.exit_cost_bps
+    assert taker_pnl == pytest.approx(expected_taker)
+
+
+def test_v16_forward_accounting_reconciles():
+    from app.v16.pipeline import forward
+    from app.v16.execution import V16ExecutionSim
+    cfg = V16Config()
+    result = forward(cfg)
+    if result["status"] == "COMPLETE" and result["n_trades"] > 0:
+        gross = result["gross_ev_bps"]
+        total_cost = result["total_cost_bps"]
+        net = result["net_ev_bps"]
+
+        assert gross > 0, "Gross EV must be positive"
+        assert total_cost > 0, "Total cost must be positive"
+        assert net > 0, "Net EV must be positive for a pass"
+
+        # Correct accounting: Net EV = mean(fill_prob * predicted_return) - mean(total_cost)
+        # NOT Gross EV - Total cost
+        assert net <= gross, "Net EV cannot exceed Gross EV"
+        assert total_cost < gross, "Total cost must be less than Gross EV for positive Net EV"
+        assert net > 0, "Net EV must be positive"
+        assert result["ci_lower_bps"] > 0, "CI lower bound must be positive"

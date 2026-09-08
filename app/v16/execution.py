@@ -1,4 +1,21 @@
-"""V16 execution simulator — maker/taker with fill-probability model."""
+"""V16 execution simulator — maker/taker with fill-probability model.
+
+Expected P&L formula (correct accounting):
+
+Maker:
+  expected_pnl = fill_prob * predicted_return
+               - entry_cost
+               - exit_cost
+               - (1 - fill_prob) * non_fill_cost
+
+Taker:
+  expected_pnl = predicted_return - entry_cost - exit_cost
+
+Where:
+  entry_cost  = fee/rebate + slippage + adverse_selection + latency
+  exit_cost   = fixed exit fee
+  non_fill_cost = opportunity cost when maker order does not fill
+"""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -32,13 +49,13 @@ class V16ExecutionSim:
         cfg = self._cfg
         if maker:
             entry_cost = cfg.maker_entry_cost_bps
-            non_fill_cost = cfg.non_fill_opportunity_cost_bps
+            exit_cost = cfg.exit_cost_bps
+            non_fill_cost = (1.0 - fill_prob) * cfg.non_fill_opportunity_cost_bps
         else:
             entry_cost = cfg.taker_entry_cost_bps
+            exit_cost = cfg.exit_cost_bps
             non_fill_cost = 0.0
-        exit_cost = cfg.exit_cost_bps
-        total_cost = entry_cost + exit_cost + non_fill_cost
-        expected_pnl = fill_prob * predicted_return_bps - total_cost
+        expected_pnl = fill_prob * predicted_return_bps - entry_cost - exit_cost - non_fill_cost
         return expected_pnl
 
     def route(self, predicted_return_bps: float, fill_prob: float) -> V16ExecutionDecision:
@@ -57,12 +74,13 @@ class V16ExecutionSim:
         taker_pnl = self.expected_pnl(predicted_return_bps, 1.0, maker=False)
 
         if maker_pnl > taker_pnl and maker_pnl > 0:
+            non_fill_cost = (1.0 - fill_prob) * cfg.non_fill_opportunity_cost_bps
             return V16ExecutionDecision(
                 action="MAKER", predicted_return_bps=predicted_return_bps,
                 fill_probability=fill_prob, expected_pnl_bps=maker_pnl,
                 entry_cost_bps=cfg.maker_entry_cost_bps, exit_cost_bps=cfg.exit_cost_bps,
-                total_cost_bps=cfg.maker_entry_cost_bps + cfg.exit_cost_bps,
-                non_fill_cost_bps=cfg.non_fill_opportunity_cost_bps,
+                total_cost_bps=cfg.maker_entry_cost_bps + cfg.exit_cost_bps + non_fill_cost,
+                non_fill_cost_bps=non_fill_cost,
                 reason="maker_optimal",
             )
         elif taker_pnl > 0:

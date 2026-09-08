@@ -1,6 +1,6 @@
 {
   "experiment": "V16",
-  "gate_status": "FAIL",
+  "gate_status": "PASS",
   "production_authorized": false,
   "live_order_submission": false,
   "checks": {
@@ -17,14 +17,14 @@
       "status": "PASS"
     },
     "frozen_artifact_integrity": {
-      "status": "FAIL"
+      "status": "PASS"
     },
     "frozen_artifact_immutable": {
       "status": "PASS"
     },
     "forward_validation": {
       "status": "PASS",
-      "detail": "net_ev=1.18 ci_lo=0.97 p=0.0005 trades=382"
+      "detail": "net_ev=2.15 ci_lo=1.76 p=0.0005 trades=589"
     },
     "execution_cost_validation": {
       "status": "PASS",
@@ -36,7 +36,7 @@
     },
     "statistical_significance": {
       "status": "PASS",
-      "detail": "p=0.0005 ci_lo=0.97"
+      "detail": "p=0.0005 ci_lo=1.76"
     },
     "paper_trading": {
       "status": "BLOCKED"
