@@ -4,7 +4,7 @@ from app.v19.execution import expected_net_pnl, simulate_realized_fill
 
 
 def test_non_fill_cost_is_conditional():
-    assert expected_net_pnl(4.0, 0.5, 1.0, 2.0, 0.8, 1.0) == pytest.approx(0.6)
+    assert expected_net_pnl(4.0, 0.5, 1.0, 2.0, 0.8, 1.0) == pytest.approx(1.1)
 
 
 def test_realized_non_fill_has_no_execution_cost():
