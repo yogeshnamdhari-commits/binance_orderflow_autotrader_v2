@@ -41,8 +41,10 @@ def evaluate_robustness(trades: pd.DataFrame) -> dict:
     if n < MIN_TRADES:
         return {"status": "BLOCKED", "reason": f"insufficient trades: {n} < {MIN_TRADES}"}
 
-    blocks = np.array_split(df, N_BLOCKS)
-    block_means = [float(b["expected_pnl_bps"].mean()) for b in blocks]
+    # Preserve chronological order and split by row position, not by NumPy's
+    # DataFrame object handling (which can return object arrays rather than frames).
+    block_indices = np.array_split(np.arange(n), N_BLOCKS)
+    block_means = [float(df.iloc[idx]["expected_pnl_bps"].mean()) for idx in block_indices if len(idx)]
     positive_blocks = sum(x > 0 for x in block_means)
     chronological_pass = positive_blocks >= MIN_POSITIVE_BLOCKS
 
