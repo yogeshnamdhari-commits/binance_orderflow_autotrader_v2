@@ -1,0 +1,19 @@
+{
+  "symbol": "BTCUSDT",
+  "prediction_horizon_ms": 10000,
+  "feature_families": [
+    "v16_control",
+    "liquidation",
+    "funding_basis",
+    "cross_market"
+  ],
+  "min_train_events": 1000,
+  "min_test_events": 250,
+  "max_feature_age_ms": 5000,
+  "cost_stress_multipliers": [
+    1.0,
+    1.25,
+    1.5
+  ],
+  "live_order_submission": false
+}
