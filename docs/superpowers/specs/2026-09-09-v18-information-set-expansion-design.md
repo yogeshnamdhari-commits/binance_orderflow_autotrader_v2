@@ -28,6 +28,18 @@ The V18 feature layer may consume:
 
 Every feature must carry a source timestamp and an availability timestamp. Features are joined using **as-of semantics** so no future information can enter a decision.
 
+## Existing-data constraint
+
+The repository's audited data inventory reports BTCUSDT aggTrades, funding rates and hourly spot/perpetual data as available, but historical liquidation data and historical L2 order-book data are unavailable in the audited local inventory. Therefore:
+
+- funding/basis and the currently available cross-market variables are treated as **ablation/control families**, not assumed sources of new edge;
+- EXP-018 already found funding/basis/ETH-derived additions to have negative net expectancy and only tiny incremental predictive contribution, so V18 must not repackage those results as new evidence;
+- liquidation features may be implemented and collected from Binance's live `forceOrder` market stream, but they cannot be claimed as a historical-backtest feature until a timestamped historical dataset is actually acquired;
+- the historical economic gate must run only on feature families for which genuine historical data exists;
+- no synthetic liquidation or reconstructed historical L2 data may be substituted.
+
+This constraint is a stopping condition for any purported historical V18 result that requires unavailable inputs.
+
 ## Modeling
 
 V18 retains separate models for:
@@ -43,7 +55,7 @@ The initial V18 model should favor interpretable, low-dimensional baselines (reg
 
 - Freeze the V16 control and all V18 feature definitions before evaluating outcomes.
 - Use chronological, purged walk-forward splits.
-- Maintain a completely unseen historical L2 replay set where available.
+- Maintain a completely unseen historical L2 replay set where available; if it is unavailable, mark that gate BLOCKED rather than reconstructing L2.
 - Evaluate gross EV, all-in execution cost, net EV, realized simulated P&L, confidence intervals, sample size and regime-level results.
 - Apply multiple-testing control to feature-family discovery.
 - Run cost stress, chronological blocks, and leave-one-regime-out tests.
@@ -68,4 +80,4 @@ No V18 component may enable live order submission. Production authorization rema
 
 ## Research basis
 
-The design is grounded in established market-microstructure evidence that short-horizon price changes are related to order-flow imbalance and market depth (Cont, Kukanov & Stoikov, *Journal of Financial Econometrics*, 2014), while LOB sequence models such as DeepLOB provide a comparator for exploiting spatial and temporal book structure (Zhang, Zohren & Roberts, *IEEE Transactions on Signal Processing*, 2019). Binance's current USDⓈ-M documentation supports WebSocket market-stream subscriptions and exchange event streams; these interfaces are used only where the required historical/replay data can be obtained without violating the validation protocol.
+The design is grounded in established market-microstructure evidence that short-horizon price changes are related to order-flow imbalance and market depth (Cont, Kukanov & Stoikov, *Journal of Financial Econometrics*, 2014), while LOB sequence models such as DeepLOB provide a comparator for exploiting spatial and temporal book structure (Zhang, Zohren & Roberts, *IEEE Transactions on Signal Processing*, 2019). Binance's current USDⓈ-M documentation supports WebSocket market-stream subscriptions and force-order event streams; these interfaces are used only where the required historical/replay data can be obtained without violating the validation protocol.
