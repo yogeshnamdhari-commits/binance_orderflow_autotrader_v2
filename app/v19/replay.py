@@ -32,42 +32,162 @@ def _levels(raw: str | list | None) -> tuple[tuple[float, float], ...]:
     return tuple((float(p), float(q)) for p, q in value)
 
 
-def prepare_l2_dataset(events_path: Path, horizon_ns: int) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Create causal features and future labels from authentic L2/trade rows.
+def _book_event(ts_ms: int, bids: dict[float, float], asks: dict[float, float]) -> L2Event | None:
+    bid_levels = tuple(sorted(((p, q) for p, q in bids.items() if q > 0), key=lambda x: x[0], reverse=True))
+    ask_levels = tuple(sorted(((p, q) for p, q in asks.items() if q > 0), key=lambda x: x[0]))
+    if not bid_levels or not ask_levels:
+        return None
+    bid_px, bid_qty = bid_levels[0]
+    ask_px, ask_qty = ask_levels[0]
+    if ask_px < bid_px:
+        raise ValueError("reconstructed order book crossed: ask price below bid price")
+    return L2Event(
+        ts_ms * 1_000_000,
+        bid_px,
+        bid_qty,
+        ask_px,
+        ask_qty,
+        bid_levels=bid_levels,
+        ask_levels=ask_levels,
+    )
 
-    Only rows at or before each decision timestamp enter the feature calculation.
-    Forward mid-price return and fill outcomes are deliberately computed from
-    later observations and are never passed back into the feature layer.
+
+def _reconstruct_depth(rows: Iterable[dict]) -> list[L2Event]:
+    """Reconstruct causal L2 states from Binance T_DEPTH rows.
+
+    Binance historical T_DEPTH uses update_type values `snap`, `set`, and
+    `delta`. A snapshot establishes the initial state; later set/delta rows
+    mutate that state. Legacy repository rows containing complete `bids` and
+    `asks` arrays remain supported.
     """
-    rows = _load_rows(events_path)
-    books: list[L2Event] = []
+    bids: dict[float, float] = {}
+    asks: dict[float, float] = {}
+    initialized = False
+    snapshot_ts: int | None = None
+    events: list[L2Event] = []
+
+    for row in sorted(rows, key=lambda r: int(r.get("ts_ms", r.get("timestamp_ms", r.get("time", 0))))):
+        kind = str(row.get("type", "")).lower()
+        if kind != "depth":
+            continue
+        ts_ms = int(row.get("ts_ms", row.get("timestamp_ms", row.get("time", 0))))
+
+        # Repository-native full snapshots.
+        raw_bids = row.get("bids_json", row.get("bids"))
+        raw_asks = row.get("asks_json", row.get("asks"))
+        if raw_bids is not None or raw_asks is not None:
+            next_bids = dict(_levels(raw_bids))
+            next_asks = dict(_levels(raw_asks))
+            if next_bids and next_asks:
+                bids, asks, initialized = next_bids, next_asks, True
+                event = _book_event(ts_ms, bids, asks)
+                if event is not None:
+                    events.append(event)
+            continue
+
+        update_type = str(row.get("update_type", "")).lower()
+        side = str(row.get("side", "")).lower()
+        if side not in {"b", "a", "bid", "ask"}:
+            raise ValueError(f"invalid Binance depth side: {side!r}")
+        price = float(row["price"])
+        qty = float(row["qty", row.get("quantity", 0.0)])
+        book = bids if side in {"b", "bid"} else asks
+
+        if update_type == "snap":
+            if snapshot_ts != ts_ms:
+                bids.clear()
+                asks.clear()
+                snapshot_ts = ts_ms
+            book[price] = qty
+            initialized = True
+        elif update_type == "set":
+            if not initialized:
+                raise ValueError("Binance T_DEPTH set update arrived before an order-book snapshot")
+            if qty <= 0:
+                book.pop(price, None)
+            else:
+                book[price] = qty
+        elif update_type == "delta":
+            if not initialized:
+                raise ValueError("Binance T_DEPTH delta update arrived before an order-book snapshot")
+            new_qty = book.get(price, 0.0) + qty
+            if new_qty < -1e-12:
+                raise ValueError("Binance T_DEPTH delta produced negative level quantity")
+            if new_qty <= 1e-12:
+                book.pop(price, None)
+            else:
+                book[price] = new_qty
+        else:
+            raise ValueError(f"unsupported Binance depth update_type: {update_type!r}")
+
+        event = _book_event(ts_ms, bids, asks)
+        if event is not None:
+            events.append(event)
+
+    if len(events) < 3:
+        raise ValueError("historical replay requires at least three valid depth states")
+    return events
+
+
+def _trade_rows(rows: Iterable[dict]) -> list[tuple[int, float, float, str]]:
     trades: list[tuple[int, float, float, str]] = []
     for row in rows:
-        kind = str(row.get("type", "")).lower()
-        ts_ms = int(row.get("ts_ms", row.get("timestamp_ms", 0)))
-        if kind == "depth":
-            bids = _levels(row.get("bids_json", row.get("bids")))
-            asks = _levels(row.get("asks_json", row.get("asks")))
-            if bids and asks:
-                books.append(L2Event(ts_ms * 1_000_000, bids[0][0], bids[0][1], asks[0][0], asks[0][1], bid_levels=bids, ask_levels=asks))
-        elif kind == "trade":
-            side = "SELL" if str(row.get("buyer_is_maker", "false")).lower() == "true" else "BUY"
-            trades.append((ts_ms * 1_000_000, float(row["price"]), float(row["qty"]), side))
-    books.sort(key=lambda x: x.timestamp_ns)
-    trades.sort(key=lambda x: x[0])
-    if len(books) < 3:
-        raise ValueError("historical replay requires at least three valid depth events")
+        if str(row.get("type", "")).lower() != "trade":
+            continue
+        ts_ms = int(row.get("ts_ms", row.get("timestamp_ms", row.get("time", 0))))
+        price = float(row["price"])
+        qty = float(row.get("qty", row.get("quantity", 0.0)))
+        side = "SELL" if str(row.get("buyer_is_maker", "false")).lower() == "true" else "BUY"
+        trades.append((ts_ms * 1_000_000, price, qty, side))
+    return sorted(trades, key=lambda x: x[0])
+
+
+def _attach_trades(books: list[L2Event], trades: list[tuple[int, float, float, str]]) -> list[L2Event]:
+    """Add synthetic trade observations without changing the reconstructed book."""
+    if not trades:
+        return books
+    combined: list[L2Event] = list(books)
+    for ts_ns, _, qty, side in trades:
+        idx = int(np.searchsorted(np.asarray([e.timestamp_ns for e in books]), ts_ns, side="right") - 1)
+        if idx < 0:
+            continue
+        state = books[idx]
+        combined.append(L2Event(
+            ts_ns,
+            state.bid_px,
+            state.bid_qty,
+            state.ask_px,
+            state.ask_qty,
+            trade_side=side,
+            trade_qty=qty,
+            bid_levels=state.bid_levels,
+            ask_levels=state.ask_levels,
+        ))
+    return sorted(combined, key=lambda e: (e.timestamp_ns, 0 if e.trade_qty == 0 else 1))
+
+
+def prepare_l2_dataset(events_path: Path, horizon_ns: int) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Create causal features and future labels from authentic L2/trade rows."""
+    if horizon_ns <= 0:
+        raise ValueError("horizon_ns must be positive")
+    rows = _load_rows(events_path)
+    books = _reconstruct_depth(rows)
+    trades = _trade_rows(rows)
+    observed_events = _attach_trades(books, trades)
 
     timestamps: list[int] = []
     X: list[list[float]] = []
     returns: list[float] = []
     fills: list[int] = []
+    book_ts = np.asarray([x.timestamp_ns for x in books], dtype=np.int64)
+
     for i, event in enumerate(books):
         target_ns = event.timestamp_ns + horizon_ns
-        future = next((x for x in books[i + 1:] if x.timestamp_ns >= target_ns), None)
-        if future is None:
+        future_idx = int(np.searchsorted(book_ts, target_ns, side="left"))
+        if future_idx >= len(books):
             break
-        features = compute_orderflow_features(books[: i + 1], event.timestamp_ns)
+        future = books[future_idx]
+        features = compute_orderflow_features(observed_events, event.timestamp_ns)
         mid = (event.bid_px + event.ask_px) / 2.0
         future_mid = (future.bid_px + future.ask_px) / 2.0
         side = "BUY" if features["ofi_1"] >= 0 else "SELL"
@@ -86,8 +206,10 @@ def prepare_l2_dataset(events_path: Path, horizon_ns: int) -> tuple[np.ndarray, 
     return np.asarray(X), np.asarray(returns), np.asarray(fills), np.asarray(timestamps)
 
 
-def run_historical_replay(events_path: Path, config: V19Config) -> dict[str, object]:
+def run_historical_replay(events_path: Path, config: V19Config, v16_outcomes: np.ndarray | None = None) -> dict[str, object]:
     if config.live_order_submission:
         raise ValueError("historical replay requires live submission to remain disabled")
+    if v16_outcomes is None:
+        raise ValueError("historical replay requires an aligned frozen V16 outcome vector")
     X, returns, fills, timestamps = prepare_l2_dataset(events_path, config.prediction_horizon_ms * 1_000_000)
-    return run_forward_pipeline(X, returns, fills, timestamps, config)
+    return run_forward_pipeline(X, returns, fills, timestamps, config, v16_outcomes)
