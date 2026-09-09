@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-from dataclasses import asdict
+import json
 from pathlib import Path
 from typing import Sequence
-import json
 
 import numpy as np
 
 from .config import V19Config
-from .gate import GateResult, evaluate_gate, run_cost_stress
+from .gate import run_cost_stress, evaluate_gate
 from .walk_forward import FoldResult, evaluate_fold, make_purged_splits
 
 
@@ -18,8 +17,9 @@ def run_forward_pipeline(
     fills: Sequence[int],
     timestamps_ns: Sequence[int],
     config: V19Config,
+    v16_outcomes: Sequence[float],
 ) -> dict[str, object]:
-    """Run locked expanding walk-forward evaluation on a prepared causal feature matrix."""
+    """Run locked expanding walk-forward evaluation and require comparison with frozen V16."""
     splits = make_purged_splits(
         timestamps_ns,
         config.min_train_events,
@@ -34,10 +34,11 @@ def run_forward_pipeline(
     realized = np.asarray([x for fold in folds for x in fold.realized_net_bps], dtype=float)
     if expected.size == 0:
         raise ValueError("walk-forward produced no test outcomes")
-    # Chronological blocks are the individual walk-forward folds.
+    if len(v16_outcomes) != len(expected):
+        raise ValueError("frozen V16 outcome vector must align with V19 test outcomes")
     regimes = [np.asarray(fold.expected_net_bps, dtype=float) for fold in folds]
     stress = run_cost_stress(expected, config.cost_stress_multipliers)
-    gate = evaluate_gate(expected, realized, regimes, stress)
+    gate = evaluate_gate(expected, v16_outcomes, realized, regimes, stress)
     return {
         "config_hash": config.config_hash,
         "n_folds": len(folds),
@@ -47,6 +48,10 @@ def run_forward_pipeline(
         "ci_low_bps": gate.ci_low_bps,
         "ci_high_bps": gate.ci_high_bps,
         "p_value": gate.p_value,
+        "incremental_mean_bps": gate.incremental_mean_bps,
+        "incremental_ci_low_bps": gate.incremental_ci_low_bps,
+        "incremental_ci_high_bps": gate.incremental_ci_high_bps,
+        "incremental_p_value": gate.incremental_p_value,
         "regime_means": list(gate.regime_means),
         "cost_stress": {str(k): v for k, v in gate.cost_stress.items()},
         "gate_pass": gate.passed,
