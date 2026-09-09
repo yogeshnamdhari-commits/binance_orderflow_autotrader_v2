@@ -67,16 +67,22 @@ def _bootstrap_ci(returns_bps: np.ndarray, n_boot: int = 5000, block_size: int =
         block_means = np.array([rng.choice(r, size=max(1, n // 2), replace=True).mean() for _ in range(n_boot)])
     ci_lower = float(np.percentile(block_means, alpha / 2 * 100))
     ci_upper = float(np.percentile(block_means, (1 - alpha / 2) * 100))
-    sem_block = float(np.std(block_means, ddof=1))
-    sem = sem_block / np.sqrt(n) if sem_block > 0 and n > 0 else 0.0
-    if sem > 0:
+
+    # block_means is a bootstrap distribution of the sample mean, so its
+    # standard deviation is already the bootstrap standard error of the mean.
+    # Dividing it by sqrt(n) again would underestimate the SE by sqrt(n) and
+    # inflate the reported t-statistic by the same factor.
+    bootstrap_se = float(np.std(block_means, ddof=1)) if len(block_means) > 1 else 0.0
+    if bootstrap_se > 0:
         from scipy import stats as sp_stats
-        tstat = mean / sem
-        p_value = float(2 * (1 - sp_stats.t.cdf(abs(tstat), df=n - 1)))
+        tstat = mean / bootstrap_se
+        p_value_t = float(2 * (1 - sp_stats.t.cdf(abs(tstat), df=max(1, n - 1))))
     else:
         tstat = 0.0
-        p_value = 1.0
-    # permutation test (sign-flipping under null: mean = 0)
+        p_value_t = 1.0
+
+    # Permutation test (sign-flipping under null: mean = 0). This remains the
+    # primary reported p-value because it does not rely on the t approximation.
     perm_means = []
     for _ in range(2000):
         signs = rng.choice([-1, 1], size=n)
@@ -84,7 +90,7 @@ def _bootstrap_ci(returns_bps: np.ndarray, n_boot: int = 5000, block_size: int =
     perm_p = float((np.sum(np.abs(np.array(perm_means)) >= abs(mean)) + 1) / (len(perm_means) + 1))
     return {
         "mean_bps": mean, "ci_lower_bps": ci_lower, "ci_upper_bps": ci_upper,
-        "tstat": tstat, "p_value": perm_p, "n": int(n),
+        "tstat": tstat, "p_value": perm_p, "t_p_value": p_value_t, "n": int(n),
     }
 
 
@@ -187,12 +193,10 @@ def forward(config: V16Config, return_model_path: str | None = None, fill_model_
         trade_fps = np.array([d.fill_probability for d in trade_decisions])
         trade_costs = np.array([d.total_cost_bps for d in trade_decisions])
 
-        # Correct accounting: Gross EV over trades only
         gross_ev = float(np.nanmean(np.abs(trade_rets)))
         net_ev = float(np.nanmean(trade_pnls))
         total_cost = float(np.nanmean(trade_costs))
 
-        # Simulate realized fills and compute realized P&L
         rng = np.random.default_rng(cfg.random_state)
         fill_outcomes = rng.random(n_trades) < trade_fps
         realized_rets = np.where(fill_outcomes, trade_rets, 0.0)
@@ -213,7 +217,6 @@ def forward(config: V16Config, return_model_path: str | None = None, fill_model_
         stat = {"mean_bps": 0.0, "ci_lower_bps": 0.0, "ci_upper_bps": 0.0, "p_value": 1.0, "n": 0}
         realized_stat = {"mean_bps": 0.0, "ci_lower_bps": 0.0, "ci_upper_bps": 0.0, "p_value": 1.0, "n": 0}
 
-    # Regime breakdown aligned to trade decisions
     trade_indices = [i for i, d in enumerate(decisions) if d.action in ("MAKER", "TAKER")]
     regime_results = {}
     n_positive_regimes = 0
@@ -252,6 +255,7 @@ def forward(config: V16Config, return_model_path: str | None = None, fill_model_
         "ci_upper_bps": stat["ci_upper_bps"],
         "p_value": stat["p_value"],
         "tstat": stat["tstat"],
+        "t_p_value": stat.get("t_p_value", 1.0),
         "realized_ci_lower_bps": realized_stat["ci_lower_bps"],
         "realized_ci_upper_bps": realized_stat["ci_upper_bps"],
         "realized_p_value": realized_stat["p_value"],
