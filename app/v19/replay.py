@@ -72,7 +72,6 @@ def _reconstruct_depth(rows: Iterable[dict]) -> list[L2Event]:
             continue
         ts_ms = int(row.get("ts_ms", row.get("timestamp_ms", row.get("time", 0))))
 
-        # Repository-native full snapshots.
         raw_bids = row.get("bids_json", row.get("bids"))
         raw_asks = row.get("asks_json", row.get("asks"))
         if raw_bids is not None or raw_asks is not None:
@@ -90,7 +89,7 @@ def _reconstruct_depth(rows: Iterable[dict]) -> list[L2Event]:
         if side not in {"b", "a", "bid", "ask"}:
             raise ValueError(f"invalid Binance depth side: {side!r}")
         price = float(row["price"])
-        qty = float(row["qty", row.get("quantity", 0.0)])
+        qty = float(row.get("qty", row.get("quantity", 0.0)))
         book = bids if side in {"b", "bid"} else asks
 
         if update_type == "snap":
@@ -147,8 +146,9 @@ def _attach_trades(books: list[L2Event], trades: list[tuple[int, float, float, s
     if not trades:
         return books
     combined: list[L2Event] = list(books)
+    book_ts = np.asarray([e.timestamp_ns for e in books], dtype=np.int64)
     for ts_ns, _, qty, side in trades:
-        idx = int(np.searchsorted(np.asarray([e.timestamp_ns for e in books]), ts_ns, side="right") - 1)
+        idx = int(np.searchsorted(book_ts, ts_ns, side="right") - 1)
         if idx < 0:
             continue
         state = books[idx]
