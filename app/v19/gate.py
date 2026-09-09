@@ -6,6 +6,8 @@ from typing import Sequence
 
 import numpy as np
 
+from .comparison import compare_to_v16
+
 
 @dataclass(frozen=True)
 class GateResult:
@@ -16,6 +18,10 @@ class GateResult:
     ci_low_bps: float
     ci_high_bps: float
     p_value: float
+    incremental_mean_bps: float
+    incremental_ci_low_bps: float
+    incremental_ci_high_bps: float
+    incremental_p_value: float
     cost_stress: dict[float, float]
     regime_means: tuple[float, ...]
 
@@ -47,6 +53,7 @@ def run_cost_stress(net_outcomes: Sequence[float], multipliers: Sequence[float])
 
 def evaluate_gate(
     v19_outcomes: Sequence[float],
+    v16_outcomes: Sequence[float],
     realized_outcomes: Sequence[float],
     regime_outcomes: Sequence[Sequence[float]],
     stress: dict[float, float],
@@ -56,16 +63,28 @@ def evaluate_gate(
 ) -> GateResult:
     net, lo, hi, p = _mean_ci(v19_outcomes)
     realized = float(np.asarray(realized_outcomes, dtype=float).mean())
+    relative = compare_to_v16(v19_outcomes, v16_outcomes)
     regime_means = tuple(float(np.asarray(r, dtype=float).mean()) for r in regime_outcomes if len(r))
     reasons: list[str] = []
+    if relative["incremental_mean_bps"] <= min_incremental_bps:
+        reasons.append("V19 does not improve net EV over frozen V16")
+    if relative["ci_low_bps"] <= 0.0:
+        reasons.append("V19 versus V16 confidence interval does not exclude zero")
+    if relative["sign_test_pvalue"] > max_p_value:
+        reasons.append("V19 versus V16 incremental result is not statistically significant")
     if net <= min_incremental_bps:
         reasons.append("net EV is not above the required economic threshold")
     if lo <= 0.0:
-        reasons.append("95% confidence interval does not exclude zero")
+        reasons.append("V19 95% confidence interval does not exclude zero")
     if p > max_p_value:
-        reasons.append("economic result is not statistically significant")
+        reasons.append("V19 economic result is not statistically significant")
     if not regime_means or any(x <= 0.0 for x in regime_means):
         reasons.append("at least one chronological regime is non-positive")
     if any(v <= 0.0 for v in stress.values()):
         reasons.append("cost stress removes the economic edge")
-    return GateResult(not reasons, tuple(reasons), net, realized, lo, hi, p, dict(stress), regime_means)
+    return GateResult(
+        not reasons, tuple(reasons), net, realized, lo, hi, p,
+        float(relative["incremental_mean_bps"]), float(relative["ci_low_bps"]),
+        float(relative["ci_high_bps"]), float(relative["sign_test_pvalue"]),
+        dict(stress), regime_means,
+    )
