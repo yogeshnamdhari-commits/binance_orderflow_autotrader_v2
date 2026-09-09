@@ -11,9 +11,10 @@ def test_bootstrap_tstat_uses_bootstrap_se_not_se_of_bootstrap_se():
     returns = np.random.default_rng(42).normal(loc=1.0, scale=2.0, size=100)
     result = _bootstrap_ci(returns, n_boot=4000, block_size=4, rng=np.random.default_rng(11))
 
-    # The bootstrap distribution SD is the estimated SE of the sample mean.
-    # Dividing it by sqrt(n) again makes the t-statistic about sqrt(n) too large.
-    assert 40.0 < result["tstat"] < 70.0
+    # The corrected statistic is about 5.5 for this deterministic fixture.
+    # The old implementation divided the bootstrap SE by sqrt(n) a second time,
+    # producing about 55 and therefore failing this bounded sanity check.
+    assert 4.0 < result["tstat"] < 8.0
 
 
 def test_bootstrap_tstat_scales_with_sample_size_correctly():
