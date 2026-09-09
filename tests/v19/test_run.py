@@ -20,7 +20,8 @@ def test_pipeline_writes_locked_evidence(tmp_path):
     returns = np.linspace(1.0, 3.0, 12)
     fills = np.array([0, 1] * 6)
     ts = np.arange(12) * 1_000_000_000
-    result = run_forward_pipeline(X, returns, fills, ts, config)
+    v16_outcomes = np.full(4, 0.5, dtype=float)
+    result = run_forward_pipeline(X, returns, fills, ts, config, v16_outcomes)
     path = tmp_path / "evidence.json"
     write_evidence(result, path)
     saved = json.loads(path.read_text())
