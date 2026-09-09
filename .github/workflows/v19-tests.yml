@@ -4,7 +4,7 @@ on:
   push:
     branches: ["v19-economic-orderflow-research"]
   pull_request:
-    branches: ["v19-economic-orderflow-research"]
+    branches: ["v18-information-set-expansion"]
 
 jobs:
   v19:
