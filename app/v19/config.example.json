@@ -1,0 +1,25 @@
+{
+  "symbol": "BTCUSDT",
+  "prediction_horizon_ms": 2000,
+  "feature_names": [
+    "queue_imbalance_1",
+    "queue_imbalance_3",
+    "ofi_1",
+    "ofi_3",
+    "signed_trade_flow",
+    "spread_bps",
+    "depth_concentration",
+    "queue_change_intensity",
+    "liquidity_state"
+  ],
+  "min_train_events": 1000,
+  "min_test_events": 250,
+  "embargo_events": 20,
+  "max_feature_age_ms": 500,
+  "maker_round_trip_cost_bps": 1.5,
+  "taker_round_trip_cost_bps": 3.0,
+  "non_fill_opportunity_cost_bps": 0.5,
+  "maker_share": 0.75,
+  "cost_stress_multipliers": [1.0, 1.25, 1.5],
+  "live_order_submission": false
+}
