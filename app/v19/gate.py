@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from math import erf, sqrt
 from typing import Sequence
 
 import numpy as np
@@ -19,7 +20,7 @@ class GateResult:
     regime_means: tuple[float, ...]
 
 
-def _mean_ci(values: Sequence[float], seed: int = 19) -> tuple[float, float, float]:
+def _mean_ci(values: Sequence[float], seed: int = 19) -> tuple[float, float, float, float]:
     x = np.asarray(values, dtype=float)
     if x.size == 0 or not np.isfinite(x).all():
         raise ValueError("gate values must be finite and non-empty")
@@ -27,9 +28,12 @@ def _mean_ci(values: Sequence[float], seed: int = 19) -> tuple[float, float, flo
     rng = np.random.default_rng(seed)
     boot = rng.choice(x, size=(5000, len(x)), replace=True).mean(axis=1)
     lo, hi = np.quantile(boot, [0.025, 0.975])
-    # Conservative normal approximation only for a compact gate diagnostic.
     se = float(x.std(ddof=1) / np.sqrt(len(x))) if len(x) > 1 else 0.0
-    p = 1.0 if se == 0.0 else float(2.0 * (1.0 - 0.5 * (1.0 + np.math.erf(abs(mean / se) / np.sqrt(2.0)))))
+    if se == 0.0:
+        p = 0.0 if mean > 0 else 1.0
+    else:
+        z = abs(mean / se)
+        p = float(2.0 * (1.0 - 0.5 * (1.0 + erf(z / sqrt(2.0)))))
     return mean, float(lo), float(hi), p
 
 
@@ -37,8 +41,6 @@ def run_cost_stress(net_outcomes: Sequence[float], multipliers: Sequence[float])
     x = np.asarray(net_outcomes, dtype=float)
     if x.size == 0 or not np.isfinite(x).all():
         raise ValueError("net_outcomes must be finite and non-empty")
-    # The outcome is already net of baseline cost; stress scales the economic edge
-    # conservatively rather than refitting the model.
     gross_proxy = float(x.mean())
     return {float(m): gross_proxy / float(m) for m in multipliers}
 
