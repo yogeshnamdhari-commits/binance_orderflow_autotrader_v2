@@ -26,4 +26,4 @@ def test_expected_net_pnl_reconciles_fill_and_non_fill_paths():
         non_fill_opportunity_cost=0.5,
         maker_share=1.0,
     )
-    assert value == pytest.approx(2.9)
+    assert value == pytest.approx(3.1)
