@@ -31,24 +31,56 @@ def _mean_ci(values: Sequence[float], seed: int = 19) -> tuple[float, float, flo
     if x.size == 0 or not np.isfinite(x).all():
         raise ValueError("gate values must be finite and non-empty")
     mean = float(x.mean())
+    n = len(x)
+    block_size = max(1, int(n ** 0.5))
     rng = np.random.default_rng(seed)
-    boot = rng.choice(x, size=(5000, len(x)), replace=True).mean(axis=1)
-    lo, hi = np.quantile(boot, [0.025, 0.975])
-    se = float(x.std(ddof=1) / np.sqrt(len(x))) if len(x) > 1 else 0.0
+    boot = []
+    for _ in range(5000):
+        starts = rng.integers(0, n, size=max(1, n // block_size))
+        block = np.concatenate([np.roll(x, -s)[:block_size] for s in starts])
+        boot.append(float(block[:n].mean()))
+    lo, hi = float(np.quantile(boot, 0.025)), float(np.quantile(boot, 0.975))
+    se = float(x.std(ddof=1) / np.sqrt(n)) if n > 1 else 0.0
     if se == 0.0:
         p = 0.0 if mean > 0 else 1.0
     else:
         z = abs(mean / se)
         p = float(2.0 * (1.0 - 0.5 * (1.0 + erf(z / sqrt(2.0)))))
-    return mean, float(lo), float(hi), p
+    return mean, lo, hi, p
 
 
-def run_cost_stress(net_outcomes: Sequence[float], multipliers: Sequence[float]) -> dict[float, float]:
-    x = np.asarray(net_outcomes, dtype=float)
-    if x.size == 0 or not np.isfinite(x).all():
-        raise ValueError("net_outcomes must be finite and non-empty")
-    gross_proxy = float(x.mean())
-    return {float(m): gross_proxy / float(m) for m in multipliers}
+def run_cost_stress(
+    predicted_returns_bps: Sequence[float],
+    fill_probabilities: Sequence[float],
+    config: V19Config,
+) -> dict[float, float]:
+    """Recompute expected net P&L under stressed execution costs.
+
+    Each multiplier represents a scenario in which all cost components
+    are increased proportionally from their baseline values. This is
+    more realistic than scaling the mean net outcome by a constant.
+    """
+    pred = np.asarray(predicted_returns_bps, dtype=float)
+    probs = np.asarray(fill_probabilities, dtype=float)
+    if pred.size == 0 or probs.size == 0 or pred.size != probs.size:
+        raise ValueError("predictions and fill probabilities must be non-empty and aligned")
+    if not np.isfinite(pred).all() or not np.isfinite(probs).all():
+        raise ValueError("cost stress inputs must be finite")
+    if not (0.0 <= probs.min() <= probs.max() <= 1.0):
+        raise ValueError("fill probabilities must be in [0, 1]")
+    base_maker = config.maker_round_trip_cost_bps
+    base_taker = config.taker_round_trip_cost_bps
+    base_non_fill = config.non_fill_opportunity_cost_bps
+    maker_share = config.maker_share
+    results: dict[float, float] = {}
+    for mult in config.cost_stress_multipliers:
+        stressed_maker = base_maker * mult
+        stressed_taker = base_taker * mult
+        stressed_non_fill = base_non_fill * mult
+        execution = maker_share * stressed_maker + (1.0 - maker_share) * stressed_taker
+        net = probs * (pred - execution) - (1.0 - probs) * stressed_non_fill
+        results[float(mult)] = float(np.mean(net))
+    return results
 
 
 def evaluate_gate(

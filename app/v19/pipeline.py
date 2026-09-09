@@ -31,13 +31,15 @@ def run_forward_pipeline(
         for split in splits
     ]
     expected = np.asarray([x for fold in folds for x in fold.expected_net_bps], dtype=float)
+    predicted = np.asarray([x for fold in folds for x in fold.predicted_return_bps], dtype=float)
+    fill_probs = np.asarray([x for fold in folds for x in fold.fill_probability], dtype=float)
     realized = np.asarray([x for fold in folds for x in fold.realized_net_bps], dtype=float)
     if expected.size == 0:
         raise ValueError("walk-forward produced no test outcomes")
     if len(v16_outcomes) != len(expected):
         raise ValueError("frozen V16 outcome vector must align with V19 test outcomes")
     regimes = [np.asarray(fold.expected_net_bps, dtype=float) for fold in folds]
-    stress = run_cost_stress(expected, config.cost_stress_multipliers)
+    stress = run_cost_stress(predicted, fill_probs, config)
     gate = evaluate_gate(expected, v16_outcomes, realized, regimes, stress)
     return {
         "config_hash": config.config_hash,
