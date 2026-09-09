@@ -1,3 +1,5 @@
+import pytest
+
 from app.v18.features import (
     LiquidationEvent,
     compute_cross_market_features,
@@ -25,6 +27,6 @@ def test_funding_and_basis_features_are_explicit_about_missing_data():
 
 def test_cross_market_features_use_lagged_returns():
     result = compute_cross_market_features(101.0, 100.0, 0.01, 0.02)
-    assert result["cross_market_confirmation"] == 0.015
-    assert result["cross_market_divergence"] == -0.01
-    assert result["target_reference_basis"] == 0.01
+    assert result["cross_market_confirmation"] == pytest.approx(0.015)
+    assert result["cross_market_divergence"] == pytest.approx(-0.01)
+    assert result["target_reference_basis"] == pytest.approx(0.01)
