@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from math import comb
 from typing import Sequence
 
 import numpy as np
@@ -7,6 +8,8 @@ import numpy as np
 
 def compare_to_v16(v19: Sequence[float], v16: Sequence[float], *, bootstrap_samples: int = 5000, seed: int = 19) -> dict[str, float]:
     """Compare aligned trade outcomes without assuming independence between versions."""
+    if bootstrap_samples <= 0:
+        raise ValueError("bootstrap_samples must be positive")
     a = np.asarray(v19, dtype=float)
     b = np.asarray(v16, dtype=float)
     if a.ndim != 1 or b.ndim != 1 or len(a) == 0 or len(a) != len(b):
@@ -22,11 +25,10 @@ def compare_to_v16(v19: Sequence[float], v16: Sequence[float], *, bootstrap_samp
     if len(nonzero) == 0:
         p = 1.0
     else:
-        positives = np.sum(nonzero > 0)
-        # Exact two-sided binomial sign test, implemented without scipy.
+        positives = int(np.sum(nonzero > 0))
         n = len(nonzero)
-        k = min(int(positives), n - int(positives))
-        p = min(1.0, 2.0 * sum(np.math.comb(n, i) for i in range(k + 1)) / (2.0 ** n))
+        k = min(positives, n - positives)
+        p = min(1.0, 2.0 * sum(comb(n, i) for i in range(k + 1)) / (2.0 ** n))
     return {
         "incremental_mean_bps": mean,
         "ci_low_bps": float(lo),
