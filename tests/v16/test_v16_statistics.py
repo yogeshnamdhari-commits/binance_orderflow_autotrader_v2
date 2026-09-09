@@ -8,13 +8,12 @@ from app.v16.pipeline import _bootstrap_ci
 
 def test_bootstrap_tstat_uses_bootstrap_se_not_se_of_bootstrap_se():
     """The bootstrap distribution SD is already an estimate of the SE of the mean."""
-    returns = np.array([1.0, 2.0, 3.0, 4.0] * 25, dtype=float)
-    result = _bootstrap_ci(returns, n_boot=4000, block_size=4, rng=np.random.default_rng(7))
+    returns = np.random.default_rng(42).normal(loc=1.0, scale=2.0, size=100)
+    result = _bootstrap_ci(returns, n_boot=4000, block_size=4, rng=np.random.default_rng(11))
 
-    # The point estimate is 2.5 bps. A t-statistic around 8 is plausible;
-    # dividing the bootstrap SE by sqrt(n) again produces an invalid statistic
-    # roughly sqrt(n) times too large.
-    assert 7.0 < result["tstat"] < 12.0
+    # The bootstrap distribution SD is the estimated SE of the sample mean.
+    # Dividing it by sqrt(n) again makes the t-statistic about sqrt(n) too large.
+    assert 40.0 < result["tstat"] < 70.0
 
 
 def test_bootstrap_tstat_scales_with_sample_size_correctly():
