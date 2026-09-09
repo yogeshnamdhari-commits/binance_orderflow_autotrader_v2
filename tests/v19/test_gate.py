@@ -2,7 +2,13 @@ from app.v19.gate import evaluate_gate, run_cost_stress
 
 
 def test_gate_rejects_negative_regime():
-    result = evaluate_gate([1.0, 1.2, 0.8], [0.9, 1.0, 0.7], [[1.0, 1.2], [-0.5]], {1.0: 0.5})
+    result = evaluate_gate(
+        [1.0, 1.2, 0.8],
+        [0.9, 1.0, 0.7],
+        [0.9, 1.1, 0.7],
+        [[1.0, 1.2], [-0.5]],
+        {1.0: 0.5},
+    )
     assert not result.passed
     assert any("regime" in reason for reason in result.reasons)
 
