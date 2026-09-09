@@ -9,6 +9,8 @@ import numpy as np
 from .config import V19Config
 from .features import L2Event, compute_orderflow_features
 from .pipeline import run_forward_pipeline
+from .walk_forward import make_purged_splits
+from .v16_control import aligned_v16_outcomes
 
 
 def _load_rows(events_path: Path) -> list[dict]:
@@ -53,13 +55,6 @@ def _book_event(ts_ms: int, bids: dict[float, float], asks: dict[float, float]) 
 
 
 def _reconstruct_depth(rows: Iterable[dict]) -> list[L2Event]:
-    """Reconstruct causal L2 states from Binance T_DEPTH rows.
-
-    Binance historical T_DEPTH uses update_type values `snap`, `set`, and
-    `delta`. A snapshot establishes the initial state; later set/delta rows
-    mutate that state. Legacy repository rows containing complete `bids` and
-    `asks` arrays remain supported.
-    """
     bids: dict[float, float] = {}
     asks: dict[float, float] = {}
     initialized = False
@@ -67,11 +62,9 @@ def _reconstruct_depth(rows: Iterable[dict]) -> list[L2Event]:
     events: list[L2Event] = []
 
     for row in sorted(rows, key=lambda r: int(r.get("ts_ms", r.get("timestamp_ms", r.get("time", 0))))):
-        kind = str(row.get("type", "")).lower()
-        if kind != "depth":
+        if str(row.get("type", "")).lower() != "depth":
             continue
         ts_ms = int(row.get("ts_ms", row.get("timestamp_ms", row.get("time", 0))))
-
         raw_bids = row.get("bids_json", row.get("bids"))
         raw_asks = row.get("asks_json", row.get("asks"))
         if raw_bids is not None or raw_asks is not None:
@@ -91,7 +84,6 @@ def _reconstruct_depth(rows: Iterable[dict]) -> list[L2Event]:
         price = float(row["price"])
         qty = float(row.get("qty", row.get("quantity", 0.0)))
         book = bids if side in {"b", "bid"} else asks
-
         if update_type == "snap":
             if snapshot_ts != ts_ms:
                 bids.clear()
@@ -118,7 +110,6 @@ def _reconstruct_depth(rows: Iterable[dict]) -> list[L2Event]:
                 book[price] = new_qty
         else:
             raise ValueError(f"unsupported Binance depth update_type: {update_type!r}")
-
         event = _book_event(ts_ms, bids, asks)
         if event is not None:
             events.append(event)
@@ -142,7 +133,6 @@ def _trade_rows(rows: Iterable[dict]) -> list[tuple[int, float, float, str]]:
 
 
 def _attach_trades(books: list[L2Event], trades: list[tuple[int, float, float, str]]) -> list[L2Event]:
-    """Add synthetic trade observations without changing the reconstructed book."""
     if not trades:
         return books
     combined: list[L2Event] = list(books)
@@ -153,35 +143,31 @@ def _attach_trades(books: list[L2Event], trades: list[tuple[int, float, float, s
             continue
         state = books[idx]
         combined.append(L2Event(
-            ts_ns,
-            state.bid_px,
-            state.bid_qty,
-            state.ask_px,
-            state.ask_qty,
-            trade_side=side,
-            trade_qty=qty,
-            bid_levels=state.bid_levels,
-            ask_levels=state.ask_levels,
+            ts_ns, state.bid_px, state.bid_qty, state.ask_px, state.ask_qty,
+            trade_side=side, trade_qty=qty,
+            bid_levels=state.bid_levels, ask_levels=state.ask_levels,
         ))
     return sorted(combined, key=lambda e: (e.timestamp_ns, 0 if e.trade_qty == 0 else 1))
 
 
 def prepare_l2_dataset(events_path: Path, horizon_ns: int) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Create causal features and future labels from authentic L2/trade rows."""
     if horizon_ns <= 0:
         raise ValueError("horizon_ns must be positive")
     rows = _load_rows(events_path)
     books = _reconstruct_depth(rows)
     trades = _trade_rows(rows)
     observed_events = _attach_trades(books, trades)
-
     timestamps: list[int] = []
     X: list[list[float]] = []
     returns: list[float] = []
     fills: list[int] = []
     book_ts = np.asarray([x.timestamp_ns for x in books], dtype=np.int64)
-
-    for i, event in enumerate(books):
+    feature_names = (
+        "queue_imbalance_1", "queue_imbalance_3", "ofi_1", "ofi_3",
+        "signed_trade_flow", "spread_bps", "depth_concentration",
+        "queue_change_intensity", "liquidity_state",
+    )
+    for event in books:
         target_ns = event.timestamp_ns + horizon_ns
         future_idx = int(np.searchsorted(book_ts, target_ns, side="left"))
         if future_idx >= len(books):
@@ -196,11 +182,7 @@ def prepare_l2_dataset(events_path: Path, horizon_ns: int) -> tuple[np.ndarray, 
         else:
             filled = any(t >= event.timestamp_ns and t <= target_ns and s == "BUY" and p >= event.ask_px for t, p, _, s in trades)
         timestamps.append(event.timestamp_ns)
-        X.append([features[name] for name in (
-            "queue_imbalance_1", "queue_imbalance_3", "ofi_1", "ofi_3",
-            "signed_trade_flow", "spread_bps", "depth_concentration",
-            "queue_change_intensity", "liquidity_state",
-        )])
+        X.append([features[name] for name in feature_names])
         returns.append((future_mid / mid - 1.0) * 10_000.0 * (1.0 if side == "BUY" else -1.0))
         fills.append(int(filled))
     return np.asarray(X), np.asarray(returns), np.asarray(fills), np.asarray(timestamps)
@@ -209,7 +191,9 @@ def prepare_l2_dataset(events_path: Path, horizon_ns: int) -> tuple[np.ndarray, 
 def run_historical_replay(events_path: Path, config: V19Config, v16_outcomes: np.ndarray | None = None) -> dict[str, object]:
     if config.live_order_submission:
         raise ValueError("historical replay requires live submission to remain disabled")
-    if v16_outcomes is None:
-        raise ValueError("historical replay requires an aligned frozen V16 outcome vector")
     X, returns, fills, timestamps = prepare_l2_dataset(events_path, config.prediction_horizon_ms * 1_000_000)
+    if v16_outcomes is None:
+        splits = make_purged_splits(timestamps, config.min_train_events, config.min_test_events, config.embargo_events)
+        test_timestamps = np.asarray([timestamps[i] for split in splits for i in split.test], dtype=np.int64)
+        v16_outcomes = aligned_v16_outcomes(events_path.parent, test_timestamps, max_feature_age_ms=config.max_feature_age_ms)
     return run_forward_pipeline(X, returns, fills, timestamps, config, v16_outcomes)
