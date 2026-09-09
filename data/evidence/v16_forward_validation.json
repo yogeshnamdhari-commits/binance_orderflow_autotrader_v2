@@ -1,6 +1,6 @@
 {
   "experiment": "V16",
-  "timestamp": "2026-09-08T07:20:16.564199+00:00",
+  "timestamp": "2026-09-09T04:51:59.694475+00:00",
   "status": "COMPLETE",
   "forward_data_dir": "data/v16/forward",
   "n_events": 5876,
@@ -51,7 +51,7 @@
       "positive": true
     }
   },
-  "elapsed_s": 22.83,
+  "elapsed_s": 17.27,
   "accounting_note": "Gross EV = mean(|predicted_return|) over trades only. Total cost = mean(entry+exit+conditional non_fill) over trades. Net EV = mean(expected_pnl) over trades. Realized Net EV = mean(simulated fill outcome P&L) over trades.",
   "forward_pass": true
 }

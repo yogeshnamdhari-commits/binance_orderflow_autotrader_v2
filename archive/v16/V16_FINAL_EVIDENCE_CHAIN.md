@@ -1,4 +1,4 @@
-# V16 — Final Evidence Chain (Corrected)
+# V16 — Final Evidence Chain (Corrected + Historical Replay)
 
 ## Phase 1: Repository Audit
 - Inspected V12–V15 modules, reused V11 parser, V12 capture, V14 features, V15 model structure
@@ -28,9 +28,16 @@
 - Events: 5876 depthUpdate, 20638 trade, 193095 bookTicker
 - Start: ns 1788822006669496000, End: ns 1788822606669496000
 
+### Historical Replay (Independent Backtest)
+- Session: `data/v16/historical_replay/b568d852da0245f5a7fa1f696eb79a7d`
+- Duration: 600s
+- Events: 5866 depthUpdate, 41845 trade, 285562 bookTicker
+- Start: ns 1788928643249568000 (106s gap after forward end)
+- Temporal separation: PASS (106,035,974 ms gap)
+
 ### Data Integrity
-- Temporal separation: PASS (273s gap)
 - No overlap, no duplicates, ordered timestamps
+- Authentic Binance L2 + trade data (no candles, no synthetic data)
 
 ## Phase 4: Feature Pipeline
 - 33 features: 10 V14 order-flow + 23 V16 event-time (OFI, trade flow, queue/book, dynamics, regime)
@@ -93,7 +100,19 @@
 - Live order submission: FALSE
 - Paper trading confirms simulated economics
 
-## Phase 13: Production Gate
+## Phase 13: Historical Replay / Backtest
+- Status: **PASS**
+- Data: Authentic Binance L2 + trades, 600s, 5866 events, 41845 trades
+- Temporal separation: 106s gap from forward data
+- N trades: 212
+- Gross EV: 4.270 bps
+- Total cost: 1.705 bps
+- Net EV: 2.244 bps
+- Realized Net EV: 2.239 bps
+- Backtest PASS: TRUE
+- This is a TRUE historical order-flow backtest (not candle-based)
+
+## Phase 14: Production Gate
 | Gate | Status |
 |------|--------|
 | calibration_data_present | PASS |
@@ -106,19 +125,22 @@
 | execution_cost_validation | PASS |
 | statistical_significance | **PASS** |
 | paper_trading | **PASS** |
+| historical_replay | **PASS** |
 | risk_controls | PASS |
 | config_integrity | PASS |
 | live_order_submission | **FAIL** (hard-disabled) |
 
-## Phase 14: Testing
+## Phase 15: Testing
 - 17 V16 tests (all pass)
 - Full regression: 398 pass, 3 pre-existing V9 failures, 1 skip
 - Zero regressions
 
-## Phase 15: Evidence
+## Phase 16: Evidence
 - `archive/v16/V16_FINAL_EVIDENCE_CHAIN.md`
 - `archive/v16/V16_PRODUCTION_GATE.md`
+- `archive/v16/v16_paper_trading_result.json`
 - `data/evidence/v16_*.json`
+- `data/evidence/v16_historical_replay.json`
 - `FINAL_STATUS.json`
 
 ## Accounting Audit
@@ -129,6 +151,6 @@
 - Non-fill cost = (1 - fill_prob) * non_fill_opportunity_cost (conditional)
 
 ## Production Decision
-All scientific gates PASS. Paper trading PASS.
+All scientific gates PASS. Paper trading PASS. Historical replay PASS.
 Production authorization requires explicit approval from authorized personnel.
 LIVE_ORDER_SUBMISSION remains FALSE until explicit authorization is granted.

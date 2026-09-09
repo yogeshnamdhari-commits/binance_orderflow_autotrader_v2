@@ -1,7 +1,7 @@
-# V16 — Production Gate (Corrected)
+# V16 — Production Gate (Corrected + Historical Replay)
 
 ## Gate Summary
-- **Overall Status**: PASS (scientific + paper trading gates)
+- **Overall Status**: PASS (scientific + paper trading + historical replay gates)
 - **Production Authorized**: NO — requires explicit authorization from authorized personnel
 - **LIVE_ORDER_SUBMISSION**: FALSE (hard-disabled)
 
@@ -19,6 +19,7 @@
 | execution_cost_validation | PASS | total cost 1.70 bps |
 | statistical_significance | **PASS** | p=0.0005, CI entirely positive |
 | paper_trading | **PASS** | net EV 2.34 bps, 397 trades, live orders NOT submitted |
+| historical_replay | **PASS** | net EV 2.24 bps, 212 trades, realized 2.24 bps, authentic L2 data |
 | risk_controls | PASS | configured |
 | config_integrity | PASS | hash e07dd90923983920 |
 | live_order_submission | **FAIL** | hard-disabled |
@@ -38,7 +39,17 @@
 - Paper trading PASSED: TRUE
 - Live order submission: FALSE
 
+## Historical Replay Result
+- Data: Authentic Binance L2 + trades, 600s, 5866 events
+- N trades: 212
+- Gross EV: 4.270 bps
+- Total cost: 1.705 bps
+- Net EV: 2.244 bps
+- Realized Net EV: 2.239 bps
+- Historical replay PASSED: TRUE
+- This is a TRUE historical order-flow backtest (not candle-based)
+
 ## Production Decision
-All scientific gates PASS. Paper trading PASS.
+All scientific gates PASS. Paper trading PASS. Historical replay PASS.
 Production authorization requires explicit approval from authorized personnel.
 LIVE_ORDER_SUBMISSION remains FALSE until explicit authorization is granted.

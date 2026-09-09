@@ -106,3 +106,5 @@ data/v16/calibration/*/events.jsonl
 data/v16/forward/*/events.jsonl
 data/v16/calibration/*/snapshot.json
 data/v16/forward/*/snapshot.json
+data/v16/historical_replay/*/events.jsonl
+data/v16/historical_replay/*/snapshot.json

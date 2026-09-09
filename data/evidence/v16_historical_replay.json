@@ -1,0 +1,14 @@
+{
+  "experiment": "V16",
+  "timestamp": "2026-09-09T10:06:00Z",
+  "type": "historical_replay",
+  "data_dir": "data/v16/historical_replay/b568d852da0245f5a7fa1f696eb79a7d",
+  "n_events": 5866,
+  "n_trades": 212,
+  "gross_ev_bps": 4.27043900192759,
+  "total_cost_bps": 1.705150462025734,
+  "net_ev_bps": 2.2440589852214394,
+  "realized_net_ev_bps": 2.2385595449050593,
+  "backtest_passed": true,
+  "live_order_submitted": false
+}
