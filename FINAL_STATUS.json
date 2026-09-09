@@ -1,83 +1,36 @@
 {
-  "experiment": "V16 (corrected + historical replay)",
-  "timestamp": "2026-09-09T04:50:59.423785+00:00",
+  "experiment": "V16 (post-audit revalidation)",
+  "timestamp": "2026-09-09T13:22:00Z",
   "config_hash": "e07dd90923983920",
-  "result": "PASS (scientific + paper trading + historical replay)",
+  "result": "REVALIDATION_REQUIRED_AFTER_STATISTICAL_FIX",
   "production_authorized": false,
   "live_order_submission": false,
-  "answers": {
-    "1_does_orderflow_contain_predictive_information": {
-      "answer": "YES",
-      "evidence": "V16 GBR return model train R2=0.84, fill model train AUC=0.95 (corrected target). Order-flow features predict return magnitude and fill probability.",
-      "qualification": "Signal generalizes to forward data (net EV positive, 6/6 regimes positive) and historical replay (net EV 2.24 bps)"
-    },
-    "2_does_information_survive_execution_costs": {
-      "answer": "YES",
-      "evidence": "V16 forward net EV=2.34 bps after 1.70 bps maker/taker cost. Historical replay net EV=2.24 bps after 1.71 bps cost. Gross EV ~4.3 bps exceeds costs. Accounting reconciles: Net EV = mean(fill_prob * return) - mean(total_cost).",
-      "qualification": "Execution-aware router + corrected fill probability model achieves positive net EV. Non-fill cost is conditional on (1 - fill_prob)."
-    },
-    "3_is_edge_statistically_distinguishable_from_zero": {
-      "answer": "YES",
-      "evidence": "Forward: 95% CI=[1.90, 2.87] bps (entirely positive), sign-flipping permutation p=0.0005. Historical replay: realized Net EV 2.24 bps.",
-      "qualification": "Edge statistically significant after execution costs"
-    },
-    "4_is_edge_robust_across_regimes": {
-      "answer": "YES",
-      "evidence": "Forward: 6/6 regimes positive. Historical replay: 212 trades, net EV 2.24 bps.",
-      "qualification": "Robust across all tested market conditions and independent historical data"
-    },
-    "5_does_paper_trading_confirm_simulated_economics": {
-      "answer": "YES",
-      "evidence": "Paper trading: 397 trades, net EV 2.34 bps. Historical replay: 212 trades, net EV 2.24 bps. Both match forward simulation.",
-      "qualification": "Paper trading and historical replay confirm simulated economics"
-    },
-    "6_is_production_authorization_justified": {
-      "answer": "PENDING",
-      "evidence": "All scientific gates PASS, paper trading PASS, historical replay PASS. Production authorization requires explicit approval from authorized personnel.",
-      "qualification": "Requires explicit authorization + final production gate review"
-    }
+  "audit_changes": {
+    "bootstrap_tstat": "FIXED: bootstrap distribution SD is used directly as the SE of the mean; the prior extra division by sqrt(n) was removed.",
+    "robustness_block_split": "FIXED: chronological blocks now use positional DataFrame indexing instead of NumPy object-array indexing.",
+    "dependency_declaration": "FIXED: scikit-learn, scipy and joblib are declared in requirements.txt and CI.",
+    "robustness_runner": "AVAILABLE: app/v16/robustness_runner.py regenerates trade-level evidence from frozen models and local forward data without retraining."
   },
-  "experiments": {
-    "V12": "FAIL \u2014 net EV -4.49 bps (taker, 14.52 bps cost)",
-    "V13": "FAIL \u2014 AUC 0.72, net EV negative after 14.52 bps cost (2s horizon)",
-    "V14": "FAIL \u2014 AUC 0.45-0.67, net EV ~0 after 3.25 bps maker/taker cost (10s horizon)",
-    "V15": "FAIL \u2014 GBR return magnitude, net EV -1.69 bps after 1.61 bps cost, 0/6 regimes positive",
-    "V16": "PASS (corrected + historical replay) \u2014 event-time order-flow, forward net EV +2.34 bps, historical replay net EV +2.24 bps, CI [1.90, 2.87], p=0.0005, 6/6 regimes positive. Accounting: Net EV = mean(fill_prob * return) - mean(total_cost). Historical replay uses authentic Binance L2 data (no candles, no synthetic data)."
+  "verification": {
+    "v16_ci": "PASS",
+    "v16_tests_passed": 23,
+    "v16_tests_failed": 0,
+    "v16_ci_run": 10,
+    "note": "The full V16 test suite passed after the audit fixes. The existing empirical forward/historical evidence was not overwritten; it must be regenerated because the statistical calculation changed."
   },
-  "root_cause": "V12-V15 failed because they used fixed-bar features, direction-only models, or fixed fill probabilities. V16 succeeds by (1) event-time features computed at each order-book event, (2) separate return-magnitude and fill-probability models with corrected fill target (queue thinning + high intensity + tight spread), (3) dynamic maker/taker execution routing based on expected P&L with conditional non-fill cost, (4) walk-forward validation, (5) paper trading confirmation, (6) historical replay on authentic Binance L2 data. The key insight: order-flow signal exists but must be paired with realistic execution simulation to achieve positive net EV.",
-  "tests": {
-    "passed": 398,
-    "failed": 3,
-    "skipped": 1,
-    "regressions": 0,
-    "note": "3 failures are pre-existing V9 issues; 17 V16 tests added, all pass"
+  "previous_empirical_results": {
+    "forward_net_ev_bps": 2.3408577992764408,
+    "forward_ci_bps": [1.9024038609100669, 2.874481453924893],
+    "forward_permutation_p": 0.0004997501249375312,
+    "forward_trades": 397,
+    "historical_replay_net_ev_bps": 2.2440589852214394,
+    "historical_replay_realized_net_ev_bps": 2.2385595449050593,
+    "historical_replay_trades": 212,
+    "qualification": "These are prior V16 results, not post-fix revalidation results."
   },
-  "artifacts": {
-    "frozen_models": "archive/v16/v16_frozen_return_model.joblib + v16_frozen_fill_model.joblib (immutable)",
-    "calibration_data": "data/v16/calibration/24549b7... (5876 obs, 600s)",
-    "forward_data": "data/v16/forward/e264a34... (5876 events, 600s)",
-    "historical_replay_data": "data/v16/historical_replay/b568d85... (5866 events, 600s, authentic L2)",
-    "evidence": "data/evidence/v16_*.json + v16_historical_replay.json",
-    "docs": "archive/v16/V16_*_*.md (2 files)",
-    "tests": "tests/v16/test_v16_pipeline.py (17 tests)"
-  },
-  "next_steps": "Production authorization requires explicit approval from authorized personnel. LIVE_ORDER_SUBMISSION remains hard-disabled until explicit authorization is granted. All scientific gates, paper trading, and historical replay gates have PASSED.",
-  "branch": "v15-autonomous-completion",
-  "github_repo": "yogeshnamdhari-commits/binance_orderflow_autotrader_v2",
-  "paper_trading_status": "PASS",
-  "paper_trading_passed": true,
-  "paper_trading_net_ev_bps": 2.3409,
-  "paper_trading_n_trades": 397,
-  "production_status": "PENDING_EXPLICIT_AUTHORIZATION",
-  "historical_replay": {
-    "status": "PASS",
-    "data_source": "Authentic Binance L2 + trades (data/v16/historical_replay)",
-    "n_events": 5866,
-    "n_trades": 212,
-    "gross_ev_bps": 4.2704,
-    "total_cost_bps": 1.7052,
-    "net_ev_bps": 2.2441,
-    "realized_net_ev_bps": 2.2386,
-    "backtest_passed": true
-  }
+  "production_status": "LOCKED_PENDING_REVALIDATION",
+  "live_order_submission": false,
+  "next_required_action": "Run the existing V16 forward validation and app/v16/robustness_runner.py against the local raw forward data, then evaluate app/v16/gate.py. Do not enable live order submission unless every mandatory gate passes after revalidation.",
+  "branch": "v16-autonomous-completion",
+  "github_repo": "yogeshnamdhari-commits/binance_orderflow_autotrader_v2"
 }
