@@ -7,15 +7,16 @@ from pathlib import Path
 from typing import Any
 
 ALLOWED_FEATURES = (
-    "queue_imbalance_1",
-    "queue_imbalance_3",
-    "ofi_1",
-    "ofi_3",
-    "signed_trade_flow",
-    "spread_bps",
+    "queue_imbalance_1_zscore",
+    "queue_imbalance_3_zscore",
+    "ofi_1_zscore",
+    "ofi_3_zscore",
+    "signed_trade_flow_zscore",
+    "spread_bps_zscore",
     "depth_concentration",
-    "queue_change_intensity",
-    "liquidity_state",
+    "queue_change_intensity_zscore",
+    "liquidity_state_zscore",
+    "volatility_regime",
 )
 
 
