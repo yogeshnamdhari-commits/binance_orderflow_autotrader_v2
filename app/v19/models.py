@@ -13,6 +13,7 @@ from sklearn.preprocessing import StandardScaler
 class ReturnModel:
     estimator: object
     feature_names: tuple[str, ...]
+    regime: int | None = None
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         X = np.asarray(X, dtype=float)
@@ -25,6 +26,7 @@ class ReturnModel:
 class FillModel:
     estimator: object
     feature_names: tuple[str, ...]
+    regime: int | None = None
 
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
         X = np.asarray(X, dtype=float)
@@ -48,7 +50,7 @@ def fit_return_model(X: np.ndarray, y: Sequence[float], feature_names: Sequence[
     names = tuple(feature_names)
     if X.shape[1] != len(names):
         raise ValueError("feature_names must match X columns")
-    estimator = make_pipeline(StandardScaler(), Ridge(alpha=1.0))
+    estimator = make_pipeline(StandardScaler(), Ridge(alpha=0.5))
     estimator.fit(X, y)
     return ReturnModel(estimator, names)
 
@@ -61,6 +63,6 @@ def fit_fill_model(X: np.ndarray, filled: Sequence[int], feature_names: Sequence
     classes = np.unique(y)
     if len(classes) != 2:
         raise ValueError("fill model requires both filled and unfilled observations")
-    estimator = make_pipeline(StandardScaler(), LogisticRegression(C=1.0, max_iter=1000))
+    estimator = make_pipeline(StandardScaler(), LogisticRegression(C=2.0, max_iter=1000))
     estimator.fit(X, y.astype(int))
     return FillModel(estimator, names)

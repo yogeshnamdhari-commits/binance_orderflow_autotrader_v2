@@ -3,11 +3,19 @@ from __future__ import annotations
 from dataclasses import dataclass
 from math import isfinite
 from typing import Sequence
+import numpy as np
 
 FEATURE_NAMES = (
-    "queue_imbalance_1", "queue_imbalance_3", "ofi_1", "ofi_3",
-    "signed_trade_flow", "spread_bps", "depth_concentration",
-    "queue_change_intensity", "liquidity_state",
+    "queue_imbalance_1_zscore",
+    "queue_imbalance_3_zscore",
+    "ofi_1_zscore",
+    "ofi_3_zscore",
+    "signed_trade_flow_zscore",
+    "spread_bps_zscore",
+    "depth_concentration",
+    "queue_change_intensity_zscore",
+    "liquidity_state_zscore",
+    "volatility_regime",
 )
 
 
@@ -61,13 +69,40 @@ def _ofi(previous: L2Event | None, current: L2Event, levels: int) -> float:
     return (bid_now - bid_prev) - (ask_now - ask_prev)
 
 
+def _zscore_normalize(values: list[float], window: int = 100) -> float:
+    if len(values) < 2:
+        return 0.0
+    recent = values[-window:] if len(values) >= window else values
+    arr = np.array(recent, dtype=float)
+    mean = np.mean(arr)
+    std = np.std(arr)
+    if std < 1e-10:
+        return 0.0
+    return float((arr[-1] - mean) / std)
+
+
+def _volatility_regime(spreads: list[float], window: int = 100) -> float:
+    if len(spreads) < 20:
+        return 1.0
+    recent = spreads[-window:] if len(spreads) >= window else spreads
+    arr = np.array(recent, dtype=float)
+    p20 = np.percentile(arr, 20)
+    p80 = np.percentile(arr, 80)
+    current = arr[-1]
+    if current <= p20:
+        return 0.0
+    elif current >= p80:
+        return 2.0
+    else:
+        return 1.0
+
+
 def compute_orderflow_features(
     events: Sequence[L2Event],
     now_ns: int,
     levels: int = 3,
     window_ns: int = 2_000_000_000,
 ) -> dict[str, float]:
-    """Compute only information observable at or before now_ns."""
     if levels <= 0 or window_ns <= 0:
         raise ValueError("levels and window_ns must be positive")
     observed = [e for e in events if e.timestamp_ns <= now_ns]
@@ -81,31 +116,60 @@ def compute_orderflow_features(
     recent = [e for e in observed if e.timestamp_ns >= start]
     previous = observed[-2] if len(observed) >= 2 else None
 
+    imbalance_1_hist = [_imbalance(e, 1) for e in recent]
+    imbalance_3_hist = [_imbalance(e, 3) for e in recent]
+    ofi_1_hist = [_ofi(recent[i-1] if i > 0 else None, e, 1) for i, e in enumerate(recent)]
+    ofi_3_hist = [_ofi(recent[i-1] if i > 0 else None, e, 3) for i, e in enumerate(recent)]
+
     signed_volume = sum(
         e.trade_qty if e.trade_side.upper() == "BUY" else -e.trade_qty
         for e in recent
         if e.trade_qty > 0 and e.trade_side.upper() in {"BUY", "SELL"}
     )
-    ofi_1 = _ofi(previous, current, 1)
-    ofi_3 = _ofi(previous, current, levels)
+    signed_vol_hist = [
+        sum(
+            e2.trade_qty if e2.trade_side.upper() == "BUY" else -e2.trade_qty
+            for e2 in recent[:i+1]
+            if e2.trade_qty > 0 and e2.trade_side.upper() in {"BUY", "SELL"}
+        )
+        for i in range(len(recent))
+    ]
+
     spread_bps = 10_000.0 * (current.ask_px - current.bid_px) / ((current.ask_px + current.bid_px) / 2.0)
+    spread_hist = [
+        10_000.0 * (e.ask_px - e.bid_px) / ((e.ask_px + e.bid_px) / 2.0)
+        for e in recent
+    ]
+
     total_depth = sum(q for _, q in _depth(current, "bid", levels)) + sum(q for _, q in _depth(current, "ask", levels))
     top_depth = current.bid_qty + current.ask_qty
     depth_concentration = top_depth / total_depth if total_depth else 0.0
-    queue_change = abs(ofi_3)
+
+    queue_change = abs(_ofi(previous, current, 3))
+    queue_change_hist = [abs(_ofi(recent[i-1] if i > 0 else None, e, 3)) for i, e in enumerate(recent)]
+    queue_change_intensity = float(queue_change / max(len(recent), 1))
+
     liquidity_state = total_depth / max(current.ask_px - current.bid_px, current.ask_px * 1e-8)
+    liquidity_hist = [
+        (sum(q for _, q in _depth(e, "bid", levels)) + sum(q for _, q in _depth(e, "ask", levels)))
+        / max(e.ask_px - e.bid_px, e.ask_px * 1e-8)
+        for e in recent
+    ]
 
     out = {
-        "queue_imbalance_1": _imbalance(current, 1),
-        "queue_imbalance_3": _imbalance(current, levels),
-        "ofi_1": float(ofi_1),
-        "ofi_3": float(ofi_3),
-        "signed_trade_flow": float(signed_volume),
-        "spread_bps": float(spread_bps),
+        "queue_imbalance_1_zscore": _zscore_normalize(imbalance_1_hist),
+        "queue_imbalance_3_zscore": _zscore_normalize(imbalance_3_hist),
+        "ofi_1_zscore": _zscore_normalize(ofi_1_hist),
+        "ofi_3_zscore": _zscore_normalize(ofi_3_hist),
+        "signed_trade_flow_zscore": _zscore_normalize(signed_vol_hist),
+        "spread_bps_zscore": _zscore_normalize(spread_hist),
         "depth_concentration": float(depth_concentration),
-        "queue_change_intensity": float(queue_change / max(len(recent), 1)),
-        "liquidity_state": float(liquidity_state),
+        "queue_change_intensity_zscore": _zscore_normalize(queue_change_hist),
+        "liquidity_state_zscore": _zscore_normalize(liquidity_hist),
+        "volatility_regime": _volatility_regime(spread_hist),
     }
+
     if not all(isfinite(x) for x in out.values()):
         raise ValueError("feature calculation produced a non-finite value")
+
     return out
