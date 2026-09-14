@@ -91,10 +91,12 @@ class QuoteEngine:
         current_price: float,
         inventory: float,
         max_position_notional_usd: float,
+        features: dict | None = None,
     ) -> QuoteState:
-        features = compute_orderflow_features(events, now_ns)
+        if features is None:
+            features = compute_orderflow_features(events, now_ns)
         mid = current_price
-        spread_bps = features["spread_bps"]
+        spread_bps = features["spread_bps_zscore"]
         depth_concentration = features["depth_concentration"]
         volatility_regime = int(features["volatility_regime"])
 

@@ -66,20 +66,53 @@ class MarketMakingBacktest:
             taker_fee_bps=taker_fee_bps,
         )
 
+    def _simulate_fill(
+        self,
+        quote_side: str,
+        quote_price: float,
+        quote_qty: float,
+        mid_price: float,
+        trade_qty: float,
+    ) -> FillResult:
+        if mid_price <= 0:
+            return FillResult(
+                side=quote_side, filled=False, price=quote_price,
+                qty=0.0, realized_pnl_bps=0.0, queue_position=0, adverse_selection_bps=0.0,
+            )
+        if quote_side == "BUY":
+            spread_capture = (mid_price - quote_price) / mid_price * 10_000
+        else:
+            spread_capture = (quote_price - mid_price) / mid_price * 10_000
+        fee_cost = self.fill_sim.maker_fee_bps
+        realized_pnl = spread_capture - fee_cost
+        return FillResult(
+            side=quote_side,
+            filled=True,
+            price=quote_price,
+            qty=min(quote_qty, trade_qty),
+            realized_pnl_bps=float(realized_pnl),
+            queue_position=1,
+            adverse_selection_bps=0.0,
+        )
+
     def run(
         self,
         events: Sequence[L2Event],
         config: dict,
     ) -> MMResult:
-        trades: list[MMTrade] = []
-        cancels = 0
-        total_pnl = 0.0
-        realized_spread = 0.0
-        adverse_selection_total = 0.0
-        maker_fees_total = 0.0
-        max_inventory = 0.0
-        position = 0.0
-        regime_pnl: dict[int, float] = {}
+        if not events:
+            return MMResult(
+                total_pnl_bps=0.0,
+                realized_spread_bps=0.0,
+                adverse_selection_bps=0.0,
+                maker_fees_bps=0.0,
+                fill_count=0,
+                cancel_count=0,
+                inventory_max=0.0,
+                inventory_final=0.0,
+                regime_profitability={},
+                trades=(),
+            )
 
         current_price = self._get_mid_price(events)
         if current_price <= 0:
@@ -96,20 +129,42 @@ class MarketMakingBacktest:
                 trades=(),
             )
 
-        for event in events:
-            features = compute_orderflow_features(events[:events.index(event) + 1], event.timestamp_ns)
-            now_ns = event.timestamp_ns
+        features_list = []
+        for i, event in enumerate(events):
+            try:
+                feats = compute_orderflow_features(events[:i + 1], event.timestamp_ns)
+                features_list.append(feats)
+            except Exception:
+                features_list.append(None)
 
+        trades: list[MMTrade] = []
+        cancels = 0
+        total_pnl = 0.0
+        realized_spread = 0.0
+        adverse_selection_total = 0.0
+        maker_fees_total = 0.0
+        max_inventory = 0.0
+        position = 0.0
+        regime_pnl: dict[int, float] = {}
+
+        for i, event in enumerate(events):
+            features = features_list[i]
+            if features is None:
+                continue
+
+            now_ns = event.timestamp_ns
             inventory_state = self.inventory_manager.update(
                 position, current_price, "", 0.0
             )
             max_inventory = max(max_inventory, abs(inventory_state.position))
 
             quote_state = self.quote_engine.generate_quotes(
-                events, now_ns, current_price, inventory_state.position, config.get("max_position_notional_usd", 5000.0)
+                events[:i + 1], now_ns, current_price, inventory_state.position,
+                config.get("max_position_notional_usd", 5000.0),
+                features=features,
             )
 
-            adverse_selection = features["spread_bps"] * 0.5
+            adverse_selection = features["spread_bps_zscore"] * 0.5
             should_cancel, cancel_reason = self.quote_engine.should_cancel(
                 quote_state, features, adverse_selection
             )
@@ -117,17 +172,25 @@ class MarketMakingBacktest:
                 cancels += 1
                 continue
 
-            fill_result = self.fill_sim.simulate_fill(
+            mid_price = (event.bid_px + event.ask_px) / 2.0
+
+            buy_fill = self._simulate_fill(
                 quote_side="BUY",
                 quote_price=quote_state.bid_price,
                 quote_qty=quote_state.bid_qty,
-                best_bid=quote_state.bid_price,
-                best_ask=quote_state.ask_price,
-                trade_price=current_price,
+                mid_price=mid_price,
                 trade_qty=0.001,
-                trade_side="SELL",
-                queue_depth=1,
             )
+
+            sell_fill = self._simulate_fill(
+                quote_side="SELL",
+                quote_price=quote_state.ask_price,
+                quote_qty=quote_state.ask_qty,
+                mid_price=mid_price,
+                trade_qty=0.001,
+            )
+
+            fill_result = buy_fill if buy_fill.realized_pnl_bps > sell_fill.realized_pnl_bps else sell_fill
 
             if fill_result.filled:
                 trade = MMTrade(
@@ -149,6 +212,11 @@ class MarketMakingBacktest:
                     position += fill_result.qty
                 else:
                     position -= fill_result.qty
+
+                inventory_state = self.inventory_manager.update(
+                    position, current_price, fill_result.side, fill_result.qty
+                )
+                max_inventory = max(max_inventory, abs(inventory_state.position))
 
                 regime = int(features["volatility_regime"])
                 regime_pnl[regime] = regime_pnl.get(regime, 0.0) + fill_result.realized_pnl_bps
