@@ -31,13 +31,26 @@ Do not commit `.env` or shell history containing credentials.
 ## Preflight
 
 ```bash
-python3 -m compileall app tests
-python3 -c "import app.mm; import app.mm.live_risk; import app.mm.reconciliation; import app.mm.execution_gateway; import app.mm.binance_execution"
-python3 -m pytest -q tests/test_v20_production_controls.py
+python3 -m compileall app tests scripts
+python3 -c "import app.mm; import app.mm.live_risk; import app.mm.reconciliation; import app.mm.execution_gateway; import app.mm.binance_execution; import scripts.v20_testnet_smoke; import scripts.v20_authenticated_testnet_gate"
+python3 -m pytest -q tests/test_v20_production_controls.py tests/test_v20_testnet_smoke.py tests/test_v20_user_stream_runtime.py
 python3 scripts/v20_testnet_smoke.py
 ```
 
 The smoke script refuses non-approved Binance Futures demo hosts and does not submit an order unless `V20_TESTNET_EXECUTE=1` is explicitly set.
+
+## Authenticated gate
+
+A manual GitHub Actions workflow is included at `.github/workflows/v20-authenticated-testnet-gate.yml`.
+
+Create two GitHub Actions secrets on the repository:
+
+```text
+BINANCE_DEMO_API_KEY
+BINANCE_DEMO_API_SECRET
+```
+
+Then run **V20 Authenticated Demo Gate** with `execute_order=true`. The workflow uses only the approved demo REST endpoint and configured private-stream endpoints, records evidence as an artifact, and fails closed if the account cannot trade, the private stream cannot become healthy, the order lifecycle fails, or any open order remains after cleanup.
 
 The production gate must report all of the following before any order submission path is considered:
 
