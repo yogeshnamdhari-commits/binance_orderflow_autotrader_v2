@@ -35,6 +35,7 @@ class ExecutionGateway:
         self.risk_gate = risk_gate
         self.manager = manager
         self.live_enabled = bool(live_enabled)
+        self._exchange_to_local: dict[str, str] = {}
 
     def submit(self, submission: Submission) -> ExecutionResult:
         allowed, reasons = self.risk_gate.can_submit(submission.qty)
@@ -62,10 +63,56 @@ class ExecutionGateway:
                 client_id=submission.client_id,
             )
 
-        return self.adapter.submit(submission)
+        local = self.manager.create(
+            submission.symbol,
+            submission.side,
+            submission.qty,
+            submission.price,
+            submission.client_id,
+        )
+        if local is None:
+            return ExecutionResult(
+                status="REJECTED_DUPLICATE",
+                order_id=None,
+                message="duplicate client id",
+                client_id=submission.client_id,
+            )
+
+        try:
+            result = self.adapter.submit(submission)
+        except Exception as exc:
+            # Never retry automatically: a timeout can mean the exchange accepted
+            # the order. Reconciliation must resolve the outcome first.
+            self.manager.timeout_order(local.order_id, reason="submission_ambiguous")
+            self.risk_gate.emergency_stop()
+            return ExecutionResult(
+                status="UNKNOWN_SUBMISSION",
+                order_id=local.order_id,
+                message=f"submission outcome unknown: {type(exc).__name__}",
+                client_id=submission.client_id,
+            )
+
+        if result.order_id:
+            self._exchange_to_local[str(result.order_id)] = local.order_id
+
+        status = result.status.upper()
+        if status in {"REJECTED", "EXPIRED", "CANCELED", "CANCELLED", "EXPIRED_IN_MATCH"}:
+            self.manager.reject(local.order_id, reason=result.message)
+        elif status in {"FILLED"}:
+            self.manager.mark_filled(local.order_id, submission.price, submission.qty)
+        return result
 
     def cancel(self, order_id: str) -> ExecutionResult:
-        order = self.manager.get(order_id)
+        local_id = self._exchange_to_local.get(str(order_id), str(order_id))
+        order = self.manager.get(local_id)
         if order is None:
             return ExecutionResult("REJECTED_UNKNOWN_ORDER", None, "unknown order")
-        return self.adapter.cancel(order_id)
+        try:
+            result = self.adapter.cancel(str(order_id))
+        except Exception as exc:
+            self.risk_gate.emergency_stop()
+            return ExecutionResult("CANCEL_UNKNOWN", str(order_id), f"cancel outcome unknown: {type(exc).__name__}")
+        status = result.status.upper()
+        if status in {"CANCELED", "CANCELLED", "EXPIRED", "EXPIRED_IN_MATCH"}:
+            self.manager.cancel(local_id)
+        return result
