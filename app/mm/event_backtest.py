@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import deque
 from dataclasses import dataclass, field
 from typing import Sequence
 import math
@@ -7,7 +8,7 @@ import math
 from .book import L2Snapshot, L2Update, OrderBook
 from .config import V20Config
 from .execution_replay import PassiveQuoteReplay, QuoteIntent, Side, TradeEvent
-from .backtest import compute_volatility_regime, generate_quotes
+from .backtest import generate_quotes
 
 
 @dataclass(frozen=True)
@@ -25,6 +26,8 @@ class EventBacktestResult:
     avg_adverse_selection_bps: float
     as_by_horizon: dict[int, float] = field(default_factory=dict)
     final_inventory: float = 0.0
+    toxicity_suppressed_quotes: int = 0
+    toxic_flow_imbalance_mean: float = 0.0
 
 
 def _future_mid_by_time(
@@ -62,6 +65,57 @@ def _same_price_qty(book: OrderBook, side: str, price: float) -> float:
     )
 
 
+def _book_imbalance(book: OrderBook) -> float:
+    """Top-of-book queue imbalance in [-1, 1]."""
+    bids = book.get_depth("bid", levels=1)
+    asks = book.get_depth("ask", levels=1)
+    if not bids or not asks:
+        return 0.0
+    bid_qty = max(0.0, bids[0][1])
+    ask_qty = max(0.0, asks[0][1])
+    denom = bid_qty + ask_qty
+    return (bid_qty - ask_qty) / denom if denom > 0 else 0.0
+
+
+def _quote_center(
+    mid_price: float,
+    imbalance: float,
+    config: V20Config,
+) -> float:
+    """Shift the reservation/fair center with top-of-book imbalance."""
+    skew = max(0.0, config.microprice_skew_bps) * max(-1.0, min(1.0, imbalance))
+    return mid_price * (1.0 + skew / 10_000.0)
+
+
+def _flow_state(
+    sorted_trades: Sequence[TradeEvent],
+    depth_timestamp_ns: int,
+    flow_index: int,
+    flow_queue: deque[tuple[int, float]],
+    signed_flow: float,
+    total_flow: float,
+    window_ns: int,
+) -> tuple[int, float, float, float]:
+    """Advance a rolling aggressor-flow imbalance without using future trades."""
+    while flow_index < len(sorted_trades) and sorted_trades[flow_index].timestamp_ns <= depth_timestamp_ns:
+        trade = sorted_trades[flow_index]
+        qty = max(0.0, trade.qty)
+        signed = qty if trade.aggressor_side is Side.BUY else -qty
+        flow_queue.append((trade.timestamp_ns, signed))
+        signed_flow += signed
+        total_flow += qty
+        flow_index += 1
+
+    cutoff = depth_timestamp_ns - window_ns
+    while flow_queue and flow_queue[0][0] < cutoff:
+        _, old_signed = flow_queue.popleft()
+        signed_flow -= old_signed
+        total_flow -= abs(old_signed)
+
+    imbalance = signed_flow / total_flow if total_flow > 0 else 0.0
+    return flow_index, signed_flow, total_flow, max(-1.0, min(1.0, imbalance))
+
+
 def run_event_backtest(
     snapshot: L2Snapshot,
     depth_events: Sequence[L2Update],
@@ -70,18 +124,24 @@ def run_event_backtest(
     *,
     horizon_ms: Sequence[int] = (1, 5, 10, 25, 50, 100),
 ) -> EventBacktestResult:
-    """Replay passive execution from observed trades instead of random fill draws.
+    """Replay passive execution from observed trades instead of random fills.
 
-    Strategy quote parameters are read directly from V20Config and are not changed
-    here. The only changed variable versus V1 is the execution/fill mechanism.
+    Candidate microstructure controls are deterministic and use only information
+    available by the quote timestamp. They suppress the toxic side during joint
+    top-of-book imbalance and aggressive-flow imbalance, and shift the quote
+    center toward the microprice. Production config remains unchanged unless the
+    authoritative config explicitly enables these controls.
     """
 
     book = OrderBook.from_snapshot(snapshot)
     replay = PassiveQuoteReplay()
     sorted_trades = sorted(trade_events, key=lambda x: (x.timestamp_ns, x.event_seq))
     trade_index = 0
+    flow_index = 0
+    flow_queue: deque[tuple[int, float]] = deque()
+    signed_flow = 0.0
+    total_flow = 0.0
     mids: list[tuple[int, float]] = []
-    spread_history: list[float] = []
     inventory = 0.0
     cash = 0.0
     fees_usd = 0.0
@@ -90,6 +150,8 @@ def run_event_backtest(
     last_quote: QuoteIntent | None = None
     quote_counter = 0
     replacements = 0
+    toxicity_suppressed = 0
+    toxic_flow_values: list[float] = []
 
     def process_fills(trades: Sequence[TradeEvent]) -> None:
         nonlocal inventory, cash, fees_usd
@@ -115,8 +177,38 @@ def run_event_backtest(
             continue
 
         mids.append((depth_event.timestamp_ns, mid))
-        spread_history.append(spread_bps)
-        bid, ask, bid_qty, ask_qty = generate_quotes(mid, spread_bps, inventory, config)
+
+        flow_index, signed_flow, total_flow, flow_imbalance = _flow_state(
+            sorted_trades,
+            depth_event.timestamp_ns,
+            flow_index,
+            flow_queue,
+            signed_flow,
+            total_flow,
+            max(1, int(config.flow_window_ms)) * 1_000_000,
+        )
+
+        book_imbalance = _book_imbalance(book)
+        center = _quote_center(mid, book_imbalance, config)
+        bid, ask, bid_qty, ask_qty = generate_quotes(center, spread_bps, inventory, config)
+
+        if config.toxicity_filter_enabled:
+            bull_toxic = (
+                book_imbalance >= config.toxicity_imbalance_threshold
+                and flow_imbalance >= config.toxicity_flow_threshold
+            )
+            bear_toxic = (
+                book_imbalance <= -config.toxicity_imbalance_threshold
+                and flow_imbalance <= -config.toxicity_flow_threshold
+            )
+            if bull_toxic:
+                ask_qty = 0.0
+                toxicity_suppressed += 1
+                toxic_flow_values.append(abs(flow_imbalance))
+            elif bear_toxic:
+                bid_qty = 0.0
+                toxicity_suppressed += 1
+                toxic_flow_values.append(abs(flow_imbalance))
 
         desired = QuoteIntent(
             quote_id=f"v2q-{quote_counter}",
@@ -134,8 +226,8 @@ def run_event_backtest(
             return (
                 abs(a.bid_price - b.bid_price) > price_eps
                 or abs(a.ask_price - b.ask_price) > price_eps
-                or a.bid_qty <= 0
-                or a.ask_qty <= 0
+                or a.bid_qty <= 0 != b.bid_qty <= 0
+                or a.ask_qty <= 0 != b.ask_qty <= 0
                 or replay.active_quote is None
             )
 
@@ -149,8 +241,8 @@ def run_event_backtest(
                 ask_price=desired.ask_price,
                 ask_qty=desired.ask_qty,
             )
-            bid_queue = _same_price_qty(book, "bid", desired.bid_price)
-            ask_queue = _same_price_qty(book, "ask", desired.ask_price)
+            bid_queue = _same_price_qty(book, "bid", desired.bid_price) if desired.bid_qty > 0 else 0.0
+            ask_queue = _same_price_qty(book, "ask", desired.ask_price) if desired.ask_qty > 0 else 0.0
             if last_quote is not None:
                 replacements += 1
             replay.activate(
@@ -196,4 +288,6 @@ def run_event_backtest(
         avg_adverse_selection_bps=avg_as,
         as_by_horizon=as_by_horizon,
         final_inventory=inventory,
+        toxicity_suppressed_quotes=toxicity_suppressed,
+        toxic_flow_imbalance_mean=(sum(toxic_flow_values) / len(toxic_flow_values) if toxic_flow_values else 0.0),
     )
