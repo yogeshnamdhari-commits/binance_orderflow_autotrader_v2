@@ -71,6 +71,28 @@ def fetch_ws_snapshot(symbol: str, limit: int = 1000) -> dict[str, object]:
     return result
 
 
+def fetch_ws_snapshot_with_retries(
+    symbol: str,
+    *,
+    limit: int = 1000,
+    attempts: int = 3,
+    retry_delay_seconds: float = 1.0,
+) -> dict[str, object]:
+    """Retry transient public depth-snapshot failures without changing bridge semantics."""
+    if attempts < 1:
+        raise ValueError("attempts must be >= 1")
+    last_error: Exception | None = None
+    for attempt in range(1, attempts + 1):
+        try:
+            return fetch_ws_snapshot(symbol, limit=limit)
+        except Exception as exc:
+            last_error = exc
+            if attempt < attempts and retry_delay_seconds > 0:
+                time.sleep(retry_delay_seconds)
+    assert last_error is not None
+    raise last_error
+
+
 def _depth_update_id_range(raw_json: str) -> tuple[int, int] | None:
     """Extract (U, u) from a depthUpdate event raw JSON string."""
     try:
@@ -127,10 +149,10 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
 
     def fetch_snapshot_and_find_bridge() -> None:
         with snapshot_lock:
-            if state["snapshot_fetched"]:
+            if state["snapshot_fetched"] or state["bridge_found"]:
                 return
             try:
-                snap = fetch_ws_snapshot(symbol.upper())
+                snap = fetch_ws_snapshot_with_retries(symbol.upper(), attempts=3, retry_delay_seconds=1.0)
                 snapshot_id = int(snap["lastUpdateId"])
                 (session_dir / "snapshot.json").write_text(
                     json.dumps(snap, indent=2, sort_keys=True) + "\n",
