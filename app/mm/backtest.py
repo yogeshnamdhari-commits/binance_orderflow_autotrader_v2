@@ -64,6 +64,9 @@ class MMBacktestResult:
     avg_loss_bps: float = 0.0
     max_win_bps: float = 0.0
     max_loss_bps: float = 0.0
+    pnl_notional_usd: float = 0.0
+    inventory_mtm_bps: float = 0.0
+    as_by_horizon: dict[int, float] = field(default_factory=dict)
 
 
 def compute_volatility_regime(
@@ -126,6 +129,9 @@ def _compute_empirical_adverse_selection(
 ) -> float:
     """
     Compute adverse selection from actual post-fill mid-price movement.
+
+    For BUY: adverse if mid-price drops after fill (we bought too high).
+    For SELL: adverse if mid-price rises after fill (we sold too low).
     """
     if fill_price <= 0 or event_idx + 1 >= len(all_mid_prices):
         return 0.0
@@ -140,9 +146,9 @@ def _compute_empirical_adverse_selection(
     future_mid = float(np.mean(future_mids))
 
     if side == "BUY":
-        drift_bps = (future_mid - fill_price) * 10_000.0 / fill_price
-    else:
         drift_bps = (fill_price - future_mid) * 10_000.0 / fill_price
+    else:
+        drift_bps = (future_mid - fill_price) * 10_000.0 / fill_price
 
     return max(0.0, drift_bps)
 
@@ -158,7 +164,9 @@ def run_mm_backtest(
     order_book = OrderBook.from_snapshot(snapshot)
 
     position = 0.0
+    position_notional = 0.0
     total_pnl_bps = 0.0
+    total_pnl_notional_usd = 0.0
     fills_list: list[FillEvent] = []
     cancels = 0
     inventory_history = [0.0]
@@ -179,6 +187,9 @@ def run_mm_backtest(
     regime_pnl = {0: 0.0, 1: 0.0, 2: 0.0}
     regime_fills = {0: 0, 1: 0, 2: 0}
     regime_cancels = {0: 0, 1: 0, 2: 0}
+
+    as_horizons = [1, 5, 10, 25, 50, 100]
+    as_by_horizon: dict[int, list[float]] = {h: [] for h in as_horizons}
 
     temp_book = OrderBook.from_snapshot(snapshot)
     all_mid_prices: list[float] = []
@@ -289,6 +300,16 @@ def run_mm_backtest(
                 lookahead_ticks=10,
             )
 
+            for horizon in as_horizons:
+                as_h = _compute_empirical_adverse_selection(
+                    fill_price=fill_result.fill_price,
+                    side=side,
+                    event_idx=event_idx,
+                    all_mid_prices=all_mid_prices,
+                    lookahead_ticks=horizon,
+                )
+                as_by_horizon[horizon].append(as_h)
+
             realized_pnl_bps = compute_realized_pnl(
                 fill_price=fill_result.fill_price,
                 fill_qty=fill_result.fill_qty,
@@ -302,6 +323,10 @@ def run_mm_backtest(
 
             position_change = fill_result.fill_qty if side == "BUY" else -fill_result.fill_qty
             position += position_change
+            position_notional += position_change * fill_result.fill_price
+
+            fill_notional_usd = fill_result.fill_qty * fill_result.fill_price
+            total_pnl_notional_usd += fill_notional_usd * realized_pnl_bps / 10_000.0
 
             fill_event = FillEvent(
                 timestamp_ns=depth_event.timestamp_ns,
@@ -320,6 +345,15 @@ def run_mm_backtest(
             regime_fills[volatility_regime] += 1
 
         inventory_history.append(position)
+
+    final_mid = mid_price_history[-1] if mid_price_history else 0.0
+    inventory_mtm_bps = 0.0
+    if final_mid > 0 and position != 0.0:
+        avg_entry = position_notional / position if position != 0 else 0.0
+        if avg_entry > 0:
+            inventory_mtm_bps = (final_mid - avg_entry) / avg_entry * 10_000.0 * abs(position)
+            if position < 0:
+                inventory_mtm_bps = -inventory_mtm_bps
 
     num_fills = len(fills_list)
     avg_adverse_selection = float(np.mean([f.adverse_selection_bps for f in fills_list])) if fills_list else 0.0
@@ -341,6 +375,8 @@ def run_mm_backtest(
 
     max_win = float(max(winning_fills)) if winning_fills else 0.0
     max_loss = float(min(losing_fills)) if losing_fills else 0.0
+
+    as_by_horizon_mean = {h: float(np.mean(v)) if v else 0.0 for h, v in as_by_horizon.items()}
 
     gate_reasons = []
     gate_pass = True
@@ -385,6 +421,9 @@ def run_mm_backtest(
         avg_loss_bps=avg_loss,
         max_win_bps=max_win,
         max_loss_bps=max_loss,
+        pnl_notional_usd=float(total_pnl_notional_usd),
+        inventory_mtm_bps=float(inventory_mtm_bps),
+        as_by_horizon=as_by_horizon_mean,
     )
 
 
@@ -449,7 +488,7 @@ def run_all_mm_backtests(
         result = run_mm_backtest(snapshot, depth_events, features_list, config)
         results[capture_dir.name] = result
 
-        print(f"  PnL: {result.pnl_bps:.2f} bps")
+        print(f"  PnL: {result.pnl_bps:.2f} bps (${result.pnl_notional_usd:.2f})")
         print(f"  Fills: {result.fills}, Cancels: {result.cancels}")
         if result.winning_fills or result.losing_fills:
             print(f"  Win rate: {result.win_rate:.2f}% ({result.winning_fills} wins, {result.losing_fills} losses)")
@@ -459,6 +498,11 @@ def run_all_mm_backtests(
         else:
             print("  No fills observed")
         print(f"  Inventory: max={result.inventory_max:.4f}, final={result.inventory_final:.4f}")
+        if result.inventory_mtm_bps != 0.0:
+            print(f"  Inventory MTM: {result.inventory_mtm_bps:.2f} bps")
+        if result.as_by_horizon:
+            horizon_str = ", ".join(f"{h}ticks={v:.2f}" for h, v in sorted(result.as_by_horizon.items()))
+            print(f"  Adverse selection by horizon: {horizon_str}")
         print(f"  Gate: {'PASS' if result.gate_pass else 'FAIL'}")
         print()
 
