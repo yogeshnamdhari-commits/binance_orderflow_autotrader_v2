@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Iterable, Sequence
+from typing import Sequence
 
 
 class Side(str, Enum):
@@ -24,10 +24,7 @@ class QuoteIntent:
 
 @dataclass(frozen=True)
 class TradeEvent:
-    """Normalized aggressive trade from the captured market stream.
-
-    aggressor_side is the taker's direction: BUY consumes asks; SELL consumes bids.
-    """
+    """Normalized aggressive trade from the captured market stream."""
 
     timestamp_ns: int
     price: float
@@ -77,16 +74,11 @@ class ReplayStats:
 
 
 class PassiveQuoteReplay:
-    """Event-driven passive-fill model using observed trades.
+    """Deterministic passive-fill model driven by observed trade events.
 
-    This model deliberately does not generate random fills. A passive BUY can only
-    fill when an observed aggressive SELL trades at or below the bid. A passive
-    SELL can only fill when an observed aggressive BUY trades at or above the ask.
-
-    Queue position is represented conservatively by visible same-price quantity at
-    quote activation. Trade volume at the same price consumes that queue before our
-    order can receive a fill. This is still an approximation, but it is auditable
-    and deterministic and can be strengthened when per-order queue data exists.
+    A passive BUY can only fill when an aggressive SELL trades through the bid;
+    a passive SELL can only fill when an aggressive BUY trades through the ask.
+    Queue-ahead is initialized from visible same-price quantity at activation.
     """
 
     def __init__(self) -> None:
@@ -99,6 +91,10 @@ class PassiveQuoteReplay:
         self._replacements_seen = 0
         self._trades_seen = 0
         self._orphan_trades = 0
+
+    @property
+    def active_quote(self) -> QuoteIntent | None:
+        return self._quote
 
     def activate(
         self,
@@ -166,15 +162,16 @@ class PassiveQuoteReplay:
                     trade_seq=trade.event_seq,
                 )
                 self._fills.append(fill)
+                remaining_quote = max(0.0, quote.bid_qty - fill_qty)
                 self._quote = QuoteIntent(
                     quote.quote_id,
                     quote.timestamp_ns,
                     quote.bid_price,
-                    max(0.0, quote.bid_qty - fill_qty),
+                    remaining_quote,
                     quote.ask_price,
                     quote.ask_qty,
                 )
-                if self._quote.bid_qty == 0:
+                if remaining_quote == 0:
                     self.cancel()
                 return [fill]
             return []
@@ -197,15 +194,16 @@ class PassiveQuoteReplay:
                     trade_seq=trade.event_seq,
                 )
                 self._fills.append(fill)
+                remaining_quote = max(0.0, quote.ask_qty - fill_qty)
                 self._quote = QuoteIntent(
                     quote.quote_id,
                     quote.timestamp_ns,
                     quote.bid_price,
                     quote.bid_qty,
                     quote.ask_price,
-                    max(0.0, quote.ask_qty - fill_qty),
+                    remaining_quote,
                 )
-                if self._quote.ask_qty == 0:
+                if remaining_quote == 0:
                     self.cancel()
                 return [fill]
             return []
@@ -230,7 +228,6 @@ class PassiveQuoteReplay:
 
 def replay_trades(replay: PassiveQuoteReplay, events: Sequence[TradeEvent]) -> tuple[ReplayFill, ...]:
     """Replay normalized trades in deterministic event order."""
-    ordered = sorted(events, key=lambda e: (e.timestamp_ns, e.event_seq))
-    for event in ordered:
+    for event in sorted(events, key=lambda e: (e.timestamp_ns, e.event_seq)):
         replay.on_trade(event)
     return replay.fills()
