@@ -31,6 +31,20 @@ def test_user_stream_trade_fields_are_parsed():
     assert event.commission == 0.08
 
 
+def test_quiet_stream_stays_healthy_after_transport_heartbeat():
+    guard = UserStreamGuard(max_age_ms=5000)
+    guard.connected_event(1000)
+    assert guard.health(5999)[0] is True
+    guard.heartbeat(6000)
+    healthy, age, reason = guard.health(9999)
+    assert healthy is True
+    assert age == 3999
+    assert reason == "ok"
+    stale, _, reason = guard.health(11001)
+    assert stale is False
+    assert reason == "stale"
+
+
 def test_runtime_user_failure_latches_risk():
     risk = LiveRiskGate(RiskLimits())
     gateway = ExecutionGateway(Adapter(), risk, OrderStateManager(), live_enabled=False)
