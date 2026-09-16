@@ -12,12 +12,7 @@ from .user_stream import UserStreamGuard
 
 
 class BinanceUSDMUserStream:
-    """Authenticated USD-M user-data stream with explicit keepalive/reconnect.
-
-    Binance's current architecture exposes the user-data control API on
-    ws-fapi.binance.com and the event stream on the /private market-stream
-    endpoint. The stream is refreshed before the 60-minute expiry window.
-    """
+    """Authenticated USD-M user-data stream with explicit keepalive/reconnect."""
 
     CONTROL_URL = "wss://ws-fapi.binance.com/ws-fapi/v1"
     PRIVATE_STREAM_BASE = "wss://fstream.binance.com/private/ws"
@@ -38,7 +33,6 @@ class BinanceUSDMUserStream:
 
     def _control_call(self, method: str) -> str | None:
         response: dict = {}
-        done = threading.Event()
         ws = websocket.create_connection(
             self.CONTROL_URL,
             timeout=5,
@@ -54,18 +48,20 @@ class BinanceUSDMUserStream:
             }))
             deadline = time.time() + 5
             while time.time() < deadline:
-                remaining = max(0.1, deadline - time.time())
-                ws.settimeout(remaining)
+                ws.settimeout(max(0.1, deadline - time.time()))
                 payload = json.loads(ws.recv())
                 if payload.get("id") == request_id:
                     response = payload
                     break
             if response.get("status") != 200:
-                raise RuntimeError(f"user_stream_control_failed:{method}:{response.get('status')}:{response.get('error')}")
-            return str((response.get("result") or {}).get("listenKey")) if method != "userDataStream.stop" else None
+                raise RuntimeError(
+                    f"user_stream_control_failed:{method}:{response.get('status')}:{response.get('error')}"
+                )
+            if method == "userDataStream.stop":
+                return None
+            return str((response.get("result") or {}).get("listenKey"))
         finally:
             ws.close()
-            done.set()
 
     def start_stream(self) -> str:
         with self._control_lock:
@@ -92,24 +88,28 @@ class BinanceUSDMUserStream:
                 self.listen_key = None
                 self.guard.disconnected()
 
-    def _on_message(self, ws, raw: str) -> None:
+    def _on_message(self, _ws, raw: str) -> None:
         payload = json.loads(raw)
+        event_type = payload.get("e")
         event_ts = int(payload.get("E", int(time.time() * 1000)))
+        if event_type == "listenKeyExpired":
+            self.guard.disconnected()
+            self.status_cb({"status": "LISTEN_KEY_EXPIRED"})
+            return
+        if event_type == "MARGIN_CALL":
+            # MARGIN_CALL is a safety event, not a healthy heartbeat.
+            self.guard.disconnected()
+            self.status_cb({"status": "MARGIN_CALL"})
+            return
         try:
             parsed = self.guard.parse(payload)
             for event in parsed:
                 self.event_cb(event)
-            if payload.get("e") == "listenKeyExpired":
-                self.guard.disconnected()
-                self.status_cb({"status": "LISTEN_KEY_EXPIRED"})
-            elif payload.get("e") == "MARGIN_CALL":
-                self.status_cb({"status": "MARGIN_CALL"})
+            self.guard.connected_event(event_ts)
         except Exception as exc:
             self.guard.disconnected()
             self.status_cb({"status": "USER_STREAM_PARSE_ERROR", "error": repr(exc)})
             raise
-        finally:
-            self.guard.connected_event(event_ts)
 
     def _on_open(self, _ws) -> None:
         self.guard.connected_event(int(time.time() * 1000))
