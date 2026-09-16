@@ -125,15 +125,15 @@ def _compute_empirical_adverse_selection(
     side: str,
     event_idx: int,
     all_mid_prices: list[float],
+    mid_at_fill_time: float,
     lookahead_ticks: int = 10,
 ) -> float:
     """
-    Compute adverse selection from actual post-fill mid-price movement.
-
-    For BUY: adverse if mid-price drops after fill (we bought too high).
-    For SELL: adverse if mid-price rises after fill (we sold too low).
+    Signed adverse selection: mid-price drift AFTER fill relative to mid at fill time.
+    Positive = adverse (mid moved against position), negative = favorable.
+    Baseline is mid at fill time, NOT fill_price (which already embeds spread).
     """
-    if fill_price <= 0 or event_idx + 1 >= len(all_mid_prices):
+    if mid_at_fill_time <= 0 or event_idx + 1 >= len(all_mid_prices):
         return 0.0
 
     future_start = event_idx + 1
@@ -144,13 +144,8 @@ def _compute_empirical_adverse_selection(
         return 0.0
 
     future_mid = float(np.mean(future_mids))
-
-    if side == "BUY":
-        drift_bps = (fill_price - future_mid) * 10_000.0 / fill_price
-    else:
-        drift_bps = (future_mid - fill_price) * 10_000.0 / fill_price
-
-    return max(0.0, drift_bps)
+    drift_bps = (future_mid - mid_at_fill_time) * 10_000.0 / mid_at_fill_time
+    return drift_bps
 
 
 def run_mm_backtest(
@@ -199,6 +194,25 @@ def run_mm_backtest(
             all_mid_prices.append(temp_book.get_mid_price())
         except (ValueError, IndexError):
             all_mid_prices.append(0.0)
+
+    # Precompute cumulative sums from the right for O(1) window-mean AS.
+    n_mid = len(all_mid_prices)
+    as_window_mean: dict[int, list[float]] = {}
+    for horizon in as_horizons:
+        suffix = [0.0] * (n_mid + 1)
+        for i in range(n_mid - 1, -1, -1):
+            suffix[i] = suffix[i + 1] + all_mid_prices[i]
+        means = []
+        for i in range(n_mid):
+            end = i + 1 + horizon
+            if end > n_mid:
+                end = n_mid
+            cnt = end - (i + 1)
+            if cnt > 0 and all_mid_prices[i] > 0:
+                means.append((suffix[i + 1] - suffix[end]) / cnt)
+            else:
+                means.append(0.0)
+        as_window_mean[horizon] = means
 
     for event_idx, (depth_event, features) in enumerate(zip(depth_events, features_list)):
         try:
@@ -292,22 +306,23 @@ def run_mm_backtest(
                 fills_this_event = [f for f in fills_this_event if f[0] == "BUY"]
 
         for side, fill_result in fills_this_event:
-            adverse_selection_bps = _compute_empirical_adverse_selection(
-                fill_price=fill_result.fill_price,
-                side=side,
-                event_idx=event_idx,
-                all_mid_prices=all_mid_prices,
-                lookahead_ticks=10,
-            )
+            _mid_at_fill = mid_price
+            def _as_for(lookahead: int) -> float:
+                future_start = event_idx + 1
+                if future_start >= n_mid:
+                    return 0.0
+                future_end = min(future_start + lookahead, n_mid)
+                window = as_window_mean[lookahead][future_start:future_end]
+                future_mids = [p for p in window if p > 0]
+                if not future_mids:
+                    return 0.0
+                future_mid = float(np.mean(future_mids))
+                return (future_mid - _mid_at_fill) * 10_000.0 / _mid_at_fill
+
+            adverse_selection_bps = _as_for(10)
 
             for horizon in as_horizons:
-                as_h = _compute_empirical_adverse_selection(
-                    fill_price=fill_result.fill_price,
-                    side=side,
-                    event_idx=event_idx,
-                    all_mid_prices=all_mid_prices,
-                    lookahead_ticks=horizon,
-                )
+                as_h = _as_for(horizon)
                 as_by_horizon[horizon].append(as_h)
 
             realized_pnl_bps = compute_realized_pnl(
@@ -507,6 +522,8 @@ def run_all_mm_backtests(
 
         if not snapshot_file.exists() or not events_file.exists():
             continue
+
+        print(f"Processing {capture_dir.name}...", flush=True)
 
         print(f"Processing {capture_dir.name}...")
 
