@@ -1,8 +1,10 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from app.mm.config import V20Config
-from scripts.v20_event_backtest_capture import load_events, load_snapshot, summarize
+from scripts.v20_event_backtest_capture import load_events, load_snapshot
 
 
 def _write_capture(root: Path) -> Path:
@@ -93,6 +95,48 @@ def test_local_capture_loader_reconstructs_v20_events(tmp_path):
     assert len(trades) == 1
     assert trades[0].aggressor_side.value == "SELL"
     assert counts == {"raw_rows": 2, "depth_events": 1, "trade_events": 1}
+
+
+def test_loader_reports_one_depth_sequence_gap_without_cascading(tmp_path):
+    capture = _write_capture(tmp_path)
+    manifest = json.loads((capture / "manifest.json").read_text(encoding="utf-8"))
+    manifest["event_count"] = 3
+    (capture / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+
+    rows = [
+        json.loads(line)
+        for line in (capture / "events.jsonl").read_text(encoding="utf-8").splitlines()
+    ]
+    rows.insert(
+        1,
+        {
+            "receive_ns": 1_150_000_000,
+            "stream": "btcusdt@depth@100ms",
+            "event_type": "depthUpdate",
+            "event_time_ms": 1_150,
+            "raw_json": json.dumps(
+                {
+                    "stream": "btcusdt@depth@100ms",
+                    "data": {
+                        "e": "depthUpdate",
+                        "E": 1_150,
+                        "U": 20,
+                        "u": 21,
+                        "pu": 19,
+                        "b": [],
+                        "a": [],
+                    },
+                }
+            ),
+        },
+    )
+    (capture / "events.jsonl").write_text(
+        "".join(json.dumps(row) + "\n" for row in rows),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="depth sequence gap.*expected_prev=11"):
+        load_events(capture)
 
 
 def test_config_loader_keeps_exact_candidate_hash_contract():
