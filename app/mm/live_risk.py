@@ -49,6 +49,10 @@ class LiveRiskGate:
     def latch(self, reason: str) -> None:
         self.state.emergency_latched = True
 
+    def emergency_stop(self) -> None:
+        """Latch the system into NO-TRADE until reconciliation clears it."""
+        self.latch("emergency stop")
+
     def reset_after_reconciliation(self) -> None:
         if self.state.reconciled and self.state.market_ready and self.state.user_stream_ready:
             self.state.emergency_latched = False
