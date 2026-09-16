@@ -112,7 +112,6 @@ def _bucket_ranges(timestamps: list[int]) -> list[tuple[int, int | float]]:
     for i in range(4):
         low = timestamps[cuts[i]]
         if i < 3:
-            # The upper bound is exclusive for every non-final bucket.
             high = timestamps[cuts[i + 1]]
         else:
             high = math.inf
@@ -214,7 +213,7 @@ def main() -> int:
     pnl_positive = valid_candidate.net_pnl_usd > 0
     improvement_positive = improvement > 0
     as_improved = valid_candidate.avg_adverse_selection_bps <= valid_baseline.avg_adverse_selection_bps
-    sufficient_fills = valid_candidate.fills >= MIN_FILLS_PER_VALIDATION_SIDE and valid_baseline.fills >= MIN_FILLS_PER_VALIDATION_SIDE
+    sufficient_fills = valid_candidate.fills >= MIN_FILLS_PER_VALIDATION_SIDE and baseline_fills := valid_baseline.fills >= MIN_FILLS_PER_VALIDATION_SIDE
     robust_buckets = len(bucket_delta) >= 4 and sum(x > 0 for x in bucket_delta) >= 3
 
     certified = all([pnl_positive, improvement_positive, as_improved, sufficient_fills, robust_buckets])
@@ -235,7 +234,14 @@ def main() -> int:
                 "at_least_3_of_4_validation_buckets_improve": robust_buckets,
             },
         },
-        "capture": {**counts, "session_id": manifest.get("session_id"), "start_ns": manifest.get("start_ns"), "end_ns": manifest.get("end_ns")},
+        "capture": {
+            "symbol": manifest.get("symbol"),
+            "streams": manifest.get("streams"),
+            "session_id": manifest.get("session_id"),
+            "start_ns": manifest.get("start_ns"),
+            "end_ns": manifest.get("end_ns"),
+            **counts,
+        },
         "selected_candidate": {
             "base_half_spread_bps": selected.base_half_spread_bps,
             "toxicity_imbalance_threshold": selected.toxicity_imbalance_threshold,
