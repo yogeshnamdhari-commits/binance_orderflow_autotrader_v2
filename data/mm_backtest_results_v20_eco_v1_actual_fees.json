@@ -1,0 +1,182 @@
+{
+  "run_id": "V20-ECO-V1-ACTUAL-FEES",
+  "git_commit": "644110f2685d23f2b8524c5896a5b3cadb44cf33",
+  "config_path": "app/mm/config_v20_eco_v1_actual_fees.json",
+  "config_sha256": "295f77a4ed960e9cc671cb67d81080b88f1b018bfd7c7cb5c036af278c3cdf33",
+  "config_label": "ACTUAL FEES: maker 1.0 bps, taker 2.0 bps (from EXECUTION_ECONOMIC_AUDIT.md)",
+  "seed": 42,
+  "command": "python3 scripts/run_v20_eco_v1_actual_fees.py",
+  "live_order_submission": false,
+  "results": {
+    "3b8eee35e6d14eb3b38d368c6caf310a": {
+      "pnl_bps": 52551.05801225586,
+      "pnl_notional_usd": 393.4039680279704,
+      "inventory_mtm_bps": 3.045638359128407,
+      "net_pnl_bps_incl_mtm": 52554.10365061499,
+      "fills": 34936,
+      "cancels": 0,
+      "win_rate": 99.94847721547974,
+      "winning_fills": 34918,
+      "losing_fills": 18,
+      "profit_factor": 4776.580973392252,
+      "avg_win_bps": 1.505299906368118,
+      "avg_loss_bps": -0.6113399059024384,
+      "max_win_bps": 5.247220056351171,
+      "max_loss_bps": -1.19702110447286,
+      "gross_profit_bps": 52562.062130561935,
+      "gross_loss_bps": 11.004118306243889,
+      "avg_adverse_selection_bps": -0.0031895216845551806,
+      "as_by_horizon": {
+        "1": -0.0005621089435784249,
+        "5": -0.0016976536447618899,
+        "10": -0.0031895216845551806,
+        "25": -0.007634564150425661,
+        "50": -0.015099750724129295,
+        "100": -0.0303944379486392
+      },
+      "avg_realized_pnl_per_fill_bps": 1.5042093545985762,
+      "inventory_max": 0.005279613482418983,
+      "inventory_final": -0.00031592579096805103,
+      "gate_pass": true,
+      "gate_reasons": [
+        "pass"
+      ]
+    },
+    "477cf6ae81564e8aa729e79d9cfdc048": {
+      "pnl_bps": 25340.505431809324,
+      "pnl_notional_usd": 190.27864189525644,
+      "inventory_mtm_bps": 0.0,
+      "net_pnl_bps_incl_mtm": 25340.505431809324,
+      "fills": 16837,
+      "cancels": 0,
+      "win_rate": 98.9903189404288,
+      "winning_fills": 16667,
+      "losing_fills": 170,
+      "profit_factor": 253.46032813063093,
+      "avg_win_bps": 1.5264222499303075,
+      "avg_loss_bps": -0.590436516348706,
+      "max_win_bps": 5.896045961718066,
+      "max_loss_bps": -2.9669529986465992,
+      "gross_profit_bps": 25440.879639588435,
+      "gross_loss_bps": 100.37420777928,
+      "avg_adverse_selection_bps": -0.003860402190121217,
+      "as_by_horizon": {
+        "1": -0.000740984355091085,
+        "5": -0.0018416136137041309,
+        "10": -0.003860402190121217,
+        "25": -0.00842109353419462,
+        "50": -0.01905090709870562,
+        "100": -0.04109215424228129
+      },
+      "avg_realized_pnl_per_fill_bps": 1.505048727909326,
+      "inventory_max": 0.011773760634602858,
+      "inventory_final": 0.0009263049592851732,
+      "gate_pass": true,
+      "gate_reasons": [
+        "pass"
+      ]
+    },
+    "9863cf188e1841f3a5738733632f1977": {
+      "pnl_bps": 25909.347748867724,
+      "pnl_notional_usd": 194.39361280057955,
+      "inventory_mtm_bps": 2.4745401818651076,
+      "net_pnl_bps_incl_mtm": 25911.82228904959,
+      "fills": 17187,
+      "cancels": 0,
+      "win_rate": 99.87781462733462,
+      "winning_fills": 17166,
+      "losing_fills": 21,
+      "profit_factor": 9082.529923273429,
+      "avg_win_bps": 1.5095072073025224,
+      "avg_loss_bps": -0.13585579463543557,
+      "max_win_bps": 4.282813380589427,
+      "max_loss_bps": -0.3261805579531236,
+      "gross_profit_bps": 25912.200720555098,
+      "gross_loss_bps": 2.8529716873441466,
+      "avg_adverse_selection_bps": -0.006465156124406819,
+      "as_by_horizon": {
+        "1": -0.0011314759487656208,
+        "5": -0.003396401331240559,
+        "10": -0.006465156124406819,
+        "25": -0.016417452648608544,
+        "50": -0.03351193093068898,
+        "100": -0.06866906221184872
+      },
+      "avg_realized_pnl_per_fill_bps": 1.5074968143869043,
+      "inventory_max": 0.006723093403098925,
+      "inventory_final": -0.0002630212721443229,
+      "gate_pass": true,
+      "gate_reasons": [
+        "pass"
+      ]
+    },
+    "e4153485b12e4ac2b80b4ff81bc08870": {
+      "pnl_bps": 48992.95309396508,
+      "pnl_notional_usd": 367.85199996420005,
+      "inventory_mtm_bps": 0.0,
+      "net_pnl_bps_incl_mtm": 48992.95309396508,
+      "fills": 32463,
+      "cancels": 0,
+      "win_rate": 99.16520346240335,
+      "winning_fills": 32192,
+      "losing_fills": 271,
+      "profit_factor": 265.394741761636,
+      "avg_win_bps": 1.527654553661145,
+      "avg_loss_bps": -0.6837723154788177,
+      "max_win_bps": 8.517477426155443,
+      "max_loss_bps": -2.2989906443364263,
+      "gross_profit_bps": 49178.25539145957,
+      "gross_loss_bps": 185.30229749475959,
+      "avg_adverse_selection_bps": -0.008123761699857877,
+      "as_by_horizon": {
+        "1": -0.0014758139523138388,
+        "5": -0.004445569677748314,
+        "10": -0.008123761699857877,
+        "25": -0.019682445407311004,
+        "50": -0.039743009711147984,
+        "100": -0.08375337218620339
+      },
+      "avg_realized_pnl_per_fill_bps": 1.5091936387260907,
+      "inventory_max": 0.007871203399123582,
+      "inventory_final": 0.0005586680297871762,
+      "gate_pass": true,
+      "gate_reasons": [
+        "pass"
+      ]
+    },
+    "ebe81a6484044c5399abd2439d251e3c": {
+      "pnl_bps": 52318.468861232905,
+      "pnl_notional_usd": 393.13499896600763,
+      "inventory_mtm_bps": 0.0,
+      "net_pnl_bps_incl_mtm": 52318.468861232905,
+      "fills": 34947,
+      "cancels": 0,
+      "win_rate": 99.7853893038029,
+      "winning_fills": 34872,
+      "losing_fills": 75,
+      "profit_factor": 1569.815884965921,
+      "avg_win_bps": 1.5012565347277445,
+      "avg_loss_bps": -0.4446535705696248,
+      "max_win_bps": 5.127263204790997,
+      "max_loss_bps": -1.3338040353981113,
+      "gross_profit_bps": 52351.81787902591,
+      "gross_loss_bps": 33.34901779272186,
+      "avg_adverse_selection_bps": 0.003926306741637604,
+      "as_by_horizon": {
+        "1": 0.0007742448156313403,
+        "5": 0.002158739844211052,
+        "10": 0.003926306741637604,
+        "25": 0.009104672415317334,
+        "50": 0.017984023842644345,
+        "100": 0.03515312129079093
+      },
+      "avg_realized_pnl_per_fill_bps": 1.4970804035033882,
+      "inventory_max": 0.0069321995170683465,
+      "inventory_final": 0.00018434350838426102,
+      "gate_pass": true,
+      "gate_reasons": [
+        "pass"
+      ]
+    }
+  }
+}
