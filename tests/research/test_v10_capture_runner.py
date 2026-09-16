@@ -2,16 +2,14 @@
 from __future__ import annotations
 
 import json
-import time
 from pathlib import Path
 
 import pytest
 
 from app.v10_capture import (
     _depth_update_id_range,
+    fetch_ws_snapshot_with_retries,
     find_bridging_index,
-    fetch_rest_snapshot,
-    run_capture,
 )
 from app.v10_recorder import V10Recorder
 
@@ -60,7 +58,6 @@ def test_find_bridging_index_accepts_exact_bridge():
 
 
 def test_find_bridging_index_rejects_u_greater_than_snapshot_without_pu_match():
-    # u > snapshot_id alone must NOT be accepted as a bridge
     events = [
         (_depth_update_payload(U=200, u=250, pu=199), 0, "btcusdt@depth@100ms"),
     ]
@@ -77,12 +74,44 @@ def test_find_bridging_index_returns_none_when_no_bridge():
 
 
 def test_u_greater_than_snapshot_alone_is_insufficient():
-    """The old fallback (u > snapshot_id) must not produce a valid bridge."""
     snapshot_id = 100
-    # This update is well past the snapshot but has no causal relationship
     raw = _depth_update_payload(U=200, u=250, pu=199)
     idx = find_bridging_index([(raw, 0, "stream")], snapshot_id=snapshot_id)
     assert idx is None
+
+
+def test_snapshot_retry_succeeds_after_transient_failure(monkeypatch):
+    calls = {"count": 0}
+
+    def fake_fetch(_symbol: str, limit: int = 1000):
+        calls["count"] += 1
+        if calls["count"] < 3:
+            raise RuntimeError("temporary websocket failure")
+        return {"lastUpdateId": 123, "bids": [], "asks": []}
+
+    monkeypatch.setattr("app.v10_capture.fetch_ws_snapshot", fake_fetch)
+    monkeypatch.setattr("app.v10_capture.time.sleep", lambda _seconds: None)
+
+    result = fetch_ws_snapshot_with_retries("BTCUSDT", attempts=3, retry_delay_seconds=0.0)
+
+    assert result["lastUpdateId"] == 123
+    assert calls["count"] == 3
+
+
+def test_snapshot_retry_exhausts_cleanly(monkeypatch):
+    calls = {"count": 0}
+
+    def fake_fetch(_symbol: str, limit: int = 1000):
+        calls["count"] += 1
+        raise RuntimeError("persistent websocket failure")
+
+    monkeypatch.setattr("app.v10_capture.fetch_ws_snapshot", fake_fetch)
+    monkeypatch.setattr("app.v10_capture.time.sleep", lambda _seconds: None)
+
+    with pytest.raises(RuntimeError, match="persistent websocket failure"):
+        fetch_ws_snapshot_with_retries("BTCUSDT", attempts=3, retry_delay_seconds=0.0)
+
+    assert calls["count"] == 3
 
 
 def test_record_bootstrap_writes_manifest(tmp_path: Path):
@@ -168,13 +197,9 @@ def test_record_bootstrap_failure_writes_manifest(tmp_path: Path):
 
 
 def test_sequence_gap_during_capture_marks_diagnostics():
-    """pu continuity must be enforced; gaps must be recorded in diagnostics."""
     validator = type("V", (), {"previous_u": None})()
-    # Simulate a gap: pu != previous_u
     event = {"U": 200, "u": 250, "pu": 199}
-    # This mirrors the DepthSequenceValidator observe logic
     previous_u = None
-    first_update = int(event["U"])
     final_update = int(event["u"])
     previous_update = event.get("pu")
     previous_update = int(previous_update) if previous_update is not None else None
@@ -189,13 +214,11 @@ def test_sequence_gap_during_capture_marks_diagnostics():
             state = "CONTIGUOUS"
         previous_u = final_update
 
-    assert state == "FIRST"  # first event is always FIRST
+    assert state == "FIRST"
 
 
 def test_no_silent_fallback_makes_capture_replayable():
-    """Without a valid bridge, the capture must not silently write events."""
     snapshot_id = 100
-    # Event with u > snapshot_id but no causal bridge
     raw = _depth_update_payload(U=200, u=250, pu=199)
     idx = find_bridging_index([(raw, 0, "stream")], snapshot_id=snapshot_id)
     assert idx is None, "u > snapshot_id alone must not create a bridge"
