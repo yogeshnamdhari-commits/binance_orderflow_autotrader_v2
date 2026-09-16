@@ -24,8 +24,8 @@ def test_pre_quote_trade_cannot_fill_new_quote():
     )
     depth = [L2Update(1_000, 1, 1, 0, [], [])]
     trades = [
-        TradeEvent(500, 99.99, 1.0, Side.SELL, 1),
-        TradeEvent(1_500, 99.99, 1.0, Side.SELL, 2),
+        TradeEvent(500, 99.70, 1.0, Side.SELL, 1),
+        TradeEvent(1_500, 99.70, 1.0, Side.SELL, 2),
     ]
 
     result = run_event_backtest(snapshot, depth, trades, _config())
@@ -40,9 +40,12 @@ def test_toxicity_filter_suppresses_toxic_side():
         bids=[(99.0, 100.0)],
         asks=[(101.0, 1.0)],
     )
-    depth = [L2Update(1_000, 1, 1, 0, [], [])]
+    depth = [
+        L2Update(1_000, 1, 1, 0, [], []),
+        L2Update(2_000, 2, 2, 0, [], []),
+    ]
     trades = [
-        TradeEvent(900, 101.0, 50.0, Side.BUY, 1),
+        TradeEvent(1_500, 101.0, 50.0, Side.BUY, 1),
     ]
     result = run_event_backtest(
         snapshot,
