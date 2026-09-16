@@ -4,6 +4,7 @@ from app.mm.execution import OrderStateManager
 from app.mm.execution_gateway import ExecutionGateway
 from app.mm.live_runtime import V20LiveRuntime
 from app.mm.user_stream import UserStreamGuard
+from app.mm.binance_user_stream import BinanceUSDMUserStream
 
 
 class Adapter:
@@ -14,6 +15,14 @@ class Adapter:
     def cancel(self, order_id):
         from app.mm.execution import ExecutionResult
         return ExecutionResult("CANCELED", order_id, "cancelled")
+
+
+class FakeWS:
+    def __init__(self):
+        self.closed = False
+
+    def close(self):
+        self.closed = True
 
 
 def test_user_stream_trade_fields_are_parsed():
@@ -43,6 +52,18 @@ def test_quiet_stream_stays_healthy_after_transport_heartbeat():
     stale, _, reason = guard.health(11001)
     assert stale is False
     assert reason == "stale"
+
+
+def test_expired_stream_clears_key_and_closes_socket():
+    ws = FakeWS()
+    statuses = []
+    stream = BinanceUSDMUserStream(api_key="test-key", status_cb=statuses.append)
+    stream.listen_key = "expired-key"
+    stream._on_message(ws, '{"e":"listenKeyExpired","E":1000}')
+    assert stream.listen_key is None
+    assert ws.closed is True
+    assert stream.guard.connected is False
+    assert statuses[-1]["status"] == "LISTEN_KEY_EXPIRED"
 
 
 def test_runtime_user_failure_latches_risk():
