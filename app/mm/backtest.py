@@ -427,11 +427,73 @@ def run_mm_backtest(
     )
 
 
+def build_run_provenance(
+    config_path: str | None = None,
+    seed: int | None = None,
+    command: str | None = None,
+) -> dict:
+    """Provenance envelope identifying the exact code+config+data for a run.
+
+    Records Git commit, config SHA-256 (single source of truth:
+    app/mm/config.json), seed and command so results are reproducible.
+    """
+    import subprocess
+
+    try:
+        git_commit = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=Path(__file__).resolve().parents[2],
+            stderr=subprocess.DEVNULL,
+        ).decode().strip()
+    except Exception:
+        git_commit = "unknown"
+    config_sha = None
+    if config_path:
+        try:
+            from .config import config_sha256
+
+            config_sha = config_sha256(config_path)
+        except Exception:
+            config_sha = "unreadable"
+    return {
+        "git_commit": git_commit,
+        "config_path": config_path,
+        "config_sha256": config_sha,
+        "seed": seed,
+        "command": command,
+    }
+
+
 def run_all_mm_backtests(
     captures_dir: str,
     config: V20Config,
+    config_path: str | None = None,
+    seed: int | None = None,
+    command: str | None = None,
 ) -> dict:
-    """Run MM backtest on all captures."""
+    """Run MM backtest on all captures.
+
+    Provide ``config_path`` (authoritative config.json), ``seed`` and
+    ``command`` so the run prints a provenance chain:
+    Git commit / config SHA-256 / capture / seed / command / result.
+    If ``seed`` is given, numpy RNG is seeded for reproducibility.
+    """
+    import subprocess
+
+    if seed is not None:
+        np.random.seed(seed)
+    if config_path is None:
+        from .config import CONFIG_JSON_DEFAULT
+
+        config_path = CONFIG_JSON_DEFAULT
+    provenance = build_run_provenance(config_path=config_path, seed=seed, command=command)
+    try:
+        print(
+            f"Provenance: git={provenance['git_commit'][:12]} "
+            f"config={config_path} sha256={provenance['config_sha256']} "
+            f"seed={seed} command={command}"
+        )
+    except Exception:
+        pass
 
     results = {}
     captures_path = Path(captures_dir)
