@@ -1,9 +1,10 @@
 """Authentic-data V20 market-making performance certification.
 
-The runner captures public Binance BTCUSDT depth/trade data locally, performs a
-causal chronological replay, selects candidate microstructure parameters only
-on the first half of the capture, and certifies them on the untouched second
-half. No order placement and no synthetic market data are used.
+The certification runner requires a causally bridged BTCUSDT capture containing
+both depth updates and aggressive trade events. Candidate microstructure
+parameters are selected only on the first chronological half and evaluated on
+an untouched second half. No order placement and no synthetic market data are
+used.
 """
 from __future__ import annotations
 
@@ -21,6 +22,12 @@ from app.mm.execution_replay import TradeEvent
 from scripts.v20_event_backtest_capture import load_events, load_snapshot
 
 
+MIN_TOTAL_EVENTS = 4_000
+MIN_DEPTH_EVENTS = 500
+MIN_TRADE_EVENTS = 500
+MIN_FILLS_PER_VALIDATION_SIDE = 100
+
+
 def _load_config(path: Path, maker_fee_bps: float) -> V20Config:
     config, _ = V20Config.load_authoritative(str(path))
     return replace(config, maker_fee_bps=maker_fee_bps, live_order_submission=False)
@@ -36,8 +43,13 @@ def _split_events(
     trades: list[TradeEvent],
 ) -> tuple[L2Snapshot, list[L2Update], list[TradeEvent], L2Snapshot, list[L2Update], list[TradeEvent]]:
     timestamps = sorted(_event_timestamp_ns(depth, trades))
-    if len(timestamps) < 2000:
-        raise ValueError(f"insufficient events for certification: {len(timestamps)}")
+    if len(timestamps) < MIN_TOTAL_EVENTS:
+        raise ValueError(f"insufficient events for certification: {len(timestamps)} < {MIN_TOTAL_EVENTS}")
+    if len(depth) < MIN_DEPTH_EVENTS:
+        raise ValueError(f"insufficient depth events for certification: {len(depth)} < {MIN_DEPTH_EVENTS}")
+    if len(trades) < MIN_TRADE_EVENTS:
+        raise ValueError(f"insufficient trade events for certification: {len(trades)} < {MIN_TRADE_EVENTS}")
+
     split_ts = timestamps[len(timestamps) // 2]
 
     train_depth = [e for e in depth if e.timestamp_ns <= split_ts]
@@ -46,25 +58,23 @@ def _split_events(
     valid_trades = [e for e in trades if e.timestamp_ns > split_ts]
     if len(train_depth) < 100 or len(valid_depth) < 100:
         raise ValueError("train/validation depth split is too small")
-    if not valid_trades:
-        raise ValueError("validation contains no trades")
+    if len(train_trades) < 100 or len(valid_trades) < 100:
+        raise ValueError("train/validation trade split is too small")
 
     book = OrderBook.from_snapshot(snapshot)
     for event in train_depth:
         book.apply_update(event)
 
-    train_snapshot = snapshot
     validation_snapshot = L2Snapshot(
         timestamp_ns=book.timestamp_ns,
         last_update_id=book.last_update_id,
         bids=book.get_depth("bid", levels=1000),
         asks=book.get_depth("ask", levels=1000),
     )
-    return train_snapshot, train_depth, train_trades, validation_snapshot, valid_depth, valid_trades
+    return snapshot, train_depth, train_trades, validation_snapshot, valid_depth, valid_trades
 
 
 def _score(result: EventBacktestResult) -> tuple[float, int]:
-    # Training objective: reward net P&L while penalizing toxic execution.
     objective = result.net_pnl_usd - 0.05 * abs(result.avg_adverse_selection_bps) * max(1.0, result.filled_qty)
     return objective, result.fills
 
@@ -94,6 +104,22 @@ def _run(result_cfg: V20Config, snapshot: L2Snapshot, depth: list[L2Update], tra
     return run_event_backtest(snapshot, depth, trades, result_cfg)
 
 
+def _bucket_ranges(timestamps: list[int]) -> list[tuple[int, int | float]]:
+    """Return non-overlapping chronological quartile ranges."""
+    n = len(timestamps)
+    cuts = [0, n // 4, n // 2, (3 * n) // 4, n]
+    ranges: list[tuple[int, int | float]] = []
+    for i in range(4):
+        low = timestamps[cuts[i]]
+        if i < 3:
+            # The upper bound is exclusive for every non-final bucket.
+            high = timestamps[cuts[i + 1]]
+        else:
+            high = math.inf
+        ranges.append((low, high))
+    return ranges
+
+
 def _bucket_results(
     snapshot: L2Snapshot,
     depth: list[L2Update],
@@ -103,18 +129,16 @@ def _bucket_results(
     timestamps = sorted(_event_timestamp_ns(depth, trades))
     if len(timestamps) < 400:
         return []
-    boundaries = [timestamps[(len(timestamps) * i) // 4] for i in range(1, 4)]
+    ranges = _bucket_ranges(timestamps)
     results: list[EventBacktestResult] = []
     current_snapshot = snapshot
-    current_depth = depth
-    current_trades = trades
-    # Evaluate sequential quartiles with a reconstructed book snapshot so each
-    # bucket is causally self-contained.
-    for idx in range(4):
-        low = timestamps[(len(timestamps) * idx) // 4]
-        high = timestamps[(len(timestamps) * (idx + 1)) // 4] if idx < 3 else math.inf
-        bucket_depth = [e for e in current_depth if low <= e.timestamp_ns <= high]
-        bucket_trades = [e for e in current_trades if low <= e.timestamp_ns <= high]
+    for idx, (low, high) in enumerate(ranges):
+        if idx < 3:
+            bucket_depth = [e for e in depth if low <= e.timestamp_ns < high]
+            bucket_trades = [e for e in trades if low <= e.timestamp_ns < high]
+        else:
+            bucket_depth = [e for e in depth if e.timestamp_ns >= low]
+            bucket_trades = [e for e in trades if e.timestamp_ns >= low]
         if bucket_depth:
             results.append(_run(config, current_snapshot, bucket_depth, bucket_trades))
             book = OrderBook.from_snapshot(current_snapshot)
@@ -148,18 +172,24 @@ def main() -> int:
     parser.add_argument("--capture-dir", type=Path, required=True)
     parser.add_argument("--baseline-config", type=Path, default=Path("app/mm/config.json"))
     parser.add_argument("--candidate-config", type=Path, default=Path("app/mm/config_backtest_toxicity_v1.json"))
-    parser.add_argument("--maker-fee-bps", type=float, default=2.0)
+    parser.add_argument("--maker-fee-bps", type=float, default=1.0)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
     manifest = json.loads((args.capture_dir / "manifest.json").read_text(encoding="utf-8"))
-    if manifest.get("bootstrap", {}).get("status") != "BRIDGED":
+    bootstrap = manifest.get("bootstrap", {})
+    if bootstrap.get("status") != "BRIDGED":
         raise SystemExit("CERTIFICATION_BLOCKED: capture bootstrap is not BRIDGED")
     if str(manifest.get("symbol", "")).upper() != "BTCUSDT":
         raise SystemExit("CERTIFICATION_BLOCKED: symbol must be BTCUSDT")
 
     snapshot = load_snapshot(args.capture_dir)
     depth, trades, counts = load_events(args.capture_dir)
+    if counts.get("depth_events", 0) < MIN_DEPTH_EVENTS:
+        raise SystemExit(f"CERTIFICATION_BLOCKED: insufficient depth events ({counts.get('depth_events', 0)})")
+    if counts.get("trade_events", 0) < MIN_TRADE_EVENTS:
+        raise SystemExit(f"CERTIFICATION_BLOCKED: insufficient trade events ({counts.get('trade_events', 0)})")
+
     train_snapshot, train_depth, train_trades, validation_snapshot, valid_depth, valid_trades = _split_events(snapshot, depth, trades)
 
     baseline = _load_config(args.baseline_config, args.maker_fee_bps)
@@ -184,7 +214,7 @@ def main() -> int:
     pnl_positive = valid_candidate.net_pnl_usd > 0
     improvement_positive = improvement > 0
     as_improved = valid_candidate.avg_adverse_selection_bps <= valid_baseline.avg_adverse_selection_bps
-    sufficient_fills = valid_candidate.fills >= 100 and valid_baseline.fills >= 100
+    sufficient_fills = valid_candidate.fills >= MIN_FILLS_PER_VALIDATION_SIDE and valid_baseline.fills >= MIN_FILLS_PER_VALIDATION_SIDE
     robust_buckets = len(bucket_delta) >= 4 and sum(x > 0 for x in bucket_delta) >= 3
 
     certified = all([pnl_positive, improvement_positive, as_improved, sufficient_fills, robust_buckets])
@@ -194,6 +224,10 @@ def main() -> int:
             "status": "PERFORMANCE_CERTIFIED" if certified else "NOT_CERTIFIED",
             "maker_fee_bps": args.maker_fee_bps,
             "rules": {
+                "minimum_total_events": MIN_TOTAL_EVENTS,
+                "minimum_depth_events": MIN_DEPTH_EVENTS,
+                "minimum_trade_events": MIN_TRADE_EVENTS,
+                "minimum_validation_fills_each": MIN_FILLS_PER_VALIDATION_SIDE,
                 "validation_candidate_net_pnl_usd_gt_0": pnl_positive,
                 "candidate_beats_baseline_net_pnl": improvement_positive,
                 "candidate_adverse_selection_not_worse": as_improved,
