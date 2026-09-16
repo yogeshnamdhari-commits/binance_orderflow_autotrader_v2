@@ -17,7 +17,8 @@ jobs:
       matrix:
         session: [A, B, C, D]
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    # The authentic capture alone takes 30 minutes; leave deterministic headroom for replay/report generation.
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
 
