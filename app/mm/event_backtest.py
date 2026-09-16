@@ -18,6 +18,7 @@ class EventBacktestResult:
     cancels: int
     replacements: int
     filled_qty: float
+    fees_usd: float
     realized_pnl_usd: float
     inventory_mtm_usd: float
     net_pnl_usd: float
@@ -49,7 +50,16 @@ def _adverse_selection(fill_price: float, side: Side, future_mid: float | None) 
 
 def _same_price_qty(book: OrderBook, side: str, price: float) -> float:
     levels = book.get_depth(side, levels=20)
-    return sum(qty for level_price, qty in levels if math.isclose(level_price, price, rel_tol=0.0, abs_tol=max(price * 1e-9, 1e-8)))
+    return sum(
+        qty
+        for level_price, qty in levels
+        if math.isclose(
+            level_price,
+            price,
+            rel_tol=0.0,
+            abs_tol=max(price * 1e-9, 1e-8),
+        )
+    )
 
 
 def run_event_backtest(
@@ -74,12 +84,28 @@ def run_event_backtest(
     spread_history: list[float] = []
     inventory = 0.0
     cash = 0.0
+    fees_usd = 0.0
     fills_for_as: list[tuple[int, Side, float]] = []
 
     last_quote: QuoteIntent | None = None
     quote_counter = 0
     replacements = 0
-    cancels = 0
+
+    def process_fills(trades: Sequence[TradeEvent]) -> None:
+        nonlocal inventory, cash, fees_usd
+        for trade in trades:
+            for fill in replay.on_trade(trade):
+                notional = fill.price * fill.qty
+                fee = notional * config.maker_fee_bps / 10_000.0
+                fees_usd += fee
+                if fill.side is Side.BUY:
+                    inventory += fill.qty
+                    cash -= notional
+                else:
+                    inventory -= fill.qty
+                    cash += notional
+                cash -= fee
+                fills_for_as.append((fill.timestamp_ns, fill.side, fill.price))
 
     for depth_event in depth_events:
         book.apply_update(depth_event)
@@ -90,7 +116,6 @@ def run_event_backtest(
 
         mids.append((depth_event.timestamp_ns, mid))
         spread_history.append(spread_bps)
-        regime = compute_volatility_regime(spread_bps, spread_history)
         bid, ask, bid_qty, ask_qty = generate_quotes(mid, spread_bps, inventory, config)
 
         desired = QuoteIntent(
@@ -111,6 +136,7 @@ def run_event_backtest(
                 or abs(a.ask_price - b.ask_price) > price_eps
                 or a.bid_qty <= 0
                 or a.ask_qty <= 0
+                or replay.active_quote is None
             )
 
         if materially_different(last_quote, desired):
@@ -125,37 +151,22 @@ def run_event_backtest(
             )
             bid_queue = _same_price_qty(book, "bid", desired.bid_price)
             ask_queue = _same_price_qty(book, "ask", desired.ask_price)
-            replay.activate(desired, visible_bid_qty_at_price=bid_queue, visible_ask_qty_at_price=ask_queue)
             if last_quote is not None:
                 replacements += 1
+            replay.activate(
+                desired,
+                visible_bid_qty_at_price=bid_queue,
+                visible_ask_qty_at_price=ask_queue,
+            )
             last_quote = desired
 
+        due: list[TradeEvent] = []
         while trade_index < len(sorted_trades) and sorted_trades[trade_index].timestamp_ns <= depth_event.timestamp_ns:
-            trade = sorted_trades[trade_index]
-            fills = replay.on_trade(trade)
-            for fill in fills:
-                notional = fill.price * fill.qty
-                if fill.side is Side.BUY:
-                    inventory += fill.qty
-                    cash -= notional
-                else:
-                    inventory -= fill.qty
-                    cash += notional
-                fills_for_as.append((fill.timestamp_ns, fill.side, fill.price))
+            due.append(sorted_trades[trade_index])
             trade_index += 1
+        process_fills(due)
 
-    while trade_index < len(sorted_trades):
-        fills = replay.on_trade(sorted_trades[trade_index])
-        for fill in fills:
-            notional = fill.price * fill.qty
-            if fill.side is Side.BUY:
-                inventory += fill.qty
-                cash -= notional
-            else:
-                inventory -= fill.qty
-                cash += notional
-            fills_for_as.append((fill.timestamp_ns, fill.side, fill.price))
-        trade_index += 1
+    process_fills(sorted_trades[trade_index:])
 
     stats = replay.stats()
     final_mid = mids[-1][1] if mids else 0.0
@@ -168,7 +179,8 @@ def run_event_backtest(
         values: list[float] = []
         horizon_ns = int(horizon * 1_000_000)
         for ts, side, price in fills_for_as:
-            values.append(_adverse_selection(price, side, _future_mid_by_time(mids, ts, horizon_ns)))
+            future_mid = _future_mid_by_time(mids, ts, horizon_ns)
+            values.append(_adverse_selection(price, side, future_mid))
         as_by_horizon[horizon] = sum(values) / len(values) if values else 0.0
 
     avg_as = sum(as_by_horizon.values()) / len(as_by_horizon) if as_by_horizon else 0.0
@@ -177,6 +189,7 @@ def run_event_backtest(
         cancels=stats.cancels_seen,
         replacements=replacements,
         filled_qty=stats.filled_qty,
+        fees_usd=fees_usd,
         realized_pnl_usd=realized_pnl_usd,
         inventory_mtm_usd=inventory_mtm_usd,
         net_pnl_usd=net_pnl_usd,
