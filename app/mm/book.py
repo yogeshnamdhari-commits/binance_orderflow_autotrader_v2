@@ -44,27 +44,37 @@ class OrderBook:
             last_update_id=snapshot.last_update_id,
         )
         for price, qty in snapshot.bids:
-            book.bids[price] = qty
+            book.bids[float(price)] = float(qty)
         for price, qty in snapshot.asks:
-            book.asks[price] = qty
+            book.asks[float(price)] = float(qty)
         return book
 
     def apply_update(self, update: L2Update) -> None:
         """Apply incremental WebSocket update."""
 
+        if self.last_update_id is None:
+            raise ValueError("OrderBook must be initialized from snapshot before applying updates")
+
         if update.prev_final_update_id != self.last_update_id:
-            raise ValueError(
-                f"Sequence gap: expected {self.last_update_id}, "
-                f"got {update.prev_final_update_id}"
-            )
+            if update.prev_final_update_id < self.last_update_id:
+                pass
+            else:
+                raise ValueError(
+                    f"Sequence gap: expected {self.last_update_id}, "
+                    f"got {update.prev_final_update_id}"
+                )
 
         for price, qty in update.bids:
+            price = float(price)
+            qty = float(qty)
             if qty == 0:
                 self.bids.pop(price, None)
             else:
                 self.bids[price] = qty
 
         for price, qty in update.asks:
+            price = float(price)
+            qty = float(qty)
             if qty == 0:
                 self.asks.pop(price, None)
             else:

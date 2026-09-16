@@ -7,6 +7,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import threading
 import time
 from pathlib import Path
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
@@ -100,26 +101,58 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
 
     import websocket
 
-    snapshot = fetch_rest_snapshot(symbol.upper())
-    snapshot_id = int(snapshot["lastUpdateId"])
-    (session_dir / "snapshot.json").write_text(
-        json.dumps(snapshot, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
-
     # Buffer WebSocket events until a bridging depthUpdate is found, then
     # flush the buffer (minus pre-bridge events) to the recorder. This follows
     # Binance's documented diff-depth synchronization protocol.
-    buffered: list[tuple[str, int]] = []
-    bridge_found = False
-    first_event_ts: float | None = None
+    #
+    # The bridge condition is strictly: U <= snapshot_id + 1 <= u.
+    # This is the only acceptable causal relationship between the REST snapshot
+    # and the first persisted depthUpdate.  A mere u > snapshot_id is NOT
+    # sufficient, because the buffered stream may have started long before the
+    # snapshot was taken, producing a causally misaligned local book.
+    state: dict[str, object] = {
+        "snapshot_id": None,
+        "bridge_found": False,
+        "snapshot_fetched": False,
+        "bridge_deadline": None,
+        "buffered": [],
+    }
     deadline = time.monotonic() + duration_seconds
+    snapshot_lock = threading.Lock()
 
-    def on_message(_ws, message):
-        nonlocal bridge_found, first_event_ts
+    def fetch_snapshot_and_find_bridge() -> None:
+        with snapshot_lock:
+            if state["snapshot_fetched"]:
+                return
+            try:
+                snap = fetch_rest_snapshot(symbol.upper())
+                snapshot_id = int(snap["lastUpdateId"])
+                (session_dir / "snapshot.json").write_text(
+                    json.dumps(snap, indent=2, sort_keys=True) + "\n",
+                    encoding="utf-8",
+                )
+                state["snapshot_id"] = snapshot_id
+                state["snapshot_fetched"] = True
+                first_bridge = find_bridging_index(state["buffered"], snapshot_id)
+                if first_bridge is not None:
+                    state["bridge_found"] = True
+                    recorder.record_bootstrap(snapshot_id, first_bridge, state["buffered"])
+                    for idx in range(first_bridge, len(state["buffered"])):
+                        raw, ns, st = state["buffered"][idx]
+                        recorder.handle_message(raw, receive_ns=ns)
+                    state["buffered"].clear()
+                else:
+                    state["bridge_deadline"] = time.monotonic() + 5.0
+            except Exception as exc:
+                recorder.record_bootstrap_failure(
+                    -1,
+                    "SNAPSHOT_FETCH_FAILED",
+                    str(exc),
+                )
+                _ws.close()
+
+    def on_message(_ws, message) -> None:
         receive_ns = time.time_ns()
-        if first_event_ts is None:
-            first_event_ts = time.monotonic()
 
         try:
             parsed = json.loads(message)
@@ -128,43 +161,65 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
 
         stream = parsed.get("stream") if isinstance(parsed, dict) else None
 
-        if not bridge_found:
-            buffered.append((message, receive_ns, stream))
-            first_bridge = find_bridging_index(buffered, snapshot_id)
-            if first_bridge is not None:
-                bridge_found = True
-                for idx in range(first_bridge, len(buffered)):
-                    raw, ns, st = buffered[idx]
-                    recorder.handle_message(raw, receive_ns=ns)
-                buffered.clear()
-            elif time.monotonic() - first_event_ts > 2.0 and buffered:
-                first_event = _depth_update_id_range(buffered[0][0])
-                if first_event is not None:
-                    U, u = first_event
-                    if u > snapshot_id:
-                        bridge_found = True
-                        for idx in range(len(buffered)):
-                            raw, ns, st = buffered[idx]
-                            recorder.handle_message(raw, receive_ns=ns)
-                        buffered.clear()
+        if not state["bridge_found"]:
+            state["buffered"].append((message, receive_ns, stream))
+            if state["snapshot_fetched"] and state["snapshot_id"] is not None:
+                first_bridge = find_bridging_index(state["buffered"], state["snapshot_id"])
+                if first_bridge is not None:
+                    state["bridge_found"] = True
+                    recorder.record_bootstrap(state["snapshot_id"], first_bridge, state["buffered"])
+                    for idx in range(first_bridge, len(state["buffered"])):
+                        raw, ns, st = state["buffered"][idx]
+                        recorder.handle_message(raw, receive_ns=ns)
+                    state["buffered"].clear()
+                elif state["bridge_deadline"] is not None and time.monotonic() > state["bridge_deadline"]:
+                    recorder.record_bootstrap_failure(
+                        state["snapshot_id"],
+                        "BRIDGE_TIMEOUT",
+                        "No depthUpdate satisfying U <= snapshot_id+1 <= u found within bootstrap window",
+                    )
+                    _ws.close()
             return
 
-        recorder.handle_message(message)
+        recorder.handle_message(message, receive_ns=receive_ns)
         if time.monotonic() >= deadline:
             _ws.close()
 
-    def on_error(_ws, _error):
+    def on_error(_ws, _error) -> None:
         recorder.mark_reconnect()
 
-    def on_close(_ws, _status_code, _message):
+    def on_close(_ws, _status_code, _message) -> None:
+        if not state["bridge_found"] and not state["snapshot_fetched"]:
+            recorder.record_bootstrap_failure(
+                state["snapshot_id"] if state["snapshot_id"] is not None else -1,
+                "CAPTURE_CLOSED",
+                "WebSocket closed before snapshot was fetched",
+            )
+        elif not state["bridge_found"]:
+            recorder.record_bootstrap_failure(
+                state["snapshot_id"],
+                "BRIDGE_TIMEOUT",
+                "No depthUpdate satisfying U <= snapshot_id+1 <= u found within bootstrap window",
+            )
         recorder.close()
 
     socket = websocket.WebSocketApp(
         ws_url,
+        on_open=lambda _ws: None,
         on_message=on_message,
         on_error=on_error,
         on_close=on_close,
     )
+
+    snapshot_thread = threading.Thread(
+        target=lambda: (
+            time.sleep(5.0),
+            fetch_snapshot_and_find_bridge(),
+        ),
+        daemon=True,
+    )
+    snapshot_thread.start()
+
     try:
         socket.run_forever()
     finally:

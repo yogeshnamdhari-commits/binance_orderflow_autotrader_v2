@@ -1,0 +1,38 @@
+{
+  "ci_high_bps": -1.0826174909380517,
+  "ci_low_bps": -1.1543950820165074,
+  "config_hash": "86d631dbe5d2d398c3ca7abd92c863929a11a00f591d3f5da73ec5547eefb2e7",
+  "cost_stress": {
+    "1.0": -1.0649154132094993,
+    "1.25": -1.3315861848533814,
+    "1.5": -1.5982569564972637,
+    "2.0": -2.1315984997850275
+  },
+  "gate_pass": false,
+  "gate_reasons": [
+    "V19 does not improve net EV over frozen V16",
+    "V19 versus V16 confidence interval does not exclude zero",
+    "net EV is not above the required economic threshold",
+    "V19 95% confidence interval does not exclude zero",
+    "at least one chronological regime is non-positive",
+    "cost stress removes the economic edge"
+  ],
+  "incremental_ci_high_bps": -1.1642951718917223,
+  "incremental_ci_low_bps": -1.1890711163185164,
+  "incremental_mean_bps": -1.1766111792566862,
+  "incremental_p_value": 0.0,
+  "live_order_submission": false,
+  "n_folds": 6,
+  "n_test_events": 6000,
+  "net_ev_bps": -1.1181026770874714,
+  "p_value": 0.0,
+  "realized_net_ev_bps": -0.6581314775115819,
+  "regime_means": [
+    -1.077518842292951,
+    -0.9997138282910937,
+    -0.9156572077835291,
+    -1.043225161171667,
+    -1.3083313418572904,
+    -1.3641696811282986
+  ]
+}

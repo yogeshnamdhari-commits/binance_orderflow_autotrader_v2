@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from math import comb
 from typing import Sequence
 
@@ -28,7 +29,10 @@ def compare_to_v16(v19: Sequence[float], v16: Sequence[float], *, bootstrap_samp
         positives = int(np.sum(nonzero > 0))
         n = len(nonzero)
         k = min(positives, n - positives)
-        p = min(1.0, 2.0 * sum(comb(n, i) for i in range(k + 1)) / (2.0 ** n))
+        if n > 60:
+            p = float(2.0 * math.erfc(abs(2.0 * positives - n) / math.sqrt(n) / math.sqrt(2.0)) / 2.0)
+        else:
+            p = min(1.0, 2.0 * sum(comb(n, i) for i in range(k + 1)) / (2.0 ** n))
     return {
         "incremental_mean_bps": mean,
         "ci_low_bps": float(lo),

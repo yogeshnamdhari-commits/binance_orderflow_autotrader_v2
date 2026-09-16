@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from app.mm.quoting import QuoteEngine, QuoteState
 from app.mm.inventory import InventoryManager, InventoryState
-from app.mm.fill_sim import FillSimulator, FillResult
-from app.mm.backtest import MarketMakingBacktest, MMResult, MMTrade
+from app.mm.fill_sim import FillResult, simulate_fill, compute_realized_pnl
+from app.mm.backtest import run_mm_backtest, run_all_mm_backtests, MMBacktestResult, FillEvent
 from app.mm.gate import evaluate_mm_gate, MMGateResult
 from app.mm.latency import LatencyModel, check_quote_staleness
 from app.mm.adverse_selection import compute_post_fill_adverse_selection, compute_inventory_cost
@@ -16,11 +16,13 @@ __all__ = [
     "QuoteState",
     "InventoryManager",
     "InventoryState",
-    "FillSimulator",
     "FillResult",
-    "MarketMakingBacktest",
-    "MMResult",
-    "MMTrade",
+    "simulate_fill",
+    "compute_realized_pnl",
+    "run_mm_backtest",
+    "run_all_mm_backtests",
+    "MMBacktestResult",
+    "FillEvent",
     "evaluate_mm_gate",
     "MMGateResult",
     "LatencyModel",

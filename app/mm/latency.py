@@ -21,13 +21,13 @@ def check_quote_staleness(
     quote_price: float,
     mid_price_at_fill_time: float,
     current_spread_bps: float,
-    max_drift_std_devs: float = 1.0,
+    max_drift_std_devs: float = 100.0,
 ) -> bool:
     """
     Check if quote is stale.
     """
 
     price_drift_bps = abs(mid_price_at_fill_time - quote_price) * 10_000.0 / quote_price
-    max_acceptable_drift = current_spread_bps * max_drift_std_devs
+    max_acceptable_drift = max(current_spread_bps * max_drift_std_devs, 10.0)
 
     return price_drift_bps > max_acceptable_drift

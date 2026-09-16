@@ -6,11 +6,25 @@ capture public USDⓈ-M WebSocket market data for deterministic research replay.
 
 from __future__ import annotations
 
+import json
+import time
 from pathlib import Path
 from typing import Callable
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from .v10_market_data import DepthSequenceValidator, SessionRecorder, normalize_ws_event
+
+
+def _depth_update_id_range(raw_json: str) -> tuple[int, int] | None:
+    """Extract (U, u) from a depthUpdate event raw JSON string."""
+    try:
+        payload = json.loads(raw_json)
+        data = payload.get("data", payload)
+        U = int(data["U"])
+        u = int(data["u"])
+        return U, u
+    except (json.JSONDecodeError, KeyError, TypeError, ValueError):
+        return None
 
 
 class V10Recorder:
@@ -72,6 +86,43 @@ class V10Recorder:
 
     def diagnostics(self) -> dict[str, int]:
         return dict(self._diagnostics)
+
+    def record_bootstrap(
+        self,
+        snapshot_id: int,
+        bridge_index: int,
+        buffered: list[tuple[str, int, str | None]],
+    ) -> None:
+        first_raw = buffered[bridge_index][0]
+        range_result = _depth_update_id_range(first_raw)
+        first_U, first_u = range_result if range_result is not None else (None, None)
+        first_pu = None
+        try:
+            payload = json.loads(first_raw)
+            data = payload.get("data", payload)
+            first_pu = data.get("pu")
+            first_pu = int(first_pu) if first_pu is not None else None
+        except Exception:
+            pass
+        self.session._manifest["bootstrap"] = {
+            "status": "BRIDGED",
+            "snapshot_last_update_id": snapshot_id,
+            "first_bridge_index": bridge_index,
+            "first_U": first_U,
+            "first_u": first_u,
+            "first_pu": first_pu,
+            "pre_bridge_events_skipped": bridge_index,
+        }
+        self.session._write_manifest()
+
+    def record_bootstrap_failure(self, snapshot_id: int, reason: str, detail: str) -> None:
+        self.session._manifest["bootstrap"] = {
+            "status": "FAILED",
+            "snapshot_last_update_id": snapshot_id,
+            "reason": reason,
+            "detail": detail,
+        }
+        self.session._write_manifest()
 
     def close(self, end_ns: int | None = None) -> None:
         self.session.close(end_ns=end_ns)

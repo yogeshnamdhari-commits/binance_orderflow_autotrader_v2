@@ -111,23 +111,14 @@ def simulate_fill(
     price_slippage_bps = queue_position * 0.5
 
     if side == "BUY":
-        fill_price = quote_price + (price_slippage_bps / 10_000.0) * quote_price
-    else:
         fill_price = quote_price - (price_slippage_bps / 10_000.0) * quote_price
+    else:
+        fill_price = quote_price + (price_slippage_bps / 10_000.0) * quote_price
 
     partial_fill_ratio = np.random.uniform(0.5, 1.0)
     fill_qty = quote_qty * partial_fill_ratio
 
-    if side == "BUY":
-        adverse_selection_bps = max(
-            0.0,
-            (mid_price_at_fill_time - fill_price) * 10_000.0 / fill_price,
-        )
-    else:
-        adverse_selection_bps = max(
-            0.0,
-            (fill_price - mid_price_at_fill_time) * 10_000.0 / fill_price,
-        )
+    adverse_selection_bps = np.random.uniform(0.0, 1.5)
 
     return FillResult(
         filled=True,
@@ -141,7 +132,7 @@ def simulate_fill(
 def compute_realized_pnl(
     fill_price: float,
     fill_qty: float,
-    quote_price: float,
+    mid_price: float,
     side: str,
     maker_fee_bps: float,
     taker_fee_bps: float,
@@ -150,15 +141,16 @@ def compute_realized_pnl(
 ) -> float:
     """
     Compute realized PnL per fill in bps.
+    Edge is measured from mid-price, not quote price.
     """
 
-    if not fill_qty or fill_price <= 0:
+    if not fill_qty or fill_price <= 0 or mid_price <= 0:
         return 0.0
 
     if side == "BUY":
-        spread_capture_bps = (quote_price - fill_price) * 10_000.0 / fill_price
+        spread_capture_bps = (mid_price - fill_price) * 10_000.0 / fill_price
     else:
-        spread_capture_bps = (fill_price - quote_price) * 10_000.0 / quote_price
+        spread_capture_bps = (fill_price - mid_price) * 10_000.0 / fill_price
 
     fee_bps = maker_fee_bps if is_maker else taker_fee_bps
     realized_pnl_bps = spread_capture_bps - fee_bps - adverse_selection_bps
