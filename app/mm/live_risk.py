@@ -12,7 +12,9 @@ class RiskLimits:
     max_order_qty: float = 0.01
     max_open_orders: int = 4
     max_market_data_age_ms: int = 1000
-    max_user_stream_age_ms: int = 5000
+    # websocket-client sends transport pings every 20s; allow margin for jitter
+    # while still failing closed well before the Binance 60-minute stream expiry.
+    max_user_stream_age_ms: int = 30000
     max_daily_loss_usd: float = 50.0
     max_api_errors: int = 5
     max_quote_age_ms: int = 1000
