@@ -12,8 +12,12 @@ env:
 
 jobs:
   performance-certification:
+    strategy:
+      fail-fast: false
+      matrix:
+        session: [A, B]
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -39,7 +43,7 @@ jobs:
           run_capture(
               symbol='BTCUSDT',
               output_dir='data/cert_capture',
-              duration_seconds=1500,
+              duration_seconds=900,
           )
           PY
 
@@ -58,17 +62,40 @@ jobs:
 
       - name: Performance certification replay
         run: |
+          mkdir -p data/cert_reports/${{ matrix.session }}
           python scripts/v20_performance_certify.py \
             --capture-dir "${{ steps.locate.outputs.capture_dir }}" \
             --baseline-config app/mm/config.json \
             --candidate-config app/mm/config_backtest_toxicity_v1.json \
             --maker-fee-bps 2.0 \
-            --output data/v20_performance_certification.json
+            --output data/cert_reports/${{ matrix.session }}/v20_performance_certification.json
 
-      - name: Publish certification report
+      - name: Publish session certification report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: v20-performance-certification
-          path: data/v20_performance_certification.json
+          name: v20-performance-certification-${{ matrix.session }}
+          path: data/cert_reports/${{ matrix.session }}/v20_performance_certification.json
           if-no-files-found: warn
+
+  aggregate:
+    needs: performance-certification
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Download session reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: v20-performance-certification-*
+          path: cert_reports
+          merge-multiple: true
+
+      - name: Aggregate certification
+        run: python scripts/v20_certification_aggregate.py cert_reports
