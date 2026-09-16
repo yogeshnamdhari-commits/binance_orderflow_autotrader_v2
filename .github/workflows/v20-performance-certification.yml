@@ -15,9 +15,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        session: [A, B]
+        session: [A, B, C, D]
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
 
@@ -43,7 +43,7 @@ jobs:
           run_capture(
               symbol='BTCUSDT',
               output_dir='data/cert_capture',
-              duration_seconds=900,
+              duration_seconds=1800,
           )
           PY
 
@@ -68,9 +68,9 @@ jobs:
           mkdir -p data/cert_reports/${{ matrix.session }}
           python scripts/v20_performance_certify.py \
             --capture-dir "${{ steps.locate.outputs.capture_dir }}" \
-            --baseline-config app/mm/config.json \
+            --baseline-config app/mm/config_v20_eco_v1_actual_fees.json \
             --candidate-config app/mm/config_backtest_toxicity_v1.json \
-            --maker-fee-bps 2.0 \
+            --maker-fee-bps 1.0 \
             --output data/cert_reports/${{ matrix.session }}/v20_performance_certification.json
 
       - name: Publish session certification report
