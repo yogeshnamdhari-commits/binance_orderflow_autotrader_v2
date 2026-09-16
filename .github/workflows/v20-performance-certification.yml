@@ -3,6 +3,8 @@ name: V20 Performance Certification
 on:
   push:
     branches: [feature/v20-market-making]
+  pull_request:
+    branches: [feature/v20-market-making]
   workflow_dispatch:
 
 env:
