@@ -1,0 +1,31 @@
+name: V20 Live Fee Realism
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'scripts/v20_fee_audit.py'
+      - 'app/mm/config_v20_eco_v1_actual_fees.json'
+      - '.github/workflows/v20-fee-realism.yml'
+    branches: [feature/v20-market-making]
+
+env:
+  V20_SYMBOL: BTCUSDT
+  V20_CONFIG: app/mm/config_v20_eco_v1_actual_fees.json
+
+jobs:
+  fee-realism:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install requests
+      - name: Authenticated Binance fee audit
+        env:
+          BINANCE_LIVE_API_KEY: ${{ secrets.BINANCE_LIVE_API_KEY }}
+          BINANCE_LIVE_API_SECRET: ${{ secrets.BINANCE_LIVE_API_SECRET }}
+        run: python scripts/v20_fee_audit.py
