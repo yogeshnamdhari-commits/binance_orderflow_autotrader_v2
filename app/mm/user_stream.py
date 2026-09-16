@@ -15,6 +15,11 @@ class OrderUpdate:
     qty: float
     filled_qty: float
     avg_price: float
+    last_fill_qty: float
+    last_fill_price: float
+    trade_id: str
+    commission: float
+    commission_asset: str
     event_ts_ms: int
 
 
@@ -64,6 +69,11 @@ class UserStreamGuard:
                 qty=float(o.get("q", 0) or 0),
                 filled_qty=float(o.get("z", 0) or 0),
                 avg_price=float(o.get("ap", 0) or 0),
+                last_fill_qty=float(o.get("l", 0) or 0),
+                last_fill_price=float(o.get("L", 0) or 0),
+                trade_id=str(o.get("t", "")),
+                commission=float(o.get("n", 0) or 0),
+                commission_asset=str(o.get("N", "")),
                 event_ts_ms=event_ts,
             ),)
         if event == "ACCOUNT_UPDATE":
@@ -79,6 +89,6 @@ class UserStreamGuard:
                 ))
             return tuple(out)
         if event in {"listenKeyExpired", "MARGIN_CALL"}:
-            self.connected = False if event == "listenKeyExpired" else self.connected
+            self.connected = False
             return ()
         raise ValueError(f"unrecognized_user_event:{event}")
