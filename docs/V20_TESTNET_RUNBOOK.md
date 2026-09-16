@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Run the frozen V20 market-making strategy through the production execution controls using Binance USD-M Futures test infrastructure before any mainnet submission is enabled.
+Run the frozen V20 market-making strategy through the production execution controls using Binance USD-M Futures demo/test infrastructure before any mainnet submission is enabled.
 
 ## Current immutable baseline
 
@@ -14,13 +14,17 @@ Run the frozen V20 market-making strategy through the production execution contr
 
 ## Required environment
 
-Set these only in the local environment:
+For the current Binance USD-M Futures demo environment, use:
 
 ```bash
 export BINANCE_API_KEY='...'
 export BINANCE_API_SECRET='...'
-export BINANCE_ORDER_BASE_URL='https://<approved-binance-usdm-testnet-base>'
+export BINANCE_ORDER_BASE_URL='https://demo-fapi.binance.com'
+export BINANCE_USER_STREAM_API_URL='wss://testnet.binancefuture.com/ws-fapi/v1'
+export BINANCE_PRIVATE_STREAM_BASE_URL='wss://fstream.binancefuture.com/private/ws'
 ```
+
+Binance's current user-data WS API uses `userDataStream.start/ping/stop` on `wss://ws-fapi.binance.com/ws-fapi/v1` in production, while current Futures demo/test integrations use the test WS API endpoint plus the Futures test stream/private-stream host. The repository therefore keeps both WS endpoints explicitly configurable rather than guessing them from the REST URL.
 
 Do not commit `.env` or shell history containing credentials.
 
@@ -30,7 +34,10 @@ Do not commit `.env` or shell history containing credentials.
 python3 -m compileall app tests
 python3 -c "import app.mm; import app.mm.live_risk; import app.mm.reconciliation; import app.mm.execution_gateway; import app.mm.binance_execution"
 python3 -m pytest -q tests/test_v20_production_controls.py
+python3 scripts/v20_testnet_smoke.py
 ```
+
+The smoke script refuses non-approved Binance Futures demo hosts and does not submit an order unless `V20_TESTNET_EXECUTE=1` is explicitly set.
 
 The production gate must report all of the following before any order submission path is considered:
 
@@ -45,11 +52,11 @@ The production gate must report all of the following before any order submission
 ## Execution sequence
 
 1. Start market-data synchronization and wait for a valid depth snapshot plus contiguous updates.
-2. Start authenticated private user-data processing.
+2. Start authenticated private user-data processing with the configured demo endpoints.
 3. Reconcile open orders and position before creating any V20 quote.
 4. Keep `live_order_submission=false` during initial validation.
 5. Exercise submit/cancel/partial-fill/reject/timeout/reconnect paths with the simulated exchange first.
-6. Use the Binance adapter only after the local control-plane tests pass and the account is confirmed to be test infrastructure.
+6. Run the one-order Binance demo smoke only after local control-plane tests pass and the account/key are confirmed to be demo infrastructure.
 7. Reconcile every order update against the exchange user stream.
 8. Stop new quoting immediately on data staleness, stream loss, mismatch, excessive API errors, daily-loss breach or position-limit breach.
 9. At shutdown, cancel all open quotes and reconcile to a flat/known position.
