@@ -18,13 +18,16 @@ class BinanceUSDMUserStream:
     PRIVATE_STREAM_BASE = "wss://fstream.binance.com/private/ws"
 
     def __init__(self, api_key: str | None = None, *, guard: UserStreamGuard | None = None,
-                 event_cb=None, status_cb=print):
+                 event_cb=None, status_cb=print, control_url: str | None = None,
+                 private_stream_base: str | None = None):
         self.api_key = api_key or os.getenv("BINANCE_API_KEY", "")
         if not self.api_key:
             raise RuntimeError("BINANCE_API_KEY is required")
         self.guard = guard or UserStreamGuard()
         self.event_cb = event_cb or (lambda _event: None)
         self.status_cb = status_cb
+        self.control_url = (control_url or os.getenv("BINANCE_USER_STREAM_API_URL") or self.CONTROL_URL).rstrip("/")
+        self.private_stream_base = (private_stream_base or os.getenv("BINANCE_PRIVATE_STREAM_BASE_URL") or self.PRIVATE_STREAM_BASE).rstrip("/")
         self.stop_flag = False
         self.listen_key: str | None = None
         self._private_ws = None
@@ -34,7 +37,7 @@ class BinanceUSDMUserStream:
     def _control_call(self, method: str) -> str | None:
         response: dict = {}
         ws = websocket.create_connection(
-            self.CONTROL_URL,
+            self.control_url,
             timeout=5,
             header=[f"X-MBX-APIKEY: {self.api_key}"],
             enable_multithread=True,
@@ -163,7 +166,7 @@ class BinanceUSDMUserStream:
             try:
                 if not self.listen_key:
                     self.start_stream()
-                url = f"{self.PRIVATE_STREAM_BASE}?listenKey={self.listen_key}&events=ORDER_TRADE_UPDATE/ACCOUNT_UPDATE"
+                url = f"{self.private_stream_base}?listenKey={self.listen_key}&events=ORDER_TRADE_UPDATE/ACCOUNT_UPDATE"
                 self._private_ws = websocket.WebSocketApp(
                     url,
                     on_open=self._on_open,
