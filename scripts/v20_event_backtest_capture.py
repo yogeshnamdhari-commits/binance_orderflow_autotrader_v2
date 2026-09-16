@@ -91,16 +91,13 @@ def load_events(capture_dir: Path) -> tuple[list[L2Update], list[TradeEvent], di
                 u = int(data["u"])
                 pu = int(data.get("pu", previous_depth_u))
                 if first_depth:
-                    # The first persisted depth event is the bootstrap bridge.
-                    # Its [U,u] range overlaps snapshot.lastUpdateId; the replay
-                    # must advance from the snapshot id rather than trusting pu.
-                    prev_id = snapshot.last_update_id
                     if not (U <= snapshot.last_update_id + 1 <= u):
                         raise ValueError(
                             "first depth event is not a valid snapshot bridge: "
                             f"snapshot={snapshot.last_update_id}, U={U}, u={u}"
                         )
                     first_depth = False
+                    prev_id = snapshot.last_update_id
                 else:
                     prev_id = pu
                     if prev_id != previous_depth_u:
@@ -132,7 +129,9 @@ def load_events(capture_dir: Path) -> tuple[list[L2Update], list[TradeEvent], di
                         event_seq=trade_id,
                     )
                 )
-        except (KeyError, TypeError, ValueError, json.JSONDecodeError):
+        except ValueError:
+            raise
+        except (KeyError, TypeError, json.JSONDecodeError):
             malformed += 1
 
     if expected_count and row_count != expected_count:
