@@ -10,7 +10,7 @@ import re
 import threading
 import time
 from pathlib import Path
-from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+from urllib.parse import urlsplit
 
 import urllib.request
 
@@ -44,11 +44,7 @@ def capture_output_path(root: str | Path, session_id: str) -> Path:
 
 
 def fetch_rest_snapshot(symbol: str, limit: int = 1000) -> dict[str, object]:
-    """Fetch a REST depth snapshot from Binance USDⓈ-M futures API.
-
-    Returns the parsed JSON snapshot with keys: lastUpdateId, bids, asks,
-    E (event time), T (transaction time), s (symbol), t (trade time).
-    """
+    """Fetch a REST depth snapshot from Binance USDⓈ-M futures API."""
     symbol = symbol.upper()
     url = f"{REST_DEPTH_BASE}?symbol={symbol}&limit={limit}"
     req = urllib.request.Request(url, headers={"User-Agent": "v10-research-capture/1.0"})
@@ -71,11 +67,7 @@ def _depth_update_id_range(raw_json: str) -> tuple[int, int] | None:
 def find_bridging_index(
     buffered_events: list[tuple[str, int, str | None]], snapshot_id: int
 ) -> int | None:
-    """Find the first depthUpdate event that bridges the REST snapshot.
-
-    A depthUpdate bridges the snapshot when U <= snapshot_id + 1 <= u.
-    Returns the index into buffered_events, or None if no bridge found.
-    """
+    """Find the first depthUpdate event that bridges the REST snapshot."""
     for idx, item in enumerate(buffered_events):
         raw_json = item[0]
         range_result = _depth_update_id_range(raw_json)
@@ -101,21 +93,13 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
 
     import websocket
 
-    # Buffer WebSocket events until a bridging depthUpdate is found, then
-    # flush the buffer (minus pre-bridge events) to the recorder. This follows
-    # Binance's documented diff-depth synchronization protocol.
-    #
-    # The bridge condition is strictly: U <= snapshot_id + 1 <= u.
-    # This is the only acceptable causal relationship between the REST snapshot
-    # and the first persisted depthUpdate.  A mere u > snapshot_id is NOT
-    # sufficient, because the buffered stream may have started long before the
-    # snapshot was taken, producing a causally misaligned local book.
     state: dict[str, object] = {
         "snapshot_id": None,
         "bridge_found": False,
         "snapshot_fetched": False,
         "bridge_deadline": None,
         "buffered": [],
+        "closed_by_deadline": False,
     }
     deadline = time.monotonic() + duration_seconds
     snapshot_lock = threading.Lock()
@@ -144,11 +128,7 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
                 else:
                     state["bridge_deadline"] = time.monotonic() + 5.0
             except Exception as exc:
-                recorder.record_bootstrap_failure(
-                    -1,
-                    "SNAPSHOT_FETCH_FAILED",
-                    str(exc),
-                )
+                recorder.record_bootstrap_failure(-1, "SNAPSHOT_FETCH_FAILED", str(exc))
                 _ws.close()
 
     def on_message(_ws, message) -> None:
@@ -210,6 +190,15 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
         on_error=on_error,
         on_close=on_close,
     )
+
+    def force_close_at_deadline() -> None:
+        remaining = max(0.0, deadline - time.monotonic())
+        time.sleep(remaining)
+        state["closed_by_deadline"] = True
+        socket.close()
+
+    deadline_thread = threading.Thread(target=force_close_at_deadline, daemon=True)
+    deadline_thread.start()
 
     snapshot_thread = threading.Thread(
         target=lambda: (
