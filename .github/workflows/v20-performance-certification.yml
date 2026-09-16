@@ -60,6 +60,9 @@ jobs:
           fi
           echo "capture_dir=${dirs[0]}" >> "$GITHUB_OUTPUT"
 
+      - name: Validate raw capture quality
+        run: python scripts/v20_capture_quality_gate.py "${{ steps.locate.outputs.capture_dir }}"
+
       - name: Performance certification replay
         run: |
           mkdir -p data/cert_reports/${{ matrix.session }}
