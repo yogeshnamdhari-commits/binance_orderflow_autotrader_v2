@@ -91,17 +91,21 @@ class BinanceUSDMUserStream:
     def _touch_transport(self) -> None:
         self.guard.heartbeat(int(time.time() * 1000))
 
-    def _on_message(self, _ws, raw: str) -> None:
+    def _on_message(self, ws, raw: str) -> None:
         payload = json.loads(raw)
         self._touch_transport()
         event_type = payload.get("e")
         event_ts = int(payload.get("E", int(time.time() * 1000)))
         if event_type == "listenKeyExpired":
+            self.listen_key = None
             self.guard.disconnected()
             self.status_cb({"status": "LISTEN_KEY_EXPIRED"})
+            try:
+                ws.close()
+            except Exception:
+                pass
             return
         if event_type == "MARGIN_CALL":
-            # MARGIN_CALL is a safety event, not a healthy heartbeat.
             self.guard.disconnected()
             self.status_cb({"status": "MARGIN_CALL"})
             return
@@ -120,8 +124,6 @@ class BinanceUSDMUserStream:
         self.status_cb({"status": "USER_STREAM_CONNECTED"})
 
     def _on_ping(self, _ws, _message) -> None:
-        # websocket-client automatically responds to server ping frames.
-        # Treat receipt of the server ping as transport liveness.
         self._touch_transport()
 
     def _on_pong(self, _ws, _message) -> None:
@@ -143,8 +145,14 @@ class BinanceUSDMUserStream:
                     self.keepalive()
                     self.status_cb({"status": "USER_STREAM_KEEPALIVE"})
                 except Exception as exc:
+                    self.listen_key = None
                     self.guard.disconnected()
                     self.status_cb({"status": "USER_STREAM_KEEPALIVE_FAILED", "error": repr(exc)})
+                    if self._private_ws is not None:
+                        try:
+                            self._private_ws.close()
+                        except Exception:
+                            pass
             time.sleep(5)
 
     def run(self) -> None:
