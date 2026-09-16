@@ -46,10 +46,24 @@ class V20LiveRuntime:
         return snap
 
     def apply_order_update(self, update: OrderUpdate, mark_price: float) -> PnLSnapshot | None:
+        local_id = self.gateway.local_order_id(update.order_id)
+        if local_id is None and update.client_id:
+            local = self.gateway.manager.get(update.client_id)
+            local_id = local.order_id if local else None
+
+        order = self.gateway.manager.get(local_id) if local_id else None
+        if order is not None:
+            if update.status == "REJECTED":
+                self.gateway.manager.reject(order.order_id, reason="exchange_rejected")
+            elif update.status in {"CANCELED", "CANCELLED", "EXPIRED", "EXPIRED_IN_MATCH"}:
+                self.gateway.manager.cancel(order.order_id)
+            elif update.execution_type == "TRADE" and update.last_fill_qty > 0 and update.last_fill_price > 0:
+                self.gateway.manager.mark_filled(order.order_id, update.last_fill_price, update.last_fill_qty)
+
         if update.execution_type == "TRADE" and update.last_fill_qty > 0 and update.last_fill_price > 0:
             self.apply_exchange_fill(
                 Fill(
-                    trade_id=update.trade_id or f"{update.order_id}:{update.filled_qty}",
+                    trade_id=update.trade_id or f"{update.order_id}:{update.event_ts_ms}:{update.last_fill_qty}",
                     side=update.side,
                     qty=update.last_fill_qty,
                     price=update.last_fill_price,
@@ -86,8 +100,8 @@ class V20LiveRuntime:
         return RuntimeStatus(can_quote, can_quote and self.gateway.live_enabled, tuple(reasons), self.last_reconciliation)
 
     def submit(self, submission: Submission, now_ms: int):
-        status = self.heartbeat(now_ms)
-        return self.gateway.submit(submission) if status.can_quote else self.gateway.submit(submission)
+        self.heartbeat(now_ms)
+        return self.gateway.submit(submission)
 
     def emergency_stop(self) -> list[str]:
         self.risk.emergency_stop()
