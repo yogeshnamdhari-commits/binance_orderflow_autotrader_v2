@@ -11,6 +11,7 @@ import requests
 
 from .execution import ExecutionResult
 from .execution_gateway import Submission
+from .order_constraints import SymbolConstraints, find_symbol
 
 
 @dataclass(frozen=True)
@@ -32,37 +33,50 @@ class BinanceExecutionConfig:
 
 
 class BinanceUSDMExecutionAdapter:
-    """Signed USD-M Futures REST order adapter.
+    """Signed USD-M Futures REST adapter with exchange-filter enforcement.
 
-    This adapter never bypasses the V20 ExecutionGateway. It only performs an
-    exchange request after the gateway has passed risk/reconciliation gates.
+    The adapter never bypasses ExecutionGateway. Exchange symbol metadata is
+    loaded once per adapter instance and orders are validated against current
+    PRICE_FILTER/LOT_SIZE/MIN_NOTIONAL constraints before submission.
     """
 
     def __init__(self, config: BinanceExecutionConfig, session: requests.Session | None = None):
         self.config = config
         self.session = session or requests.Session()
         self.session.headers.update({"X-MBX-APIKEY": config.api_key})
+        self._constraints: dict[str, SymbolConstraints] = {}
+        self._exchange_info_loaded = False
 
     def _signed_request(self, method: str, path: str, params: dict) -> requests.Response:
         params = dict(params)
         params.setdefault("timestamp", int(time.time() * 1000))
         params.setdefault("recvWindow", self.config.recv_window_ms)
         query = urlencode(params)
-        signature = hmac.new(
-            self.config.api_secret.encode("utf-8"),
-            query.encode("utf-8"),
-            hashlib.sha256,
-        ).hexdigest()
+        signature = hmac.new(self.config.api_secret.encode("utf-8"), query.encode("utf-8"), hashlib.sha256).hexdigest()
         params["signature"] = signature
-        url = f"{self.config.base_url}{path}"
-        response = self.session.request(
-            method,
-            url,
-            params=params,
-            timeout=self.config.timeout_s,
-        )
+        response = self.session.request(method, f"{self.config.base_url}{path}", params=params, timeout=self.config.timeout_s)
         response.raise_for_status()
         return response
+
+    def refresh_exchange_info(self) -> None:
+        response = self.session.get(f"{self.config.base_url}/fapi/v1/exchangeInfo", timeout=self.config.timeout_s)
+        response.raise_for_status()
+        payload = response.json()
+        self._constraints = {
+            str(info["symbol"]).upper(): SymbolConstraints.from_exchange_info(info)
+            for info in payload.get("symbols", [])
+            if str(info.get("status", "TRADING")) == "TRADING"
+        }
+        self._exchange_info_loaded = True
+
+    def _constraints_for(self, symbol: str) -> SymbolConstraints:
+        key = symbol.upper()
+        if not self._exchange_info_loaded:
+            self.refresh_exchange_info()
+        constraint = self._constraints.get(key)
+        if constraint is None:
+            raise RuntimeError(f"exchange_symbol_not_available:{key}")
+        return constraint
 
     @staticmethod
     def _order_payload(submission: Submission) -> dict:
@@ -77,11 +91,14 @@ class BinanceUSDMExecutionAdapter:
         }
 
     def submit(self, submission: Submission) -> ExecutionResult:
+        constraints = self._constraints_for(submission.symbol)
+        valid, reasons = constraints.validate(submission.price, submission.qty)
+        if not valid:
+            return ExecutionResult("REJECTED_LOCAL_FILTER", None, ";".join(reasons), submission.client_id)
         response = self._signed_request("POST", "/fapi/v1/order", self._order_payload(submission))
         data = response.json()
-        status = str(data.get("status", "UNKNOWN"))
         return ExecutionResult(
-            status=status,
+            status=str(data.get("status", "UNKNOWN")),
             order_id=str(data.get("orderId")) if data.get("orderId") is not None else None,
             message="binance order submitted",
             client_id=str(data.get("clientOrderId", submission.client_id)),
