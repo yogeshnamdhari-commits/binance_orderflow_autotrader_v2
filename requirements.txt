@@ -3,3 +3,5 @@ websocket-client>=1.8
 python-dotenv>=1.0
 pandas>=2.2
 pyarrow>=17
+joblib>=1.4
+scikit-learn>=1.5

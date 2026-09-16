@@ -1,0 +1,10 @@
+{
+  "frozen_models": {
+    "V13": {
+      "path": "archive/v13/v13_frozen_model.joblib",
+      "checksum": "c059b5352ab9c703c5805fba10e6e99e7cc4c1eeb07adad98130593270f9df0b",
+      "immutable": true,
+      "status": "FROZEN"
+    }
+  }
+}

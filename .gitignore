@@ -9,6 +9,7 @@ data/hist/
 data/raw/
 data/archives/
 data/normalized/
+data/v10/
 
 # Large data formats anywhere else
 *.parquet
@@ -75,3 +76,48 @@ Thumbs.db
 *.pickle
 *.pkl
 *.joblib
+
+# V14/V10 raw capture data — keep local, never commit (large binary market data)
+data/v14/calibration/*/events.jsonl
+data/v14/forward/*/events.jsonl
+data/v14/calibration/*/snapshot.json
+data/v14/forward/*/snapshot.json
+archive/v10/calibration_sessions/*/events.jsonl
+archive/v10/calibration_sessions/*/snapshot.json
+
+# Raw capture data (V11-V15) — keep local, never commit
+data/v13/calibration/*/events.jsonl
+data/v13/forward/*/events.jsonl
+data/v13/calibration/*/snapshot.json
+data/v13/forward/*/snapshot.json
+data/v11_forward_live/*/*.jsonl
+data/v11_forward/*/*.jsonl
+data/v10_calibration/*/events.jsonl
+data/v10_calibration/*/snapshot.json
+data/live/*/*.jsonl
+data/v14/forward_extended/*/events.jsonl
+data/v14/forward_extended/*/snapshot.json
+data/v15/forward/*/snapshot.json
+data/v15/calibration/*/events.jsonl
+data/v15/forward/*/events.jsonl
+data/v15/calibration/*/snapshot.json
+data/v15/forward/*/snapshot.json
+data/v16/calibration/*/events.jsonl
+data/v16/forward/*/events.jsonl
+data/v16/calibration/*/snapshot.json
+data/v16/forward/*/snapshot.json
+
+# ------------------------------------------------------------
+# V20 AUDIT POLICY — raw/high-volume local, evidence in Git
+# ------------------------------------------------------------
+# Raw/high-volume data -> LOCAL ONLY (GitHub 100MB limit; V20 captures are 138-392MB)
+data/captures/*/events.jsonl
+data/v16/historical_replay/*/events.jsonl
+# Temporary V20 test artifacts -> LOCAL ONLY
+data/v10_new/
+data/v10_test/
+data/v10_test3/
+# The following are experiment evidence and MUST stay tracked:
+#   app/mm/config.json (authoritative config), app/mm/*.py (code),
+#   data/captures/*/manifest.json, snapshot.json, provenance.json,
+#   v19_evidence*.json, data/mm_backtest_results*.json, data/walk_forward*.json

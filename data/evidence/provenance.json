@@ -1,0 +1,19 @@
+{
+  "timestamp": "2026-09-07T10:54:37.296465+00:00",
+  "git_revision": "19953b6",
+  "software_version": "V12-capture/1.0",
+  "data_source": "Binance Futures public REST + WebSocket",
+  "symbol": "BTCUSDT",
+  "market": "USDT-M Perpetual",
+  "venue": "BINANCE_FUTURES",
+  "calibration_sessions": [
+    "51be6aeca0b2491fbb7a9255e07696f5",
+    "a81b222592ed47f3ad4a357b0d0f6845"
+  ],
+  "forward_sessions": [
+    "f717fc7963014dbe871eb2da90efe93d"
+  ],
+  "config_hash": "245e936752e5923f",
+  "model_checksum": "90ddd4858b78545b3800e14d2c69b6552e20a512fd18f021ddd922952662d767",
+  "n_funding_points": 1
+}

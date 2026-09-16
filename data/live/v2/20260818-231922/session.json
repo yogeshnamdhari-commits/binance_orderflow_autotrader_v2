@@ -1,0 +1,8 @@
+{
+ "symbol": "btcusdt",
+ "window_seconds": 181.0,
+ "book_levels": 50,
+ "raw_rows": 14443,
+ "derived_rows": 2134,
+ "session": "20260818-231922"
+}

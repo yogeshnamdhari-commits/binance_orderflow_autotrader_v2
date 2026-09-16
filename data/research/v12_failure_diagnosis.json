@@ -1,0 +1,30 @@
+{
+  "timestamp": "2026-09-07T10:55:50Z",
+  "experiment": "V12",
+  "outcome": "FAIL",
+  "failure_class": "B: Model failure / C: Feature failure",
+  "dominant_mechanism": "The V12 order-flow signal has NO predictive power for BTCUSDT 500ms-ahead returns. Gross EV is -0.21 bps (essentially zero) BEFORE execution costs. Execution costs (14.46 bps) then drive net EV to -4.49 bps.",
+  "evidence": {
+    "val_auc": 0.5014245014245015,
+    "test_auc": 0.2619047619047619,
+    "mean_net_ev_bps": -4.490432608370327,
+    "gross_ev_bps": -0.20647174747167812,
+    "total_cost_bps": 14.463677321551902,
+    "positive_regimes": 0,
+    "p_value": 1.0,
+    "perm_pvalue": 1.0
+  },
+  "root_causes": [
+    "signal_edge_bps = -0.22 (no real edge; consistent with val AUC ~0.50)",
+    "order-flow features (OFI, depth imbalance, cancel pressure) at 500ms horizon do not predict BTCUSDT direction",
+    "zero/neutral signal means no trades are profitable even before costs"
+  ],
+  "eliminated_alternatives": [
+    "Execution costs are realistic, not inflated (14.46 bps matches Binance taker fees + realistic slippage/adverse)",
+    "Funding is small but real (0.015 bps) and correctly signed",
+    "Data integrity PASS \u2014 captures are valid, synchronized, real Binance data",
+    "No leakage \u2014 forward data is temporally after calibration, leakage tests pass (V9 suite)"
+  ],
+  "can_be_corrected_without_oos_contamination": "NO \u2014 the forward result reflects genuine lack of signal. Any improvement requires a new experiment (V13) with new data.",
+  "action": "LOCK the V12 OOS result. Propose V13."
+}

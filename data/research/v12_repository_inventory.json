@@ -1,0 +1,120 @@
+{
+  "generated_at": "2026-09-07",
+  "git_revision": "19953b6",
+  "workspace": "/Users/targetmobile/Downloads/binance_orderflow_autotrader_v2",
+  "v12_source": [
+    "audit.py",
+    "bot.py",
+    "capture.py",
+    "config.py",
+    "execution_model.py",
+    "exit.py",
+    "features.py",
+    "forward_validator.py",
+    "funding.py",
+    "model.py",
+    "monitoring.py",
+    "orders.py",
+    "paper_runtime.py",
+    "parser.py",
+    "pipeline.py",
+    "position.py",
+    "production.py",
+    "risk.py",
+    "statistics.py",
+    "testnet.py"
+  ],
+  "v12_tests": [
+    "__init__.py",
+    "test_capture.py",
+    "test_execution_model.py",
+    "test_funding.py",
+    "test_pipeline.py",
+    "test_production.py"
+  ],
+  "v12_data_sessions": {
+    "calibration/51be6aeca0b2491fbb7a9255e07696f5": {
+      "events": 2849,
+      "has_snapshot": "yes",
+      "manifest": {
+        "checksums": {
+          "events.jsonl": "14e6eacb26d2406c25e21e4f4cd89408fa026e3a458d1b699bed8d03796a32b3",
+          "manifest.json": "6bf447842ac08daec743803598cc0f43bd626109fee90950015d86953446cbc1",
+          "snapshot.json": "f5867d7fff20e45b17f0aa43d1ed0f1f424d22155a96fe1d4cce9bddda8587ed"
+        },
+        "end_ns": 1788708053256123000,
+        "event_count": 2849,
+        "schema_version": "v10.raw.v1",
+        "session_id": "51be6aeca0b2491fbb7a9255e07696f5",
+        "start_ns": 1788708032655810000,
+        "streams": [
+          "btcusdt@depth@100ms",
+          "btcusdt@trade",
+          "btcusdt@bookTicker"
+        ],
+        "symbol": "BTCUSDT"
+      }
+    },
+    "calibration/a81b222592ed47f3ad4a357b0d0f6845": {
+      "events": 1131,
+      "has_snapshot": "yes",
+      "manifest": {
+        "end_ns": 1788546363006209000,
+        "event_count": 1131,
+        "schema_version": "v10.raw.v1",
+        "session_id": "a81b222592ed47f3ad4a357b0d0f6845",
+        "start_ns": 1788546346959786000,
+        "streams": [
+          "btcusdt@depth@100ms",
+          "btcusdt@trade",
+          "btcusdt@bookTicker"
+        ],
+        "symbol": "BTCUSDT"
+      }
+    },
+    "forward/f717fc7963014dbe871eb2da90efe93d": {
+      "events": 2814,
+      "has_snapshot": "yes",
+      "manifest": {
+        "end_ns": 1788563094529895000,
+        "event_count": 2814,
+        "schema_version": "v10.raw.v1",
+        "session_id": "f717fc7963014dbe871eb2da90efe93d",
+        "start_ns": 1788563033556796000,
+        "streams": [
+          "btcusdt@depth@100ms",
+          "btcusdt@trade",
+          "btcusdt@bookTicker"
+        ],
+        "symbol": "BTCUSDT"
+      }
+    }
+  },
+  "archive_v12": {
+    "V12_FINAL_EVIDENCE_CHAIN.md": {
+      "size_bytes": 7665
+    },
+    "V12_PRODUCTION_GATE.md": {
+      "size_bytes": 2924
+    },
+    "production_audit.jsonl": {
+      "size_bytes": 0
+    },
+    "v12_calibration_artifact.json": {
+      "size_bytes": 1885
+    },
+    "v12_forward_funding_cache.json": {
+      "size_bytes": 74
+    },
+    "v12_forward_result.json": {
+      "size_bytes": 2337
+    },
+    "v12_frozen_model.joblib": {
+      "size_bytes": 3033
+    }
+  },
+  "stale_removed": [
+    "app/v12/data_capture.py",
+    "data/v12/forward_large/"
+  ]
+}

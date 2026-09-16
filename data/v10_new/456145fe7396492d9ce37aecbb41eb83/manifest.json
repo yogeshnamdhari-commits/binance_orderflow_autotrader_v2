@@ -1,0 +1,22 @@
+{
+  "bootstrap": {
+    "first_U": 11526051554351,
+    "first_bridge_index": 3449,
+    "first_pu": 11526051554289,
+    "first_u": 11526051566463,
+    "pre_bridge_events_skipped": 3449,
+    "snapshot_last_update_id": 11526051557207,
+    "status": "BRIDGED"
+  },
+  "end_ns": 1789070725457616000,
+  "event_count": 80163,
+  "schema_version": "v10.raw.v1",
+  "session_id": "456145fe7396492d9ce37aecbb41eb83",
+  "start_ns": 1789070425149721000,
+  "streams": [
+    "btcusdt@depth@100ms",
+    "btcusdt@trade",
+    "btcusdt@bookTicker"
+  ],
+  "symbol": "BTCUSDT"
+}

@@ -1,0 +1,19 @@
+{
+  "status": "BLOCKED",
+  "reason": "forward validation gate FAILED \u2014 paper mode refuses to start via bot CLI (Rule 26)",
+  "runtime_verified": true,
+  "runtime_verification": {
+    "duration_seconds": 25,
+    "live_binance_data": true,
+    "websocket_streams": [
+      "btcusdt@depth",
+      "btcusdt@trade",
+      "btcusdt@bookTicker"
+    ],
+    "risk_state_final": "NORMAL",
+    "orders_submitted": 0,
+    "audit_log_entries": 90,
+    "note": "Runtime instantiates, syncs REST snapshot+diff stream, evaluates frozen model signals, logs audit, correctly refrains from trading (net EV below threshold)."
+  },
+  "timestamp": "2026-09-07T11:06:30.843861+00:00"
+}

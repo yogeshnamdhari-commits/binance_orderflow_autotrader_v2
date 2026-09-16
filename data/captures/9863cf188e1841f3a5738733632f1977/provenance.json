@@ -1,0 +1,30 @@
+{
+  "capture_id": "9863cf188e1841f3a5738733632f1977",
+  "event_count": 313355,
+  "files": {
+    "events.jsonl": {
+      "bytes": 144928740,
+      "sha256": "4b71d69c04d33aacf2309259d64734436604852a1b41dbc7261333f7c41bed30"
+    },
+    "manifest.json": {
+      "bytes": 554,
+      "sha256": "bcfccc7881ad8d739e0e957214c4a6ccafb6bbf0ebf327553f960742c35ca4cf"
+    },
+    "snapshot.json": {
+      "bytes": 90122,
+      "sha256": "a1f40fc1f4d47791a93a7100d80f3db4b001fe56016236f5782119b032e5e61b"
+    }
+  },
+  "schema_version": "v10.raw.v1",
+  "source": "binance-futures",
+  "streams": [
+    "btcusdt@depth@100ms",
+    "btcusdt@trade",
+    "btcusdt@bookTicker"
+  ],
+  "symbol": "BTCUSDT",
+  "timestamp_range_ns": [
+    1789071579727304000,
+    1789073379993604000
+  ]
+}

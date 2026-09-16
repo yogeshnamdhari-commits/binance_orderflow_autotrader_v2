@@ -1,0 +1,22 @@
+{
+  "gate_cost_stress": {
+    "1.0": 6117.411058382958,
+    "1.25": 4893.928846706366,
+    "1.5": 4078.274038921972,
+    "2.0": 3058.705529191479
+  },
+  "gate_pass": true,
+  "gate_reasons": [],
+  "mm_adverse_selection_bps": 0.0,
+  "mm_cancel_count": 106,
+  "mm_fill_count": 4894,
+  "mm_inventory_final": -0.00012255678209640902,
+  "mm_inventory_max": 0.001993889379531908,
+  "mm_realized_spread_bps": 6117.411058382958,
+  "mm_regime_profitability": {
+    "0": 5698.881429792155,
+    "1": 36.115351318345745,
+    "2": 382.4142772724534
+  },
+  "mm_total_pnl_bps": 6117.411058382958
+}

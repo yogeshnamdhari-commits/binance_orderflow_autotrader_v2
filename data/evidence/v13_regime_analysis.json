@@ -1,0 +1,48 @@
+{
+  "status": "FAIL",
+  "regimes": {
+    "spread_regime": {
+      "high_spread": {
+        "n": 1238,
+        "mean_net_ev_bps": -6.705116901463272,
+        "positive_rate": 0.0024232633279483036
+      },
+      "low_spread": {
+        "n": 1089,
+        "mean_net_ev_bps": -5.025080676740459,
+        "positive_rate": 0.0009182736455463728
+      }
+    },
+    "vol_regime": {
+      "high_vol": {
+        "n": 1164,
+        "mean_net_ev_bps": -5.579861580312291,
+        "positive_rate": 0.000859106529209622
+      },
+      "low_vol": {
+        "n": 1163,
+        "mean_net_ev_bps": -6.258201806963359,
+        "positive_rate": 0.0025795356835769563
+      }
+    },
+    "time_regime": {
+      "early": {
+        "n": 776,
+        "mean_net_ev_bps": -5.813520255879912,
+        "positive_rate": 0.003865979381443299
+      },
+      "mid": {
+        "n": 775,
+        "mean_net_ev_bps": -5.836406669003465,
+        "positive_rate": 0.0
+      },
+      "late": {
+        "n": 776,
+        "mean_net_ev_bps": -6.106624605594579,
+        "positive_rate": 0.001288659793814433
+      }
+    }
+  },
+  "positive_regimes": 0,
+  "total_regimes": 6
+}
