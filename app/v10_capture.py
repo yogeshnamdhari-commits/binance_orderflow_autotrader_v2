@@ -1,6 +1,9 @@
 """CLI for research-only Binance USDⓈ-M public market-data capture.
 
-This module has no authentication and no order-placement capability.
+No authentication or order-placement capability is present. The capture uses
+Binance's public USDⓈ-M WebSocket market stream plus the public WebSocket API
+``depth`` request for an order-book snapshot, avoiding region-blocked REST
+snapshot endpoints while retaining a causal diff-depth bridge.
 """
 from __future__ import annotations
 
@@ -10,15 +13,12 @@ import re
 import threading
 import time
 from pathlib import Path
-from urllib.parse import urlsplit
-
-import urllib.request
 
 from .v10_recorder import V10Recorder
 
-DEFAULT_WS = "wss://fstream.binance.com"
+DEFAULT_WS = "wss://fstream.binance.com/public"
 DEFAULT_STREAMS = ["btcusdt@depth@100ms", "btcusdt@trade", "btcusdt@bookTicker"]
-REST_DEPTH_BASE = "https://fapi.binance.com/fapi/v1/depth"
+DEPTH_API_WS = "wss://ws-fapi.binance.com/ws-fapi/v1"
 
 
 def build_ws_url(base_url: str, streams: list[str]) -> str:
@@ -43,13 +43,32 @@ def capture_output_path(root: str | Path, session_id: str) -> Path:
     return Path(root) / session_id
 
 
-def fetch_rest_snapshot(symbol: str, limit: int = 1000) -> dict[str, object]:
-    """Fetch a REST depth snapshot from Binance USDⓈ-M futures API."""
-    symbol = symbol.upper()
-    url = f"{REST_DEPTH_BASE}?symbol={symbol}&limit={limit}"
-    req = urllib.request.Request(url, headers={"User-Agent": "v10-research-capture/1.0"})
-    with urllib.request.urlopen(req, timeout=10) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+def fetch_ws_snapshot(symbol: str, limit: int = 1000) -> dict[str, object]:
+    """Request a live USDⓈ-M order-book snapshot over Binance's public WS API."""
+    import uuid
+    import websocket
+
+    request = {
+        "id": str(uuid.uuid4()),
+        "method": "depth",
+        "params": {
+            "symbol": symbol.upper(),
+            "limit": limit,
+        },
+    }
+    connection = websocket.create_connection(DEPTH_API_WS, timeout=10)
+    try:
+        connection.send(json.dumps(request, separators=(",", ":")))
+        response = json.loads(connection.recv())
+    finally:
+        connection.close()
+
+    if response.get("status") != 200:
+        raise RuntimeError(f"Binance WS depth snapshot failed: {response}")
+    result = response.get("result")
+    if not isinstance(result, dict) or "lastUpdateId" not in result:
+        raise RuntimeError(f"invalid Binance WS depth snapshot response: {response}")
+    return result
 
 
 def _depth_update_id_range(raw_json: str) -> tuple[int, int] | None:
@@ -67,7 +86,7 @@ def _depth_update_id_range(raw_json: str) -> tuple[int, int] | None:
 def find_bridging_index(
     buffered_events: list[tuple[str, int, str | None]], snapshot_id: int
 ) -> int | None:
-    """Find the first depthUpdate event that bridges the REST snapshot."""
+    """Find the first depthUpdate satisfying U <= snapshot_id+1 <= u."""
     for idx, item in enumerate(buffered_events):
         raw_json = item[0]
         range_result = _depth_update_id_range(raw_json)
@@ -99,17 +118,19 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
         "snapshot_fetched": False,
         "bridge_deadline": None,
         "buffered": [],
-        "closed_by_deadline": False,
     }
     deadline = time.monotonic() + duration_seconds
     snapshot_lock = threading.Lock()
+
+    def close_socket() -> None:
+        socket.close()
 
     def fetch_snapshot_and_find_bridge() -> None:
         with snapshot_lock:
             if state["snapshot_fetched"]:
                 return
             try:
-                snap = fetch_rest_snapshot(symbol.upper())
+                snap = fetch_ws_snapshot(symbol.upper())
                 snapshot_id = int(snap["lastUpdateId"])
                 (session_dir / "snapshot.json").write_text(
                     json.dumps(snap, indent=2, sort_keys=True) + "\n",
@@ -122,23 +143,21 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
                     state["bridge_found"] = True
                     recorder.record_bootstrap(snapshot_id, first_bridge, state["buffered"])
                     for idx in range(first_bridge, len(state["buffered"])):
-                        raw, ns, st = state["buffered"][idx]
+                        raw, ns, _stream = state["buffered"][idx]
                         recorder.handle_message(raw, receive_ns=ns)
                     state["buffered"].clear()
                 else:
                     state["bridge_deadline"] = time.monotonic() + 5.0
             except Exception as exc:
                 recorder.record_bootstrap_failure(-1, "SNAPSHOT_FETCH_FAILED", str(exc))
-                _ws.close()
+                close_socket()
 
     def on_message(_ws, message) -> None:
         receive_ns = time.time_ns()
-
         try:
             parsed = json.loads(message)
         except Exception:
             return
-
         stream = parsed.get("stream") if isinstance(parsed, dict) else None
 
         if not state["bridge_found"]:
@@ -149,21 +168,21 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
                     state["bridge_found"] = True
                     recorder.record_bootstrap(state["snapshot_id"], first_bridge, state["buffered"])
                     for idx in range(first_bridge, len(state["buffered"])):
-                        raw, ns, st = state["buffered"][idx]
+                        raw, ns, _stream = state["buffered"][idx]
                         recorder.handle_message(raw, receive_ns=ns)
                     state["buffered"].clear()
                 elif state["bridge_deadline"] is not None and time.monotonic() > state["bridge_deadline"]:
                     recorder.record_bootstrap_failure(
-                        state["snapshot_id"],
+                        int(state["snapshot_id"]),
                         "BRIDGE_TIMEOUT",
                         "No depthUpdate satisfying U <= snapshot_id+1 <= u found within bootstrap window",
                     )
-                    _ws.close()
+                    close_socket()
             return
 
         recorder.handle_message(message, receive_ns=receive_ns)
         if time.monotonic() >= deadline:
-            _ws.close()
+            close_socket()
 
     def on_error(_ws, _error) -> None:
         recorder.mark_reconnect()
@@ -171,13 +190,13 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
     def on_close(_ws, _status_code, _message) -> None:
         if not state["bridge_found"] and not state["snapshot_fetched"]:
             recorder.record_bootstrap_failure(
-                state["snapshot_id"] if state["snapshot_id"] is not None else -1,
+                int(state["snapshot_id"]) if state["snapshot_id"] is not None else -1,
                 "CAPTURE_CLOSED",
                 "WebSocket closed before snapshot was fetched",
             )
         elif not state["bridge_found"]:
             recorder.record_bootstrap_failure(
-                state["snapshot_id"],
+                int(state["snapshot_id"]),
                 "BRIDGE_TIMEOUT",
                 "No depthUpdate satisfying U <= snapshot_id+1 <= u found within bootstrap window",
             )
@@ -194,8 +213,7 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
     def force_close_at_deadline() -> None:
         remaining = max(0.0, deadline - time.monotonic())
         time.sleep(remaining)
-        state["closed_by_deadline"] = True
-        socket.close()
+        close_socket()
 
     deadline_thread = threading.Thread(target=force_close_at_deadline, daemon=True)
     deadline_thread.start()
