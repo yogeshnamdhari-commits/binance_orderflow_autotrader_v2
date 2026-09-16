@@ -13,13 +13,7 @@ CONFIG_JSON_DEFAULT = "app/mm/config.json"
 
 @dataclass
 class V20Config:
-    """V20 market-making configuration schema.
-
-    NOTE: dataclass defaults are schema defaults only, not the experiment
-    configuration. The single source of truth is ``app/mm/config.json``.
-    Backtests must use :meth:`load_authoritative` so results record the
-    config SHA-256 alongside the Git commit.
-    """
+    """V20 market-making configuration schema."""
 
     symbol: str = "BTCUSDT"
     quote_interval_ms: int = 100
@@ -36,25 +30,24 @@ class V20Config:
     adverse_selection_threshold_bps: float = 0.75
     min_top_level_qty: float = 0.0
 
+    # Candidate-only microstructure controls. Defaults are disabled so the
+    # production configuration is unchanged until a candidate passes OOS.
+    toxicity_filter_enabled: bool = False
+    toxicity_imbalance_threshold: float = 0.65
+    toxicity_flow_threshold: float = 0.60
+    microprice_skew_bps: float = 1.0
+    flow_window_ms: int = 1000
+
     @classmethod
     def from_json(cls, filepath: str) -> V20Config:
-        """Load config from JSON file (legacy alias of load_authoritative)."""
-        config, _ = cls.load_authoritative(filepath)
-        return config
+        return cls.load_authoritative(filepath)[0]
 
     @classmethod
     def load_authoritative(cls, filepath: str) -> tuple[V20Config, str]:
-        """Load the authoritative experiment config, returning (config, sha256).
-
-        The hash covers the canonical config (sorted keys, comment_* excluded)
-        so every backtest result can record exactly which configuration
-        produced it.
-        """
         path = Path(filepath)
         if not path.is_file():
             raise FileNotFoundError(
-                f"Authoritative V20 config not found: {filepath}. "
-                "Do not instantiate V20Config() with bare defaults for experiments."
+                f"Authoritative V20 config not found: {filepath}."
             )
         with open(path) as f:
             data = json.load(f)
@@ -63,22 +56,17 @@ class V20Config:
         return config, config_sha256(filepath)
 
     def canonical_dict(self) -> dict:
-        """Config as canonical dict (excludes comment_* helper keys)."""
         from dataclasses import asdict
-
         return {k: v for k, v in asdict(self).items() if not k.startswith("comment")}
 
 
 def canonical_config_dict(filepath: str) -> dict:
-    """Read JSON config and return canonical dict (sorted keys, no comments)."""
     with open(filepath) as f:
         data = json.load(f)
     return {k: data[k] for k in sorted(data) if not k.startswith("comment")}
 
 
 def config_sha256(filepath: str) -> str:
-    """SHA-256 of the canonical config JSON (stable across key order)."""
     canonical = canonical_config_dict(filepath)
     blob = json.dumps(canonical, sort_keys=True, separators=(",", ":")).encode()
     return hashlib.sha256(blob).hexdigest()
-
