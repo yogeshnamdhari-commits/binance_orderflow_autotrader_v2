@@ -51,7 +51,6 @@ def _split_events(
         raise ValueError(f"insufficient trade events for certification: {len(trades)} < {MIN_TRADE_EVENTS}")
 
     split_ts = timestamps[len(timestamps) // 2]
-
     train_depth = [e for e in depth if e.timestamp_ns <= split_ts]
     train_trades = [e for e in trades if e.timestamp_ns <= split_ts]
     valid_depth = [e for e in depth if e.timestamp_ns > split_ts]
@@ -111,10 +110,7 @@ def _bucket_ranges(timestamps: list[int]) -> list[tuple[int, int | float]]:
     ranges: list[tuple[int, int | float]] = []
     for i in range(4):
         low = timestamps[cuts[i]]
-        if i < 3:
-            high = timestamps[cuts[i + 1]]
-        else:
-            high = math.inf
+        high = timestamps[cuts[i + 1]] if i < 3 else math.inf
         ranges.append((low, high))
     return ranges
 
@@ -190,7 +186,6 @@ def main() -> int:
         raise SystemExit(f"CERTIFICATION_BLOCKED: insufficient trade events ({counts.get('trade_events', 0)})")
 
     train_snapshot, train_depth, train_trades, validation_snapshot, valid_depth, valid_trades = _split_events(snapshot, depth, trades)
-
     baseline = _load_config(args.baseline_config, args.maker_fee_bps)
     candidate_base = _load_config(args.candidate_config, args.maker_fee_bps)
 
@@ -204,7 +199,6 @@ def main() -> int:
 
     valid_baseline = _run(baseline, validation_snapshot, valid_depth, valid_trades)
     valid_candidate = _run(selected, validation_snapshot, valid_depth, valid_trades)
-
     candidate_buckets = _bucket_results(validation_snapshot, valid_depth, valid_trades, selected)
     baseline_buckets = _bucket_results(validation_snapshot, valid_depth, valid_trades, baseline)
     bucket_delta = [c.net_pnl_usd - b.net_pnl_usd for c, b in zip(candidate_buckets, baseline_buckets)]
@@ -213,9 +207,11 @@ def main() -> int:
     pnl_positive = valid_candidate.net_pnl_usd > 0
     improvement_positive = improvement > 0
     as_improved = valid_candidate.avg_adverse_selection_bps <= valid_baseline.avg_adverse_selection_bps
-    sufficient_fills = valid_candidate.fills >= MIN_FILLS_PER_VALIDATION_SIDE and baseline_fills := valid_baseline.fills >= MIN_FILLS_PER_VALIDATION_SIDE
+    sufficient_fills = (
+        valid_candidate.fills >= MIN_FILLS_PER_VALIDATION_SIDE
+        and valid_baseline.fills >= MIN_FILLS_PER_VALIDATION_SIDE
+    )
     robust_buckets = len(bucket_delta) >= 4 and sum(x > 0 for x in bucket_delta) >= 3
-
     certified = all([pnl_positive, improvement_positive, as_improved, sufficient_fills, robust_buckets])
 
     report = {
@@ -249,7 +245,12 @@ def main() -> int:
             "microprice_skew_bps": selected.microprice_skew_bps,
         },
         "train": {"baseline": summarize(train_baseline), "selected_candidate": summarize(selected_train)},
-        "validation": {"baseline": summarize(valid_baseline), "selected_candidate": summarize(valid_candidate), "net_pnl_improvement_usd": improvement, "quartile_delta_usd": bucket_delta},
+        "validation": {
+            "baseline": summarize(valid_baseline),
+            "selected_candidate": summarize(valid_candidate),
+            "net_pnl_improvement_usd": improvement,
+            "quartile_delta_usd": bucket_delta,
+        },
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
