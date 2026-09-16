@@ -26,6 +26,7 @@ MIN_TOTAL_EVENTS = 4_000
 MIN_DEPTH_EVENTS = 500
 MIN_TRADE_EVENTS = 500
 MIN_FILLS_PER_VALIDATION_SIDE = 100
+MIN_TRAIN_FILLS_FOR_SELECTION = 10
 
 
 def _load_config(path: Path, maker_fee_bps: float) -> V20Config:
@@ -76,6 +77,15 @@ def _split_events(
 def _score(result: EventBacktestResult) -> tuple[float, int]:
     objective = result.net_pnl_usd - 0.05 * abs(result.avg_adverse_selection_bps) * max(1.0, result.filled_qty)
     return objective, result.fills
+
+
+def _select_candidate(records: list[dict[str, Any]], min_train_fills: int = MIN_TRAIN_FILLS_FOR_SELECTION) -> dict[str, Any]:
+    viable = [record for record in records if int(record["fills"]) >= min_train_fills]
+    if not viable:
+        raise ValueError(
+            f"no candidate meets minimum training fills: required={min_train_fills}"
+        )
+    return max(viable, key=lambda record: (float(record["objective"]), int(record["fills"])))
 
 
 def _candidate_grid(base: V20Config) -> list[V20Config]:
@@ -190,12 +200,23 @@ def main() -> int:
     candidate_base = _load_config(args.candidate_config, args.maker_fee_bps)
 
     train_baseline = _run(baseline, train_snapshot, train_depth, train_trades)
-    candidate_results: list[tuple[tuple[float, int], V20Config, EventBacktestResult]] = []
+    candidate_records: list[dict[str, Any]] = []
     for candidate in _candidate_grid(candidate_base):
         result = _run(candidate, train_snapshot, train_depth, train_trades)
-        candidate_results.append((_score(result), candidate, result))
-    candidate_results.sort(key=lambda x: x[0], reverse=True)
-    _, selected, selected_train = candidate_results[0]
+        objective, fills = _score(result)
+        candidate_records.append(
+            {
+                "objective": objective,
+                "fills": fills,
+                "net_pnl_usd": result.net_pnl_usd,
+                "avg_adverse_selection_bps": result.avg_adverse_selection_bps,
+                "config": candidate,
+                "result": result,
+            }
+        )
+    selected_record = _select_candidate(candidate_records)
+    selected = selected_record["config"]
+    selected_train = selected_record["result"]
 
     valid_baseline = _run(baseline, validation_snapshot, valid_depth, valid_trades)
     valid_candidate = _run(selected, validation_snapshot, valid_depth, valid_trades)
@@ -222,6 +243,7 @@ def main() -> int:
                 "minimum_total_events": MIN_TOTAL_EVENTS,
                 "minimum_depth_events": MIN_DEPTH_EVENTS,
                 "minimum_trade_events": MIN_TRADE_EVENTS,
+                "minimum_training_fills_for_selection": MIN_TRAIN_FILLS_FOR_SELECTION,
                 "minimum_validation_fills_each": MIN_FILLS_PER_VALIDATION_SIDE,
                 "validation_candidate_net_pnl_usd_gt_0": pnl_positive,
                 "candidate_beats_baseline_net_pnl": improvement_positive,
@@ -245,6 +267,22 @@ def main() -> int:
             "microprice_skew_bps": selected.microprice_skew_bps,
         },
         "train": {"baseline": summarize(train_baseline), "selected_candidate": summarize(selected_train)},
+        "candidate_selection_diagnostics": {
+            "total_candidates": len(candidate_records),
+            "viable_candidates": sum(1 for record in candidate_records if record["fills"] >= MIN_TRAIN_FILLS_FOR_SELECTION),
+            "top_candidates": [
+                {
+                    "fills": record["fills"],
+                    "net_pnl_usd": record["net_pnl_usd"],
+                    "objective": record["objective"],
+                    "base_half_spread_bps": record["config"].base_half_spread_bps,
+                    "toxicity_imbalance_threshold": record["config"].toxicity_imbalance_threshold,
+                    "toxicity_flow_threshold": record["config"].toxicity_flow_threshold,
+                    "microprice_skew_bps": record["config"].microprice_skew_bps,
+                }
+                for record in sorted(candidate_records, key=lambda x: (x["objective"], x["fills"]), reverse=True)[:10]
+            ],
+        },
         "validation": {
             "baseline": summarize(valid_baseline),
             "selected_candidate": summarize(valid_candidate),
