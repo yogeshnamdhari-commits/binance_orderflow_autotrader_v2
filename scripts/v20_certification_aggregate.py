@@ -5,6 +5,7 @@ from pathlib import Path
 import sys
 
 EXPECTED_SESSIONS = {"A", "B", "C", "D"}
+EXPECTED_MAKER_FEE_BPS = 1.0
 
 
 def _session_key(path: Path) -> str | None:
@@ -38,6 +39,23 @@ def main() -> int:
 
     ordered_sessions = sorted(session_map)
     payloads = [json.loads(session_map[s].read_text(encoding="utf-8")) for s in ordered_sessions]
+
+    for session, payload in zip(ordered_sessions, payloads):
+        capture = payload.get("capture", {})
+        report_session = str(capture.get("session_id", "")).upper()
+        if report_session != session:
+            raise SystemExit(
+                f"CERTIFICATION_BLOCKED: report path session {session} does not match capture session_id {report_session!r}"
+            )
+        if float(payload.get("certification", {}).get("maker_fee_bps", -1)) != EXPECTED_MAKER_FEE_BPS:
+            raise SystemExit(
+                f"CERTIFICATION_BLOCKED: session {session} does not use the required {EXPECTED_MAKER_FEE_BPS} bps maker fee"
+            )
+        if capture.get("symbol", "BTCUSDT").upper() != "BTCUSDT":
+            raise SystemExit(f"CERTIFICATION_BLOCKED: session {session} is not BTCUSDT")
+        if int(capture.get("depth_events", 0)) < 500 or int(capture.get("trade_events", 0)) < 500:
+            raise SystemExit(f"CERTIFICATION_BLOCKED: session {session} lacks minimum depth/trade event counts")
+
     statuses = [p.get("certification", {}).get("status") for p in payloads]
     all_pass = all(status == "PERFORMANCE_CERTIFIED" for status in statuses)
 
@@ -46,6 +64,7 @@ def main() -> int:
         "sessions": len(payloads),
         "session_ids": ordered_sessions,
         "session_statuses": statuses,
+        "maker_fee_bps": EXPECTED_MAKER_FEE_BPS,
         "reports": [str(session_map[s]) for s in ordered_sessions],
         "validation_net_pnl_usd": [
             p.get("validation", {}).get("selected_candidate", {}).get("net_pnl_usd")
