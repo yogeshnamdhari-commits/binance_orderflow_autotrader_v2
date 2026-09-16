@@ -88,8 +88,12 @@ class BinanceUSDMUserStream:
                 self.listen_key = None
                 self.guard.disconnected()
 
+    def _touch_transport(self) -> None:
+        self.guard.heartbeat(int(time.time() * 1000))
+
     def _on_message(self, _ws, raw: str) -> None:
         payload = json.loads(raw)
+        self._touch_transport()
         event_type = payload.get("e")
         event_ts = int(payload.get("E", int(time.time() * 1000)))
         if event_type == "listenKeyExpired":
@@ -114,6 +118,14 @@ class BinanceUSDMUserStream:
     def _on_open(self, _ws) -> None:
         self.guard.connected_event(int(time.time() * 1000))
         self.status_cb({"status": "USER_STREAM_CONNECTED"})
+
+    def _on_ping(self, _ws, _message) -> None:
+        # websocket-client automatically responds to server ping frames.
+        # Treat receipt of the server ping as transport liveness.
+        self._touch_transport()
+
+    def _on_pong(self, _ws, _message) -> None:
+        self._touch_transport()
 
     def _on_error(self, _ws, error) -> None:
         self.guard.disconnected()
@@ -148,6 +160,8 @@ class BinanceUSDMUserStream:
                     url,
                     on_open=self._on_open,
                     on_message=self._on_message,
+                    on_ping=self._on_ping,
+                    on_pong=self._on_pong,
                     on_error=self._on_error,
                     on_close=self._on_close,
                 )
