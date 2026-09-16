@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 import pytest
 
 from scripts.v20_testnet_smoke import ALLOWED_DEMO_HOSTS, valid_passive_order
@@ -21,10 +23,10 @@ def test_smoke_order_sizing_meets_filters():
     }
     price, qty = valid_passive_order(info, 100000)
     assert price < 100000
-    assert (price / 0.10).is_integer()
-    assert (qty / 0.001).is_integer()
-    assert qty >= 0.001
-    assert price * qty >= 100
+    assert (price / Decimal("0.10")).to_integral_value() == price / Decimal("0.10")
+    assert (qty / Decimal("0.001")).to_integral_value() == qty / Decimal("0.001")
+    assert qty >= Decimal("0.001")
+    assert price * qty >= Decimal("100")
 
 
 def test_smoke_rejects_qty_when_min_notional_exceeds_max_qty():
