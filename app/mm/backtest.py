@@ -108,11 +108,18 @@ def generate_quotes(
 
     half_spread = min(half_spread, config.max_half_spread_bps / 10_000.0)
 
+    # Normalize inventory by maximum notional and skew quotes against the
+    # current position.  The old implementation used raw asset quantity and
+    # moved both quotes in the wrong direction for inventory control.
+    max_notional = max(abs(config.max_position_notional_usd), 1e-9)
     inventory_drift = inventory - config.inventory_target
-    skew_bps = inventory_drift * config.inventory_penalty_bps / 10_000.0
+    inventory_fraction = (inventory_drift * mid_price) / max_notional
+    inventory_fraction = max(-1.0, min(1.0, inventory_fraction))
+    skew_bps = -inventory_fraction * config.inventory_penalty_bps
+    skew_fraction = skew_bps / 10_000.0
 
-    bid_price = mid_price * (1.0 - half_spread + skew_bps)
-    ask_price = mid_price * (1.0 + half_spread + skew_bps)
+    bid_price = mid_price * (1.0 - half_spread + skew_fraction)
+    ask_price = mid_price * (1.0 + half_spread + skew_fraction)
 
     bid_qty = config.quote_size_usd / bid_price if bid_price > 0 else 0
     ask_qty = config.quote_size_usd / ask_price if ask_price > 0 else 0
