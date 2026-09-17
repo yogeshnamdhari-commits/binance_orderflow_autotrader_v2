@@ -46,12 +46,21 @@ def main() -> int:
     payloads = [json.loads(session_map[s].read_text(encoding="utf-8")) for s in ordered_sessions]
 
     capture_session_ids: list[str] = []
+    capture_windows: list[tuple[int, int, str]] = []
     for session, payload in zip(ordered_sessions, payloads):
         capture = payload.get("capture", {})
         report_session = str(capture.get("session_id", "")).strip()
         if not report_session:
             raise SystemExit(f"CERTIFICATION_BLOCKED: session {session} has no capture session_id")
         capture_session_ids.append(report_session)
+        try:
+            start_ns = int(capture.get("start_ns", 0))
+            end_ns = int(capture.get("end_ns", 0))
+        except (TypeError, ValueError):
+            raise SystemExit(f"CERTIFICATION_BLOCKED: session {session} has invalid capture window")
+        if start_ns <= 0 or end_ns <= start_ns:
+            raise SystemExit(f"CERTIFICATION_BLOCKED: session {session} has invalid capture window")
+        capture_windows.append((start_ns, end_ns, session))
         if float(payload.get("certification", {}).get("maker_fee_bps", -1)) != EXPECTED_MAKER_FEE_BPS:
             raise SystemExit(
                 f"CERTIFICATION_BLOCKED: session {session} does not use the required {EXPECTED_MAKER_FEE_BPS} bps maker fee"
@@ -63,6 +72,14 @@ def main() -> int:
 
     if len(set(capture_session_ids)) != len(capture_session_ids):
         raise SystemExit("CERTIFICATION_BLOCKED: capture session_ids are not unique across A/B/C/D")
+
+    capture_windows.sort()
+    for previous, current in zip(capture_windows, capture_windows[1:]):
+        if current[0] < previous[1]:
+            raise SystemExit(
+                "CERTIFICATION_BLOCKED: A/B/C/D capture windows overlap; "
+                "sessions must be temporally independent"
+            )
 
     statuses = [p.get("certification", {}).get("status") for p in payloads]
     all_pass = all(status == "PERFORMANCE_CERTIFIED" for status in statuses)
