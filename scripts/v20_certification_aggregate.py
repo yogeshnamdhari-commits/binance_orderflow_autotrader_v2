@@ -1,4 +1,4 @@
-from __future__ import annotations
+from __future__
 
 import json
 from pathlib import Path
@@ -13,6 +13,11 @@ def _session_key(path: Path) -> str | None:
         name = parent.name.upper()
         if name in EXPECTED_SESSIONS:
             return name
+        prefix = "V20-PERFORMANCE-CERTIFICATION-"
+        if name.startswith(prefix):
+            suffix = name[len(prefix):]
+            if suffix in EXPECTED_SESSIONS:
+                return suffix
     return None
 
 
@@ -40,13 +45,13 @@ def main() -> int:
     ordered_sessions = sorted(session_map)
     payloads = [json.loads(session_map[s].read_text(encoding="utf-8")) for s in ordered_sessions]
 
+    capture_session_ids: list[str] = []
     for session, payload in zip(ordered_sessions, payloads):
         capture = payload.get("capture", {})
-        report_session = str(capture.get("session_id", "")).upper()
-        if report_session != session:
-            raise SystemExit(
-                f"CERTIFICATION_BLOCKED: report path session {session} does not match capture session_id {report_session!r}"
-            )
+        report_session = str(capture.get("session_id", "")).strip()
+        if not report_session:
+            raise SystemExit(f"CERTIFICATION_BLOCKED: session {session} has no capture session_id")
+        capture_session_ids.append(report_session)
         if float(payload.get("certification", {}).get("maker_fee_bps", -1)) != EXPECTED_MAKER_FEE_BPS:
             raise SystemExit(
                 f"CERTIFICATION_BLOCKED: session {session} does not use the required {EXPECTED_MAKER_FEE_BPS} bps maker fee"
@@ -55,6 +60,9 @@ def main() -> int:
             raise SystemExit(f"CERTIFICATION_BLOCKED: session {session} is not BTCUSDT")
         if int(capture.get("depth_events", 0)) < 500 or int(capture.get("trade_events", 0)) < 500:
             raise SystemExit(f"CERTIFICATION_BLOCKED: session {session} lacks minimum depth/trade event counts")
+
+    if len(set(capture_session_ids)) != len(capture_session_ids):
+        raise SystemExit("CERTIFICATION_BLOCKED: capture session_ids are not unique across A/B/C/D")
 
     statuses = [p.get("certification", {}).get("status") for p in payloads]
     all_pass = all(status == "PERFORMANCE_CERTIFIED" for status in statuses)

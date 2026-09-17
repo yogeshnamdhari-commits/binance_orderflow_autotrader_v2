@@ -41,6 +41,7 @@ jobs:
             tests/test_v20_execution_replay.py \
             tests/test_v20_event_backtest_capture.py \
             tests/test_v20_performance_certify.py \
+            tests/test_v20_certification_aggregate.py \
             tests/research/test_v10_capture_runner.py
 
       - name: Capture authentic Binance BTCUSDT market data
@@ -105,7 +106,7 @@ jobs:
         with:
           pattern: v20-performance-certification-*
           path: cert_reports
-          merge-multiple: true
+          merge-multiple: false
 
       - name: Aggregate certification
         run: python scripts/v20_certification_aggregate.py cert_reports
