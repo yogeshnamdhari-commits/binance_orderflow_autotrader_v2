@@ -90,19 +90,22 @@ def _select_candidate(records: list[dict[str, Any]], min_train_fills: int = MIN_
 
 def _candidate_grid(base: V20Config) -> list[V20Config]:
     candidates: list[V20Config] = []
+    # Keep the 108-configuration search budget while allocating one axis
+    # to the corrected, notional-normalized inventory controller.
     for half_spread in (2.0, 2.5, 3.0, 3.5):
         for imbalance in (0.55, 0.65, 0.75):
             for flow in (0.55, 0.65, 0.75):
-                for skew in (0.5, 1.0, 1.5):
+                for inventory_penalty in (5.0, 10.0, 20.0):
                     candidates.append(
                         replace(
                             base,
                             base_half_spread_bps=half_spread,
                             max_half_spread_bps=max(half_spread + 1.0, base.max_half_spread_bps),
+                            inventory_penalty_bps=inventory_penalty,
                             toxicity_filter_enabled=True,
                             toxicity_imbalance_threshold=imbalance,
                             toxicity_flow_threshold=flow,
-                            microprice_skew_bps=skew,
+                            microprice_skew_bps=1.5,
                             live_order_submission=False,
                         )
                     )
@@ -262,6 +265,7 @@ def main() -> int:
         },
         "selected_candidate": {
             "base_half_spread_bps": selected.base_half_spread_bps,
+            "inventory_penalty_bps": selected.inventory_penalty_bps,
             "toxicity_imbalance_threshold": selected.toxicity_imbalance_threshold,
             "toxicity_flow_threshold": selected.toxicity_flow_threshold,
             "microprice_skew_bps": selected.microprice_skew_bps,
@@ -276,6 +280,7 @@ def main() -> int:
                     "net_pnl_usd": record["net_pnl_usd"],
                     "objective": record["objective"],
                     "base_half_spread_bps": record["config"].base_half_spread_bps,
+                    "inventory_penalty_bps": record["config"].inventory_penalty_bps,
                     "toxicity_imbalance_threshold": record["config"].toxicity_imbalance_threshold,
                     "toxicity_flow_threshold": record["config"].toxicity_flow_threshold,
                     "microprice_skew_bps": record["config"].microprice_skew_bps,
