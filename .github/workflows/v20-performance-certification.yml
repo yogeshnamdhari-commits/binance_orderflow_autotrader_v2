@@ -15,10 +15,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        session: [A, B, C, D]
+        include:
+          - session: A
+            delay_minutes: 0
+          - session: B
+            delay_minutes: 35
+          - session: C
+            delay_minutes: 70
+          - session: D
+            delay_minutes: 105
     runs-on: ubuntu-latest
-    # The authentic capture alone takes 30 minutes; leave deterministic headroom for replay/report generation.
-    timeout-minutes: 90
+    # Stagger the four authentic capture windows so A/B/C/D are temporally
+    # independent while retaining parallel GitHub runners.
+    timeout-minutes: 190
     steps:
       - uses: actions/checkout@v4
 
@@ -43,6 +52,10 @@ jobs:
             tests/test_v20_performance_certify.py \
             tests/test_v20_certification_aggregate.py \
             tests/research/test_v10_capture_runner.py
+
+      - name: Wait for independent session window
+        if: matrix.delay_minutes > 0
+        run: sleep $((matrix.delay_minutes * 60))
 
       - name: Capture authentic Binance BTCUSDT market data
         run: |
@@ -70,6 +83,15 @@ jobs:
 
       - name: Validate raw capture quality
         run: python scripts/v20_capture_quality_gate.py "${{ steps.locate.outputs.capture_dir }}"
+
+      - name: Archive raw capture evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v20-authentic-capture-${{ matrix.session }}
+          path: "${{ steps.locate.outputs.capture_dir }}"
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Performance certification replay
         run: |
