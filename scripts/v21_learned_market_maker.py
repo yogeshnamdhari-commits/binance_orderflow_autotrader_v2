@@ -32,7 +32,7 @@ from app.mm.event_backtest import run_event_backtest
 from scripts.v20_event_backtest_capture import load_events, load_snapshot
 from scripts.v21_orderflow_dataset import FEATURES, HORIZONS_MS
 from scripts.v21_toxicity_model import _future_mid
-from scripts.v21_orderflow_core import BookTop, CausalOrderFlowState
+from app.research.v21_orderflow_core import BookTop, CausalOrderFlowState
 
 
 MAKER_FEE_BPS = 1.0
