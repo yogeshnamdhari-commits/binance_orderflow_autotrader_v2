@@ -240,6 +240,7 @@ def extract_session(capture_dir: Path, session: str) -> pd.DataFrame:
             "timestamp_ms": sample.timestamp_ms,
             "session": session,
             "half": half,
+            "split_start_ms": session_midpoint,
             "mid": sample.mid,
         })
         for horizon in HORIZONS_MS:
