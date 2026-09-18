@@ -68,7 +68,7 @@ def _trade_imbalance(trades: deque[tuple[int, float]], now: int, window: int) ->
     cutoff = now - window
     signed = 0.0
     absolute = 0.0
-    for ts, qty in trades:
+    for ts, qty, _ in trades:
         if ts >= cutoff:
             signed += qty
             absolute += abs(qty)
