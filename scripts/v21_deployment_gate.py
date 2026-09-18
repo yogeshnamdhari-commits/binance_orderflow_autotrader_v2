@@ -51,7 +51,12 @@ def evaluate(
             bundle.get("production_inference", {}).get("training_in_live_process") is False
         ),
         "paper_validation_passed": paper.get("status") == "PASS",
-        "authenticated_testnet_passed": testnet.get("status") == "PASS",
+        "authenticated_testnet_passed": (
+            testnet.get("private_stream_connected") is True
+            and testnet.get("reconciled_open_orders") is True
+            and testnet.get("reconciled_position_snapshot") is True
+            and testnet.get("rest_order_lifecycle") == "PASS"
+        ),
         "tests_passed": tests.get("status") == "PASS",
         "risk_controls_passed": bool(tests.get("risk_controls_passed", False)),
         "explicit_authorization": bool(explicit_authorization),
