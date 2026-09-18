@@ -252,6 +252,7 @@ def _decision(
     *,
     half_spread_bps: float = HALF_SPREAD_BPS,
     min_edge_bps: float = MIN_EDGE_BPS,
+    toxicity_multiplier: float = 1.0,
 ) -> tuple[QuoteIntent, dict[str, float | bool]] | None:
     p_move = float(models.move.predict_proba(x)[:, 1][0])
     p_up = float(models.direction.predict_proba(x)[:, 1][0])
@@ -283,13 +284,13 @@ def _decision(
         ((top.mid - bid) * 10_000.0 / top.mid if bid else 0.0)
         + expected_signed
         - MAKER_FEE_BPS
-        - tox_buy
+        - toxicity_multiplier * tox_buy
     )
     ask_edge = (
         ((ask - top.mid) * 10_000.0 / top.mid if ask else 0.0)
         - expected_signed
         - MAKER_FEE_BPS
-        - tox_sell
+        - toxicity_multiplier * tox_sell
     )
 
     bid_enabled = bid is not None and bid_edge >= min_edge_bps
@@ -309,6 +310,7 @@ def _decision(
             "expected_signed_move_bps": expected_signed,
             "tox_buy_bps": tox_buy,
             "tox_sell_bps": tox_sell,
+            "toxicity_multiplier": toxicity_multiplier,
             "bid_edge_bps": bid_edge,
             "ask_edge_bps": ask_edge,
             "quote_enabled": False,
@@ -342,6 +344,7 @@ def replay_test_session(
     *,
     half_spread_bps: float = HALF_SPREAD_BPS,
     min_edge_bps: float = MIN_EDGE_BPS,
+    toxicity_multiplier: float = 1.0,
 ) -> dict[str, Any]:
     snapshot = load_snapshot(capture_dir)
     depth, trades, counts = load_events(capture_dir)
@@ -436,6 +439,7 @@ def replay_test_session(
                 inventory,
                 half_spread_bps=half_spread_bps,
                 min_edge_bps=min_edge_bps,
+                toxicity_multiplier=toxicity_multiplier,
             )
             decision_stats["events"] += 1
 
