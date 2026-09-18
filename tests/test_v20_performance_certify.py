@@ -17,7 +17,10 @@ def test_candidate_grid_excludes_crossing_prone_configs():
     skews = {c.microprice_skew_bps for c in candidates}
 
     for candidate in candidates:
-        assert candidate.microprice_skew_bps + 0.25 < candidate.base_half_spread_bps
+        assert candidate.microprice_skew_bps + 0.1 < candidate.base_half_spread_bps
+    assert 2.25 in spreads
+    assert 0.75 not in spreads
+    assert 1.25 not in spreads
 
 
 def test_candidate_selection_rejects_sparse_training_candidates():

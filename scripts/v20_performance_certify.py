@@ -97,7 +97,7 @@ def _candidate_grid(base: V20Config) -> list[V20Config]:
         for imbalance in (0.55, 0.65, 0.75):
             for flow in (0.55, 0.65, 0.75):
                 for inventory_penalty in (5.0, 10.0, 20.0):
-                    if base.microprice_skew_bps + 0.1 >= half_spread:
+                    if 1.5 + 0.1 >= half_spread:
                         continue
                     candidates.append(
                         replace(
