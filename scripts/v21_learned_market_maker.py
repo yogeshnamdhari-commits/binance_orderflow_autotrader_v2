@@ -353,11 +353,6 @@ def replay_test_session(
         "toxicity_suppressed": 0,
     }
 
-    events: list[tuple[int, int, object]] = []
-    events.extend((e.timestamp_ns, 0, e) for e in test_depth)
-    events.extend((e.timestamp_ns, 1, e) for e in test_trades)
-    events.sort(key=lambda z: (z[0], z[1]))
-
     # Replay the complete session to warm the causal state. Strategy decisions
     # and P&L accounting are activated only after the untouched split boundary.
     events: list[tuple[int, int, object]] = []
