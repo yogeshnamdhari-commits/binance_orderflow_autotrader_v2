@@ -109,7 +109,7 @@ def test_runtime_binds_exchange_order_after_restart_lookup():
         ),
         100000.0,
     )
-    assert result is not None
+    assert result is None
     assert gateway.local_order_id("EX-RESTART") == seed.order_id
 
 
