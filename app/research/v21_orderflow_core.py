@@ -46,6 +46,7 @@ class OrderFlowFeatures:
     microprice_edge_bps: float
     ofi_100ms: float
     ofi_500ms: float
+    ofi_1000ms: float
     trade_imbalance_100ms: float
     trade_imbalance_500ms: float
     trade_imbalance_1000ms: float
@@ -207,6 +208,7 @@ class CausalOrderFlowState:
             microprice_edge_bps=self.microprice_edge_bps(current),
             ofi_100ms=self._sum_ofi(timestamp_ms, 100),
             ofi_500ms=self._sum_ofi(timestamp_ms, 500),
+            ofi_1000ms=self._sum_ofi(timestamp_ms, 1_000),
             trade_imbalance_100ms=self._trade_imbalance(timestamp_ms, 100),
             trade_imbalance_500ms=signed_500 / absolute_500 if absolute_500 > 0 else 0.0,
             trade_imbalance_1000ms=self._trade_imbalance(timestamp_ms, 1_000),
