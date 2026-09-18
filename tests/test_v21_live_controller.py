@@ -109,3 +109,40 @@ def test_controller_kill_switch_cancels_exchange_symbol_orders():
     assert result["status"] == "CANCELLED_ALL"
     assert result["actions"][0]["action"] == "cancel_all_exchange"
     assert result["actions"][0]["result"] == "CANCELLED_ALL"
+
+
+def test_controller_requires_both_live_authorization_gates():
+    for gateway_live, controller_authorized in ((True, False), (False, True)):
+        risk = healthy_risk()
+        gateway = ExecutionGateway(Adapter(), risk, OrderStateManager(), live_enabled=gateway_live)
+        controller = V21LiveController(
+            gateway=gateway,
+            risk=risk,
+            model=bundle(),
+            symbol="BTCUSDT",
+            tick_size=0.1,
+            maker_fee_bps=1.0,
+            live_authorized=controller_authorized,
+        )
+        plan = controller.on_depth(DepthEvent(1000, 11, 11, [], []), book(), 0.0)
+        result = controller.apply_plan(plan)
+        assert result["status"] == "DRY_RUN_BLOCKED"
+        assert gateway.manager.open_orders == []
+
+
+def test_controller_can_submit_only_when_both_gates_and_risk_are_healthy():
+    risk = healthy_risk()
+    gateway = ExecutionGateway(Adapter(), risk, OrderStateManager(), live_enabled=True)
+    controller = V21LiveController(
+        gateway=gateway,
+        risk=risk,
+        model=bundle(),
+        symbol="BTCUSDT",
+        tick_size=0.1,
+        maker_fee_bps=1.0,
+        live_authorized=True,
+    )
+    plan = controller.on_depth(DepthEvent(1000, 11, 11, [], []), book(), 0.0)
+    result = controller.apply_plan(plan)
+    assert result["status"] == "LIVE_APPLIED"
+    assert any(action["action"] == "submit" for action in result["actions"])
