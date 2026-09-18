@@ -42,6 +42,7 @@ jobs:
             scripts/v21_ablation_research.py \
             scripts/v21_move_regression.py \
             scripts/v21_learned_market_maker.py \
+            scripts/v21_economic_spread_sweep.py \
             tests/test_v21_orderflow_research.py \
             tests/test_v21_decision_engine.py
 
@@ -130,6 +131,14 @@ jobs:
             --dataset research_reports/v21_orderflow.parquet \
             --toxicity research_reports/v21_toxicity.parquet \
             --output research_reports/v21_learned_mm_report.json
+
+      - name: Run nested economic spread sweep
+        run: |
+          python scripts/v21_economic_spread_sweep.py \
+            --captures-root captures \
+            --dataset research_reports/v21_orderflow.parquet \
+            --toxicity research_reports/v21_toxicity.parquet \
+            --output research_reports/v21_economic_spread_sweep.json
 
       - name: Evaluate toxicity model
         run: |
