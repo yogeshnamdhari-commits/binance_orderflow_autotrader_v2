@@ -3,7 +3,7 @@ from app.mm.live_risk import LiveRiskGate, RiskLimits
 from app.mm.execution import OrderStateManager
 from app.mm.execution_gateway import ExecutionGateway
 from app.mm.live_runtime import V20LiveRuntime
-from app.mm.user_stream import UserStreamGuard
+from app.mm.user_stream import OrderUpdate, UserStreamGuard
 from app.mm.binance_user_stream import BinanceUSDMUserStream
 
 
