@@ -11,7 +11,7 @@ import requests
 
 from .execution import ExecutionResult
 from .execution_gateway import Submission
-from .order_constraints import SymbolConstraints, find_symbol
+from .order_constraints import SymbolConstraints
 
 
 @dataclass(frozen=True)
@@ -28,14 +28,16 @@ class BinanceExecutionConfig:
         api_key = os.getenv("BINANCE_API_KEY", "")
         api_secret = os.getenv("BINANCE_API_SECRET", "")
         if not base_url or not api_key or not api_secret:
-            raise RuntimeError("BINANCE_ORDER_BASE_URL, BINANCE_API_KEY and BINANCE_API_SECRET are required")
+            raise RuntimeError(
+                "BINANCE_ORDER_BASE_URL, BINANCE_API_KEY and BINANCE_API_SECRET are required"
+            )
         return cls(base_url, api_key, api_secret)
 
 
 class BinanceUSDMExecutionAdapter:
     """Signed USD-M Futures REST adapter with exchange-filter enforcement.
 
-    The adapter never bypasses ExecutionGateway. Exchange symbol metadata is
+    All exchange mutations remain behind ExecutionGateway. Exchange metadata is
     loaded once per adapter instance and orders are validated against current
     PRICE_FILTER/LOT_SIZE/MIN_NOTIONAL constraints before submission.
     """
@@ -52,14 +54,26 @@ class BinanceUSDMExecutionAdapter:
         params.setdefault("timestamp", int(time.time() * 1000))
         params.setdefault("recvWindow", self.config.recv_window_ms)
         query = urlencode(params)
-        signature = hmac.new(self.config.api_secret.encode("utf-8"), query.encode("utf-8"), hashlib.sha256).hexdigest()
+        signature = hmac.new(
+            self.config.api_secret.encode("utf-8"),
+            query.encode("utf-8"),
+            hashlib.sha256,
+        ).hexdigest()
         params["signature"] = signature
-        response = self.session.request(method, f"{self.config.base_url}{path}", params=params, timeout=self.config.timeout_s)
+        response = self.session.request(
+            method,
+            f"{self.config.base_url}{path}",
+            params=params,
+            timeout=self.config.timeout_s,
+        )
         response.raise_for_status()
         return response
 
     def refresh_exchange_info(self) -> None:
-        response = self.session.get(f"{self.config.base_url}/fapi/v1/exchangeInfo", timeout=self.config.timeout_s)
+        response = self.session.get(
+            f"{self.config.base_url}/fapi/v1/exchangeInfo",
+            timeout=self.config.timeout_s,
+        )
         response.raise_for_status()
         payload = response.json()
         self._constraints = {
@@ -81,8 +95,8 @@ class BinanceUSDMExecutionAdapter:
     @staticmethod
     def _order_payload(submission: Submission) -> dict:
         return {
-            "symbol": submission.symbol,
-            "side": submission.side,
+            "symbol": submission.symbol.upper(),
+            "side": submission.side.upper(),
             "type": "LIMIT",
             "timeInForce": "GTX",
             "quantity": format(submission.qty, ".12f").rstrip("0").rstrip("."),
@@ -94,8 +108,17 @@ class BinanceUSDMExecutionAdapter:
         constraints = self._constraints_for(submission.symbol)
         valid, reasons = constraints.validate(submission.price, submission.qty)
         if not valid:
-            return ExecutionResult("REJECTED_LOCAL_FILTER", None, ";".join(reasons), submission.client_id)
-        response = self._signed_request("POST", "/fapi/v1/order", self._order_payload(submission))
+            return ExecutionResult(
+                "REJECTED_LOCAL_FILTER",
+                None,
+                ";".join(reasons),
+                submission.client_id,
+            )
+        response = self._signed_request(
+            "POST",
+            "/fapi/v1/order",
+            self._order_payload(submission),
+        )
         data = response.json()
         return ExecutionResult(
             status=str(data.get("status", "UNKNOWN")),
@@ -140,4 +163,23 @@ class BinanceUSDMExecutionAdapter:
             order_id=str(data.get("orderId", order_id)),
             message="binance order cancelled",
             client_id=str(data.get("clientOrderId")) if data.get("clientOrderId") else None,
+        )
+
+    def cancel_all(self, symbol: str) -> ExecutionResult:
+        """Cancel every open order for one symbol on the exchange.
+
+        This endpoint is used as the fail-safe quote kill switch so local
+        in-memory state cannot leave an orphaned quote resting at Binance.
+        """
+        symbol = symbol.upper()
+        response = self._signed_request(
+            "DELETE",
+            "/fapi/v1/allOpenOrders",
+            {"symbol": symbol},
+        )
+        data = response.json()
+        return ExecutionResult(
+            status="CANCELLED_ALL",
+            order_id=None,
+            message=str(data.get("msg", "all open orders cancelled")),
         )
