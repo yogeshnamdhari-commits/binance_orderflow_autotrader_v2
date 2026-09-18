@@ -36,6 +36,7 @@ jobs:
             scripts/v21_orderflow_models.py \
             scripts/v21_toxicity_model.py \
             scripts/v21_ablation_research.py \
+            scripts/v21_move_regression.py \
             tests/test_v21_orderflow_research.py \
             tests/test_v21_decision_engine.py
 
@@ -109,6 +110,12 @@ jobs:
           python scripts/v21_ablation_research.py \
             --dataset research_reports/v21_orderflow.parquet \
             --output research_reports/v21_ablation_report.json
+
+      - name: Evaluate signed move magnitude
+        run: |
+          python scripts/v21_move_regression.py \
+            --dataset research_reports/v21_orderflow.parquet \
+            --output research_reports/v21_move_regression.json
 
       - name: Build toxicity dataset
         run: |
