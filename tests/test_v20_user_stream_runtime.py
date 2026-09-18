@@ -133,3 +133,29 @@ def test_user_stream_selects_mainnet_endpoints_by_default(monkeypatch):
     stream = BinanceUSDMUserStream(api_key="test-key")
     assert stream.control_url == "wss://ws-fapi.binance.com/ws-fapi/v1"
     assert stream.private_stream_base == "wss://fstream.binance.com/private/ws"
+
+
+def test_user_stream_rejects_testnet_to_mainnet_endpoint_mismatch(monkeypatch):
+    monkeypatch.setenv("BINANCE_ORDER_BASE_URL", "https://testnet.binancefuture.com")
+    try:
+        BinanceUSDMUserStream(
+            api_key="test-key",
+            private_stream_base="wss://fstream.binance.com/private/ws",
+        )
+    except RuntimeError as exc:
+        assert str(exc) == "testnet_endpoint_environment_mismatch"
+    else:
+        raise AssertionError("mainnet private stream was accepted for testnet")
+
+
+def test_user_stream_rejects_mainnet_to_testnet_endpoint_mismatch(monkeypatch):
+    monkeypatch.delenv("BINANCE_ORDER_BASE_URL", raising=False)
+    try:
+        BinanceUSDMUserStream(
+            api_key="test-key",
+            control_url="wss://testnet.binancefuture.com/ws-fapi/v1",
+        )
+    except RuntimeError as exc:
+        assert str(exc) == "mainnet_endpoint_environment_mismatch"
+    else:
+        raise AssertionError("testnet control endpoint was accepted for mainnet")
