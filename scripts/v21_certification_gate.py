@@ -14,6 +14,8 @@ from typing import Any
 
 
 MIN_TOTAL_OOS_FILLS = 10
+MIN_OOS_FOLDS = 2
+MIN_FILLS_PER_OOS_FOLD = 10
 
 
 def evaluate(
@@ -48,9 +50,19 @@ def evaluate(
     total_fills = sum(row["fills"] for row in outer)
 
     checks = {
+        "minimum_outer_oos_folds": len(outer) >= MIN_OOS_FOLDS,
         "aggregate_net_pnl_positive": aggregate_net_pnl > 0.0,
         "aggregate_improvement_positive": aggregate_improvement > 0.0,
         "minimum_total_oos_fills": total_fills >= MIN_TOTAL_OOS_FILLS,
+        "every_outer_fold_profitable": bool(outer) and all(
+            row["net_pnl_usd"] > 0.0 for row in outer
+        ),
+        "every_outer_fold_beats_fixed_baseline": bool(outer) and all(
+            row["improvement_vs_fixed_baseline_usd"] > 0.0 for row in outer
+        ),
+        "every_outer_fold_has_minimum_fills": bool(outer) and all(
+            row["fills"] >= MIN_FILLS_PER_OOS_FOLD for row in outer
+        ),
         "live_submission_disabled": False,
     }
 
