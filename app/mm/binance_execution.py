@@ -104,6 +104,28 @@ class BinanceUSDMExecutionAdapter:
             client_id=str(data.get("clientOrderId", submission.client_id)),
         )
 
+    def open_orders(self, symbol: str) -> list[dict]:
+        response = self._signed_request(
+            "GET",
+            "/fapi/v1/openOrders",
+            {"symbol": symbol.upper()},
+        )
+        payload = response.json()
+        if not isinstance(payload, list):
+            raise RuntimeError("invalid_open_orders_response")
+        return payload
+
+    def position_risk(self, symbol: str) -> list[dict]:
+        response = self._signed_request(
+            "GET",
+            "/fapi/v2/positionRisk",
+            {"symbol": symbol.upper()},
+        )
+        payload = response.json()
+        if not isinstance(payload, list):
+            raise RuntimeError("invalid_position_response")
+        return payload
+
     def cancel(self, order_id: str, symbol: str | None = None) -> ExecutionResult:
         if not symbol:
             raise ValueError("symbol is required for Binance order cancellation")
