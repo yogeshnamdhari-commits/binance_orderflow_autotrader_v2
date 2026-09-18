@@ -98,6 +98,7 @@ class V21LiveController:
         self._last_rebalance_ms: int | None = None
         self._active: dict[str, str] = {}  # side -> exchange order id
         self._active_price: dict[str, float] = {}
+        self._client_seq = 0
 
     def set_live_authorization(self, authorized: bool) -> None:
         self.live_authorized = bool(authorized)
@@ -235,6 +236,15 @@ class V21LiveController:
             live_allowed=False,
         )
 
+    def on_order_update(self, order_id: str, side: str, status: str) -> None:
+        """Release local quote ownership when the exchange reaches a terminal state."""
+        side = side.upper()
+        if self._active.get(side) != str(order_id):
+            return
+        if status.upper() in {"FILLED", "CANCELED", "CANCELLED", "REJECTED", "EXPIRED", "EXPIRED_IN_MATCH"}:
+            self._active.pop(side, None)
+            self._active_price.pop(side, None)
+
     def on_trade(self, event: TradeEvent) -> None:
         signed = float(event.qty) if event.aggressor_side == "BUY" else -float(event.qty)
         self.flow.update_trade(int(event.ts_ms), signed, float(event.qty) * float(event.price))
@@ -274,6 +284,17 @@ class V21LiveController:
         returns a dry-run decision and performs no exchange call.
         """
         now = int(plan.timestamp_ms)
+
+        # Safety takes precedence over quote throttling. If an already-live
+        # controller loses authorization or risk health, cancel active quotes
+        # immediately rather than waiting for the next quote interval.
+        if not plan.live_allowed:
+            if self._active and self.gateway.live_enabled:
+                cancelled = self.cancel_all()
+                return {"status": "LIVE_DISABLED_CANCELLED", "actions": cancelled["actions"], "plan": plan}
+            self._last_rebalance_ms = now
+            return {"status": "DRY_RUN_BLOCKED", "actions": [], "plan": plan}
+
         if self._last_rebalance_ms is not None and now - self._last_rebalance_ms < self.quote_interval_ms:
             return {"status": "THROTTLED", "plan": plan}
 
@@ -311,7 +332,8 @@ class V21LiveController:
             quote = desired[side]
             if quote is None or side in self._active:
                 continue
-            client_id = f"V21-{side[0]}-{now}-{int(time.time_ns() % 1_000_000):06d}"
+            self._client_seq += 1
+            client_id = f"V21-{side[0]}-{now}-{self._client_seq:08d}"
             result = self.gateway.submit(
                 Submission(
                     self.symbol,
