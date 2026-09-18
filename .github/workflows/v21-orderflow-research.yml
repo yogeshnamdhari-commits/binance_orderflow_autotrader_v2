@@ -163,6 +163,16 @@ jobs:
             --risk-sweep research_reports/v21_economic_risk_sweep.json \
             --output research_reports/v21_certification_report.json
 
+      - name: Freeze candidate production model bundle
+        if: success()
+        run: |
+          set -euo pipefail
+          python scripts/v21_model_bundle.py \
+            --dataset research_reports/v21_orderflow.parquet \
+            --toxicity research_reports/v21_toxicity.parquet \
+            --sessions "$(python -c 'import pandas as pd; print(",".join(sorted(pd.read_parquet("research_reports/v21_orderflow.parquet")["session"].unique().tolist())))')" \
+            --output research_reports/v21_production_model_bundle.json
+
       - name: Publish V21 research artifacts
         if: always()
         uses: actions/upload-artifact@v4
