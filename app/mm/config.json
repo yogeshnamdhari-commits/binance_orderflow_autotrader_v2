@@ -9,9 +9,9 @@
   "cancel_on_adverse_selection": true,
   "adverse_selection_threshold_bps": 0.75,
   "min_top_level_qty": 0.0,
-  "comment_fee_structure": "Replace with YOUR actual Binance USDⓈ-M VIP tier fees",
-  "maker_fee_bps": 0.0,
-  "taker_fee_bps": 3.0,
-  "comment_fee_assumption": "Standard VIP0 tier. Check https://www.binance.com/en/fee/futureFee",
+  "comment_fee_structure": "Standard regular-user baseline; replace only after account-level fee verification and recertification",
+  "maker_fee_bps": 2.0,
+  "taker_fee_bps": 5.0,
+  "comment_fee_assumption": "Standard regular-user baseline. Account/VIP discounts or rebates require a fresh economic certification",
   "live_order_submission": false
 }
