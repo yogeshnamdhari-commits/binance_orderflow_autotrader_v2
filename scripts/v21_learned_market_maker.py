@@ -336,9 +336,6 @@ def replay_test_session(
     split_start = (all_times[0] + all_times[-1]) // 2
 
     # Train/test scope: only replay the untouched second half.
-    test_depth = [e for e in depth if e.timestamp_ns // 1_000_000 > split_start]
-    test_trades = [e for e in trades if e.timestamp_ns // 1_000_000 > split_start]
-
     book = OrderBook.from_snapshot(snapshot)
     state = CausalOrderFlowState()
     replay = PassiveQuoteReplay()
@@ -361,6 +358,14 @@ def replay_test_session(
     events.extend((e.timestamp_ns, 1, e) for e in test_trades)
     events.sort(key=lambda z: (z[0], z[1]))
 
+    # Replay the complete session to warm the causal state. Strategy decisions
+    # and P&L accounting are activated only after the untouched split boundary.
+    events: list[tuple[int, int, object]] = []
+    events.extend((e.timestamp_ns, 0, e) for e in depth)
+    events.extend((e.timestamp_ns, 1, e) for e in trades)
+    events.sort(key=lambda z: (z[0], z[1]))
+
+    activated = False
     for ts_ns, kind, event in events:
         now = ts_ns // 1_000_000
         if kind == 0:
@@ -371,6 +376,15 @@ def replay_test_session(
                 continue
 
             state.update_book(now, top)
+            if now <= split_start:
+                continue
+            if not activated:
+                replay = PassiveQuoteReplay()
+                last_quote = None
+                inventory = 0.0
+                cash = 0.0
+                fees = 0.0
+                activated = True
             x, top = _snapshot_features(state, book, now)
             quote_decision = _decision(models, x, top, inventory)
             decision_stats["events"] += 1
@@ -414,6 +428,15 @@ def replay_test_session(
             continue
 
         trade = event
+        if now <= split_start:
+            state.update_trade(
+                now,
+                float(trade.qty) if trade.aggressor_side is Side.BUY else -float(trade.qty),
+                float(trade.qty) * float(trade.price),
+            )
+            continue
+        if not activated:
+            continue
         for fill in replay.on_trade(trade):
             notional = fill.price * fill.qty
             fee = notional * MAKER_FEE_BPS / 10_000.0
@@ -427,6 +450,11 @@ def replay_test_session(
             cash -= fee
             decision_stats["fills"] += 1
             decision_stats["filled_qty"] += fill.qty
+        state.update_trade(
+            now,
+            float(trade.qty) if trade.aggressor_side is Side.BUY else -float(trade.qty),
+            float(trade.qty) * float(trade.price),
+        )
 
     final_mid = all_mids[-1] if all_mids else 0.0
     net_pnl = cash + inventory * final_mid
@@ -437,8 +465,8 @@ def replay_test_session(
         "fees_usd": float(fees),
         "final_inventory": float(inventory),
         "stats": decision_stats,
-        "test_depth_events": len(test_depth),
-        "test_trade_events": len(test_trades),
+        "test_depth_events": sum(1 for e in depth if e.timestamp_ns // 1_000_000 > split_start),
+        "test_trade_events": sum(1 for e in trades if e.timestamp_ns // 1_000_000 > split_start),
     }
 
 
