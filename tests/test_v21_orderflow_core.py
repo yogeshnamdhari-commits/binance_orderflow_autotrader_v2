@@ -76,7 +76,7 @@ def test_inventory_shift_is_stabilizing():
         alpha=alpha,
         inventory_notional_usd=4_000.0,
         max_position_notional_usd=5_000.0,
-        half_spread_bps=2.0,
+        half_spread_bps=10.0,
     )
     short_decision = planner.decide(
         top=top,
