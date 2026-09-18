@@ -16,7 +16,23 @@ from pathlib import Path
 
 import numpy as np
 
-from scripts.v21_orderflow_dataset import FEATURES
+# Duplicated here deliberately so the live process does not import the
+# research dataset builder (and therefore does not require pandas/parquet).
+V21_V21_FEATURES = (
+    "queue_imbalance",
+    "microprice_edge_bps",
+    "ofi_100ms",
+    "ofi_500ms",
+    "ofi_1000ms",
+    "trade_imbalance_100ms",
+    "trade_imbalance_500ms",
+    "trade_imbalance_1000ms",
+    "trade_intensity_notional_s",
+    "spread_bps",
+    "mid_return_100ms_bps",
+    "mid_return_500ms_bps",
+    "depth_5_imbalance",
+)
 
 
 @dataclass(frozen=True)
@@ -38,7 +54,7 @@ class V21ModelBundle:
         if int(payload.get("schema_version", -1)) != self.SCHEMA_VERSION:
             raise ValueError("unsupported_v21_model_bundle_schema")
         features = list(payload.get("features", []))
-        if features != list(FEATURES):
+        if features != list(V21_FEATURES):
             raise ValueError("v21_feature_order_mismatch")
         self.payload = payload
         self.features = tuple(features)
@@ -63,15 +79,15 @@ class V21ModelBundle:
         return value
 
     def _validate_logit(self, obj: dict, name: str) -> None:
-        self._finite_vector(obj, "mean", len(FEATURES))
-        scale = self._finite_vector(obj, "scale", len(FEATURES))
+        self._finite_vector(obj, "mean", len(V21_FEATURES))
+        scale = self._finite_vector(obj, "scale", len(V21_FEATURES))
         if np.any(scale <= 0):
             raise ValueError(f"invalid_model_scale:{name}")
-        self._finite_vector(obj, "coef", len(FEATURES))
+        self._finite_vector(obj, "coef", len(V21_FEATURES))
         self._finite_scalar(obj, "intercept")
 
     def _validate_huber(self, obj: dict, name: str) -> None:
-        self._finite_vector(obj, "coef", len(FEATURES))
+        self._finite_vector(obj, "coef", len(V21_FEATURES))
         self._finite_scalar(obj, "intercept")
 
     def _validate(self) -> None:
@@ -111,7 +127,7 @@ class V21ModelBundle:
 
     def predict(self, x: np.ndarray | list[float]) -> V21Prediction:
         arr = np.asarray(x, dtype=float).reshape(-1)
-        if len(arr) != len(FEATURES) or not np.all(np.isfinite(arr)):
+        if len(arr) != len(V21_FEATURES) or not np.all(np.isfinite(arr)):
             raise ValueError("invalid_v21_feature_vector")
         p_move = self._logit_probability(self.payload["move"], arr)
         p_up = self._logit_probability(self.payload["direction"], arr)
