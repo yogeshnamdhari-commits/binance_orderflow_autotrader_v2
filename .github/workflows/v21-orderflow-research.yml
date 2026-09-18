@@ -47,6 +47,8 @@ jobs:
             scripts/v21_certification_gate.py \
             tests/test_v21_orderflow_research.py \
             tests/test_v21_decision_engine.py
+            tests/test_v21_production_model.py
+            tests/test_v21_live_controller.py
 
       - name: Test V21 research
         run: |
