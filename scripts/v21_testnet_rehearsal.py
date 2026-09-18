@@ -170,10 +170,9 @@ def run(symbol: str) -> dict:
         if str(row.get("symbol", "")).upper() == symbol.upper()
     )
 
+    private_stream_connected = bool(connected)
     stream.stop()
     thread.join(timeout=5)
-
-    private_stream_connected = bool(connected and stream.guard.connected)
     reconciled_open_orders = len(final_orders) == 0
     reconciled_position_snapshot = not final_nonzero_position
     rest_lifecycle = "PASS" if accepted and cancelled else "FAIL"
