@@ -260,6 +260,10 @@ class V21LiveController:
         top, x = self._top_and_features(book, now_ms)
         prediction = self.model.predict(x)
         plan = self._quote_decision(top, prediction, inventory_units)
+        # The plan is computed from the current event-time book, so its quote
+        # timestamp is fresh. This prevents the initial fail-closed sentinel
+        # quote age from blocking the first evaluated quote.
+        self.risk.update_quote_age(0)
         allowed, reasons = self.risk.can_quote()
         live_allowed = self.live_authorized and self.gateway.live_enabled and allowed
         reason = plan.reason
