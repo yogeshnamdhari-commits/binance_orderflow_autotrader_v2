@@ -1,0 +1,27 @@
+name: V21 Order-Flow Research CI
+
+on:
+  push:
+    branches: [research/v21-orderflow-core]
+  workflow_dispatch:
+
+env:
+  PYTHONPATH: .
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+      - name: Compile
+        run: python -m py_compile app/research/v21_orderflow_core.py tests/test_v21_orderflow_core.py
+      - name: Test V21 core
+        run: python -m pytest -q tests/test_v21_orderflow_core.py
