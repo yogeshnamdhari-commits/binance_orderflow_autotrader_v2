@@ -18,7 +18,7 @@ import numpy as np
 
 # Duplicated here deliberately so the live process does not import the
 # research dataset builder (and therefore does not require pandas/parquet).
-V21_V21_FEATURES = (
+V21_FEATURES = (
     "queue_imbalance",
     "microprice_edge_bps",
     "ofi_100ms",
