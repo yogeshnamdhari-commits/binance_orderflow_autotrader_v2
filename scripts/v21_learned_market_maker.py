@@ -249,6 +249,9 @@ def _decision(
     x: np.ndarray,
     top: BookTop,
     inventory: float,
+    *,
+    half_spread_bps: float = HALF_SPREAD_BPS,
+    min_edge_bps: float = MIN_EDGE_BPS,
 ) -> tuple[QuoteIntent, dict[str, float | bool]] | None:
     p_move = float(models.move.predict_proba(x)[:, 1][0])
     p_up = float(models.direction.predict_proba(x)[:, 1][0])
@@ -262,7 +265,7 @@ def _decision(
     inventory_shift = -inventory_fraction * INVENTORY_PENALTY_BPS
     reservation_shift = expected_signed + inventory_shift
     reservation = top.mid * (1.0 + reservation_shift / 10_000.0)
-    half = HALF_SPREAD_BPS / 10_000.0
+    half = half_spread_bps / 10_000.0
     raw_bid = reservation * (1.0 - half)
     raw_ask = reservation * (1.0 + half)
 
@@ -289,8 +292,8 @@ def _decision(
         - tox_sell
     )
 
-    bid_enabled = bid is not None and bid_edge >= MIN_EDGE_BPS
-    ask_enabled = ask is not None and ask_edge >= MIN_EDGE_BPS
+    bid_enabled = bid is not None and bid_edge >= min_edge_bps
+    ask_enabled = ask is not None and ask_edge >= min_edge_bps
 
     inventory_notional = inventory * top.mid
     if inventory_notional >= MAX_POSITION_NOTIONAL_USD:
@@ -336,6 +339,9 @@ def replay_test_session(
     capture_dir: Path,
     session: str,
     models: FoldModels,
+    *,
+    half_spread_bps: float = HALF_SPREAD_BPS,
+    min_edge_bps: float = MIN_EDGE_BPS,
 ) -> dict[str, Any]:
     snapshot = load_snapshot(capture_dir)
     depth, trades, counts = load_events(capture_dir)
@@ -423,7 +429,14 @@ def replay_test_session(
                 fees = 0.0
                 activated = True
             x, top = _snapshot_features(state, book, now)
-            quote_decision = _decision(models, x, top, inventory)
+            quote_decision = _decision(
+                models,
+                x,
+                top,
+                inventory,
+                half_spread_bps=half_spread_bps,
+                min_edge_bps=min_edge_bps,
+            )
             decision_stats["events"] += 1
 
             if quote_decision[0] is None:
