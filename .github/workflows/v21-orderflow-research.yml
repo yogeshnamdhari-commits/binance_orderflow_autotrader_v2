@@ -142,14 +142,6 @@ jobs:
             --toxicity research_reports/v21_toxicity.parquet \
             --output research_reports/v21_learned_mm_report.json
 
-      - name: Replay learned V21 market maker
-        run: |
-          python scripts/v21_learned_market_maker.py \
-            --captures-root captures \
-            --dataset research_reports/v21_orderflow.parquet \
-            --toxicity research_reports/v21_toxicity.parquet \
-            --output research_reports/v21_learned_mm_report.json
-
       - name: Build toxicity dataset
         run: |
           python - <<'PY'
