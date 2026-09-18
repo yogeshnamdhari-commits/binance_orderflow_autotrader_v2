@@ -97,6 +97,8 @@ def _candidate_grid(base: V20Config) -> list[V20Config]:
         for imbalance in (0.55, 0.65, 0.75):
             for flow in (0.55, 0.65, 0.75):
                 for inventory_penalty in (5.0, 10.0, 20.0):
+                    if base.microprice_skew_bps + 0.1 >= half_spread:
+                        continue
                     candidates.append(
                         replace(
                             base,
@@ -173,12 +175,24 @@ def summarize(result: EventBacktestResult) -> dict[str, Any]:
         "replacements": result.replacements,
         "cancels": result.cancels,
         "toxicity_suppressed_quotes": result.toxicity_suppressed_quotes,
+        "gross_spread_capture_usd": result.gross_spread_capture_usd,
+        "fees_usd": result.fees_usd,
+        "adverse_selection_usd": result.adverse_selection_usd,
+        "execution_effects_usd": result.execution_effects_usd,
+        "buy_fills": result.buy_fills,
+        "sell_fills": result.sell_fills,
+        "buy_filled_qty": result.buy_filled_qty,
+        "sell_filled_qty": result.sell_filled_qty,
+        "quote_crossings_detected": result.quote_crossings_detected,
+        "quote_crossings_suppressed": result.quote_crossings_suppressed,
+        "avg_fill_holding_time_ns": result.avg_fill_holding_time_ns,
     }
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--capture-dir", type=Path, required=True)
+    parser.add_argument("--session", choices=("A", "B", "C", "D"), required=True)
     parser.add_argument("--baseline-config", type=Path, default=Path("app/mm/config.json"))
     parser.add_argument("--candidate-config", type=Path, default=Path("app/mm/config_backtest_toxicity_v1.json"))
     parser.add_argument("--maker-fee-bps", type=float, default=1.0)
@@ -186,8 +200,12 @@ def main() -> int:
     args = parser.parse_args()
 
     manifest = json.loads((args.capture_dir / "manifest.json").read_text(encoding="utf-8"))
+    capture_session_id = manifest.get("session_id")
+    if not isinstance(capture_session_id, str) or not capture_session_id.strip():
+        raise SystemExit("CERTIFICATION_BLOCKED: capture manifest has no session_id")
     bootstrap = manifest.get("bootstrap", {})
     if bootstrap.get("status") != "BRIDGED":
+        raise SystemExit("CERTIFICATION_BLOCKED: capture bootstrap is not BRIDGED")
         raise SystemExit("CERTIFICATION_BLOCKED: capture bootstrap is not BRIDGED")
     if str(manifest.get("symbol", "")).upper() != "BTCUSDT":
         raise SystemExit("CERTIFICATION_BLOCKED: symbol must be BTCUSDT")
@@ -207,6 +225,8 @@ def main() -> int:
     candidate_records: list[dict[str, Any]] = []
     for candidate in _candidate_grid(candidate_base):
         result = _run(candidate, train_snapshot, train_depth, train_trades)
+        if result.quote_crossings_detected > 0:
+            continue
         objective, fills = _score(result)
         candidate_records.append(
             {
@@ -244,6 +264,7 @@ def main() -> int:
     certified = all([pnl_positive, improvement_positive, as_improved, sufficient_fills, robust_buckets])
 
     report = {
+        "session": args.session,
         "certification": {
             "status": "PERFORMANCE_CERTIFIED" if certified else "NOT_CERTIFIED",
             "maker_fee_bps": args.maker_fee_bps,

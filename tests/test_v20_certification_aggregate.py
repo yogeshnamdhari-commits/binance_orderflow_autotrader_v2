@@ -1,54 +1,83 @@
 import json
-import sys
 from pathlib import Path
 
-from scripts.v20_certification_aggregate import main
+from scripts.v20_certification_aggregate import aggregate
 
 
-def _write_report(
-    root: Path,
-    session: str,
-    *,
-    start_ns: int | None = None,
-    end_ns: int | None = None,
-) -> None:
-    report_dir = root / f"v20-performance-certification-{session}"
-    report_dir.mkdir(parents=True)
-    payload = {
-        "certification": {
-            "status": "NOT_CERTIFIED",
-            "maker_fee_bps": 1.0,
-        },
-        "capture": {
-            "session_id": f"uuid-{session.lower()}",
-            "symbol": "BTCUSDT",
-            "start_ns": start_ns if start_ns is not None else 1_000_000_000,
-            "end_ns": end_ns if end_ns is not None else 1_000_001_000,
-            "depth_events": 1000,
-            "trade_events": 1000,
+def _report(session: str, status: str = "PERFORMANCE_CERTIFIED") -> dict:
+    return {
+        "session": session,
+        "certification": {"status": status},
+        "validation": {
+            "baseline": {"net_pnl_usd": -1.0},
+            "selected_candidate": {"net_pnl_usd": 1.0},
+            "net_pnl_improvement_usd": 2.0,
         },
     }
-    (report_dir / "v20_performance_certification.json").write_text(json.dumps(payload), encoding="utf-8")
 
 
-def test_aggregate_accepts_downloaded_artifact_directories(tmp_path, monkeypatch):
-    starts = {"A": 1_000_000_000, "B": 1_000_002_000, "C": 1_000_004_000, "D": 1_000_006_000}
-    for session in "ABCD":
-        start = starts[session]
-        _write_report(tmp_path, session, start_ns=start, end_ns=start + 1_000)
-    monkeypatch.setattr(sys, "argv", ["aggregate", str(tmp_path)])
-    assert main() == 2
+def _write_report(root: Path, session: str, payload: dict | None = None) -> Path:
+    artifact_dir = root / f"v20-performance-certification-{session}"
+    artifact_dir.mkdir(parents=True)
+    report = artifact_dir / "v20_performance_certification.json"
+    report.write_text(json.dumps(payload if payload is not None else _report(session)), encoding="utf-8")
+    return report
 
 
-def test_aggregate_rejects_overlapping_capture_windows(tmp_path, monkeypatch):
-    _write_report(tmp_path, "A", start_ns=1_000_000_000, end_ns=1_000_010_000)
-    _write_report(tmp_path, "B", start_ns=1_000_005_000, end_ns=1_000_015_000)
-    _write_report(tmp_path, "C", start_ns=1_000_020_000, end_ns=1_000_030_000)
-    _write_report(tmp_path, "D", start_ns=1_000_040_000, end_ns=1_000_050_000)
-    monkeypatch.setattr(sys, "argv", ["aggregate", str(tmp_path)])
-    try:
-        main()
-    except SystemExit as exc:
-        assert "capture windows overlap" in str(exc)
-    else:
-        raise AssertionError("expected overlap to block certification")
+def test_aggregate_requires_all_four_session_artifacts(tmp_path):
+    for session in ("A", "B", "C", "D"):
+        _write_report(tmp_path, session)
+
+    result = aggregate(tmp_path)
+
+    assert result["status"] == "PERFORMANCE_CERTIFIED"
+    assert result["missing_sessions"] == []
+    assert result["session_statuses"] == ["PERFORMANCE_CERTIFIED"] * 4
+    assert result["validation_net_pnl_usd"] == [1.0] * 4
+
+
+def test_aggregate_blocks_missing_sessions(tmp_path):
+    _write_report(tmp_path, "A")
+
+    result = aggregate(tmp_path)
+
+    assert result["status"] == "CERTIFICATION_BLOCKED"
+    assert result["missing_sessions"] == ["B", "C", "D"]
+    assert result["session_status_by_session"]["A"] == "PERFORMANCE_CERTIFIED"
+    assert result["session_status_by_session"]["B"] == "MISSING"
+
+
+def test_aggregate_rejects_flat_merged_reports(tmp_path):
+    (tmp_path / "v20_performance_certification.json").write_text(
+        json.dumps(_report("A")), encoding="utf-8"
+    )
+
+    result = aggregate(tmp_path)
+
+    assert result["status"] == "CERTIFICATION_BLOCKED"
+    assert result["missing_sessions"] == ["A", "B", "C", "D"]
+
+
+def test_aggregate_rejects_report_session_identity_mismatch(tmp_path):
+    _write_report(tmp_path, "A", _report("B"))
+    for session in ("B", "C", "D"):
+        _write_report(tmp_path, session)
+
+    result = aggregate(tmp_path)
+
+    assert result["status"] == "CERTIFICATION_BLOCKED"
+    assert result["identity_errors"][0]["session"] == "A"
+    assert result["identity_errors"][0]["reported_session"] == "B"
+
+
+def test_aggregate_rejects_malformed_report(tmp_path):
+    artifact_dir = tmp_path / "v20-performance-certification-A"
+    artifact_dir.mkdir()
+    (artifact_dir / "v20_performance_certification.json").write_text("{", encoding="utf-8")
+    for session in ("B", "C", "D"):
+        _write_report(tmp_path, session)
+
+    result = aggregate(tmp_path)
+
+    assert result["status"] == "CERTIFICATION_BLOCKED"
+    assert result["parse_errors"][0]["session"] == "A"

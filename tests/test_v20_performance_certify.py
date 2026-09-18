@@ -1,6 +1,23 @@
 import pytest
 
-from scripts.v20_performance_certify import _select_candidate
+from app.mm.config import V20Config
+from scripts.v20_performance_certify import _candidate_grid, _select_candidate
+
+
+def test_candidate_grid_excludes_crossing_prone_configs():
+    base = V20Config(
+        base_half_spread_bps=2.0,
+        max_half_spread_bps=3.0,
+        quote_size_usd=100.0,
+        maker_fee_bps=1.0,
+        taker_fee_bps=3.0,
+    )
+    candidates = _candidate_grid(base)
+    spreads = {c.base_half_spread_bps for c in candidates}
+    skews = {c.microprice_skew_bps for c in candidates}
+
+    for candidate in candidates:
+        assert candidate.microprice_skew_bps + 0.25 < candidate.base_half_spread_bps
 
 
 def test_candidate_selection_rejects_sparse_training_candidates():

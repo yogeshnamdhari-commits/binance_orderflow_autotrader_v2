@@ -164,6 +164,16 @@ def summarize(result: EventBacktestResult) -> dict[str, Any]:
         "cancels": result.cancels,
         "toxicity_suppressed_quotes": result.toxicity_suppressed_quotes,
         "toxic_flow_imbalance_mean": result.toxic_flow_imbalance_mean,
+        "gross_spread_capture_usd": result.gross_spread_capture_usd,
+        "adverse_selection_usd": result.adverse_selection_usd,
+        "execution_effects_usd": result.execution_effects_usd,
+        "buy_fills": result.buy_fills,
+        "sell_fills": result.sell_fills,
+        "buy_filled_qty": result.buy_filled_qty,
+        "sell_filled_qty": result.sell_filled_qty,
+        "quote_crossings_detected": result.quote_crossings_detected,
+        "quote_crossings_suppressed": result.quote_crossings_suppressed,
+        "avg_fill_holding_time_ns": result.avg_fill_holding_time_ns,
     }
 
 
@@ -213,6 +223,12 @@ def main() -> int:
             "filled_qty": candidate.filled_qty - baseline.filled_qty,
             "replacements": candidate.replacements - baseline.replacements,
             "cancels": candidate.cancels - baseline.cancels,
+            "gross_spread_capture_usd": candidate.gross_spread_capture_usd - baseline.gross_spread_capture_usd,
+            "fees_usd": candidate.fees_usd - baseline.fees_usd,
+            "adverse_selection_usd": candidate.adverse_selection_usd - baseline.adverse_selection_usd,
+            "buy_fills": candidate.buy_fills - baseline.buy_fills,
+            "sell_fills": candidate.sell_fills - baseline.sell_fills,
+            "quote_crossings_detected": candidate.quote_crossings_detected - baseline.quote_crossings_detected,
         },
     }
 

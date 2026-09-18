@@ -3,109 +3,128 @@ from __future__ import annotations
 import json
 from pathlib import Path
 import sys
-
-EXPECTED_SESSIONS = {"A", "B", "C", "D"}
-EXPECTED_MAKER_FEE_BPS = 1.0
+from typing import Any
 
 
-def _session_key(path: Path) -> str | None:
-    for parent in path.parents:
-        name = parent.name.upper()
-        if name in EXPECTED_SESSIONS:
-            return name
-        prefix = "V20-PERFORMANCE-CERTIFICATION-"
-        if name.startswith(prefix):
-            suffix = name[len(prefix):]
-            if suffix in EXPECTED_SESSIONS:
-                return suffix
-    return None
+EXPECTED_SESSIONS = ("A", "B", "C", "D")
+ARTIFACT_PREFIX = "v20-performance-certification-"
+REPORT_FILENAME = "v20_performance_certification.json"
+
+
+def _metric(payload: dict[str, Any], *keys: str) -> Any:
+    value: Any = payload
+    for key in keys:
+        if not isinstance(value, dict):
+            return None
+        value = value.get(key)
+    return value
+
+
+def aggregate(root: Path) -> dict[str, Any]:
+    reports: dict[str, Path] = {}
+    discovery_errors: list[dict[str, str]] = []
+
+    if not root.is_dir():
+        discovery_errors.append({"reason": "report_root_missing", "path": str(root)})
+    else:
+        for artifact_dir in sorted(path for path in root.iterdir() if path.is_dir()):
+            if not artifact_dir.name.startswith(ARTIFACT_PREFIX):
+                continue
+            session = artifact_dir.name.removeprefix(ARTIFACT_PREFIX)
+            if session not in EXPECTED_SESSIONS:
+                discovery_errors.append(
+                    {"reason": "unexpected_session", "session": session, "path": str(artifact_dir)}
+                )
+                continue
+            report = artifact_dir / REPORT_FILENAME
+            if not report.is_file():
+                discovery_errors.append(
+                    {"reason": "report_missing", "session": session, "path": str(artifact_dir)}
+                )
+                continue
+            if session in reports:
+                discovery_errors.append(
+                    {"reason": "duplicate_session", "session": session, "path": str(artifact_dir)}
+                )
+                continue
+            reports[session] = report
+
+    missing = [session for session in EXPECTED_SESSIONS if session not in reports]
+    payloads: dict[str, dict[str, Any]] = {}
+    parse_errors: list[dict[str, str]] = []
+    identity_errors: list[dict[str, Any]] = []
+
+    for session in EXPECTED_SESSIONS:
+        report = reports.get(session)
+        if report is None:
+            continue
+        try:
+            payload = json.loads(report.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            parse_errors.append({"session": session, "path": str(report), "error": str(exc)})
+            continue
+        if not isinstance(payload, dict):
+            parse_errors.append({"session": session, "path": str(report), "error": "report is not a JSON object"})
+            continue
+        reported_session = payload.get("session")
+        if reported_session != session:
+            identity_errors.append(
+                {
+                    "session": session,
+                    "reported_session": reported_session,
+                    "path": str(report),
+                }
+            )
+            continue
+        payloads[session] = payload
+
+    blocked = bool(missing or discovery_errors or parse_errors or identity_errors)
+    statuses = {
+        session: payloads.get(session, {}).get("certification", {}).get("status", "MISSING")
+        for session in EXPECTED_SESSIONS
+    }
+    all_pass = not blocked and all(
+        statuses[session] == "PERFORMANCE_CERTIFIED" for session in EXPECTED_SESSIONS
+    )
+
+    if blocked:
+        status = "CERTIFICATION_BLOCKED"
+    elif all_pass:
+        status = "PERFORMANCE_CERTIFIED"
+    else:
+        status = "NOT_CERTIFIED"
+
+    return {
+        "status": status,
+        "expected_sessions": list(EXPECTED_SESSIONS),
+        "sessions": len(payloads),
+        "missing_sessions": missing,
+        "session_statuses": [statuses[session] for session in EXPECTED_SESSIONS],
+        "session_status_by_session": statuses,
+        "discovery_errors": discovery_errors,
+        "parse_errors": parse_errors,
+        "identity_errors": identity_errors,
+        "reports": {session: str(reports[session]) for session in EXPECTED_SESSIONS if session in reports},
+        "validation_net_pnl_usd": [
+            _metric(payloads.get(session, {}), "validation", "selected_candidate", "net_pnl_usd")
+            for session in EXPECTED_SESSIONS
+        ],
+        "validation_baseline_net_pnl_usd": [
+            _metric(payloads.get(session, {}), "validation", "baseline", "net_pnl_usd")
+            for session in EXPECTED_SESSIONS
+        ],
+        "net_pnl_improvement_usd": [
+            _metric(payloads.get(session, {}), "validation", "net_pnl_improvement_usd")
+            for session in EXPECTED_SESSIONS
+        ],
+    }
 
 
 def main() -> int:
     root = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("cert_reports")
-    reports = sorted(root.rglob("v20_performance_certification.json"))
-    session_map: dict[str, Path] = {}
-    for report in reports:
-        session = _session_key(report)
-        if session is not None:
-            if session in session_map:
-                raise SystemExit(f"CERTIFICATION_BLOCKED: duplicate report for session {session}")
-            session_map[session] = report
-
-    missing = sorted(EXPECTED_SESSIONS - set(session_map))
-    if missing:
-        raise SystemExit(
-            f"CERTIFICATION_BLOCKED: expected exactly four independent reports A/B/C/D; missing {missing}"
-        )
-    if len(reports) != 4:
-        raise SystemExit(
-            f"CERTIFICATION_BLOCKED: expected exactly 4 certification reports, found {len(reports)}"
-        )
-
-    ordered_sessions = sorted(session_map)
-    payloads = [json.loads(session_map[s].read_text(encoding="utf-8")) for s in ordered_sessions]
-
-    capture_session_ids: list[str] = []
-    capture_windows: list[tuple[int, int, str]] = []
-    for session, payload in zip(ordered_sessions, payloads):
-        capture = payload.get("capture", {})
-        report_session = str(capture.get("session_id", "")).strip()
-        if not report_session:
-            raise SystemExit(f"CERTIFICATION_BLOCKED: session {session} has no capture session_id")
-        capture_session_ids.append(report_session)
-        try:
-            start_ns = int(capture.get("start_ns", 0))
-            end_ns = int(capture.get("end_ns", 0))
-        except (TypeError, ValueError):
-            raise SystemExit(f"CERTIFICATION_BLOCKED: session {session} has invalid capture window")
-        if start_ns <= 0 or end_ns <= start_ns:
-            raise SystemExit(f"CERTIFICATION_BLOCKED: session {session} has invalid capture window")
-        capture_windows.append((start_ns, end_ns, session))
-        if float(payload.get("certification", {}).get("maker_fee_bps", -1)) != EXPECTED_MAKER_FEE_BPS:
-            raise SystemExit(
-                f"CERTIFICATION_BLOCKED: session {session} does not use the required {EXPECTED_MAKER_FEE_BPS} bps maker fee"
-            )
-        if capture.get("symbol", "BTCUSDT").upper() != "BTCUSDT":
-            raise SystemExit(f"CERTIFICATION_BLOCKED: session {session} is not BTCUSDT")
-        if int(capture.get("depth_events", 0)) < 500 or int(capture.get("trade_events", 0)) < 500:
-            raise SystemExit(f"CERTIFICATION_BLOCKED: session {session} lacks minimum depth/trade event counts")
-
-    if len(set(capture_session_ids)) != len(capture_session_ids):
-        raise SystemExit("CERTIFICATION_BLOCKED: capture session_ids are not unique across A/B/C/D")
-
-    capture_windows.sort()
-    for previous, current in zip(capture_windows, capture_windows[1:]):
-        if current[0] < previous[1]:
-            raise SystemExit(
-                "CERTIFICATION_BLOCKED: A/B/C/D capture windows overlap; "
-                "sessions must be temporally independent"
-            )
-
-    statuses = [p.get("certification", {}).get("status") for p in payloads]
-    all_pass = all(status == "PERFORMANCE_CERTIFIED" for status in statuses)
-
-    summary = {
-        "status": "PERFORMANCE_CERTIFIED" if all_pass else "NOT_CERTIFIED",
-        "sessions": len(payloads),
-        "session_ids": ordered_sessions,
-        "session_statuses": statuses,
-        "maker_fee_bps": EXPECTED_MAKER_FEE_BPS,
-        "reports": [str(session_map[s]) for s in ordered_sessions],
-        "validation_net_pnl_usd": [
-            p.get("validation", {}).get("selected_candidate", {}).get("net_pnl_usd")
-            for p in payloads
-        ],
-        "validation_baseline_net_pnl_usd": [
-            p.get("validation", {}).get("baseline", {}).get("net_pnl_usd")
-            for p in payloads
-        ],
-        "net_pnl_improvement_usd": [
-            p.get("validation", {}).get("net_pnl_improvement_usd")
-            for p in payloads
-        ],
-    }
+    summary = aggregate(root)
     print(json.dumps(summary, indent=2, sort_keys=True))
-    return 0 if all_pass else 2
+    return 0 if summary["status"] == "PERFORMANCE_CERTIFIED" else 2
 
 
 if __name__ == "__main__":

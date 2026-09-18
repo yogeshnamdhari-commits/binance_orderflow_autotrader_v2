@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Sequence
 import json
+import math
 import numpy as np
 from pathlib import Path
 
@@ -67,6 +68,15 @@ class MMBacktestResult:
     pnl_notional_usd: float = 0.0
     inventory_mtm_bps: float = 0.0
     as_by_horizon: dict[int, float] = field(default_factory=dict)
+    gross_spread_capture_usd: float = 0.0
+    fees_usd: float = 0.0
+    adverse_selection_usd_total: float = 0.0
+    execution_effects_usd: float = 0.0
+    buy_fills: int = 0
+    sell_fills: int = 0
+    buy_filled_qty: float = 0.0
+    sell_filled_qty: float = 0.0
+    quote_crossings: int = 0
 
 
 def compute_volatility_regime(
@@ -90,6 +100,30 @@ def compute_volatility_regime(
         return 2
     else:
         return 1
+
+
+def _enforce_passive_geometry(
+    bid_price: float,
+    ask_price: float,
+    best_bid: float,
+    best_ask: float,
+    tick_size: float = 0.1,
+) -> tuple[float, float, bool, bool, bool]:
+    """Detect crossing and return suppression flags.
+
+    Returns (bid_price, ask_price, crossed, suppress_bid, suppress_ask).
+    The caller should set qty=0 on suppressed sides.
+    """
+    crossed = bool(bid_price > best_bid or ask_price < best_ask)
+    suppress_bid = bool(bid_price > best_bid)
+    suppress_ask = bool(ask_price < best_ask)
+    bid_price = min(bid_price, best_bid)
+    ask_price = max(ask_price, best_ask)
+    bid_price = math.floor(bid_price / tick_size) * tick_size
+    ask_price = math.ceil(ask_price / tick_size) * tick_size
+    bid_price = min(bid_price, best_bid)
+    ask_price = max(ask_price, best_ask)
+    return bid_price, ask_price, crossed, suppress_bid, suppress_ask
 
 
 def generate_quotes(
@@ -171,6 +205,15 @@ def run_mm_backtest(
     total_pnl_notional_usd = 0.0
     fills_list: list[FillEvent] = []
     cancels = 0
+    quote_crossings = 0
+    gross_spread_capture_usd = 0.0
+    total_fees_usd = 0.0
+    total_adverse_selection_usd = 0.0
+    total_execution_effects_usd = 0.0
+    buy_fills = 0
+    sell_fills = 0
+    buy_filled_qty = 0.0
+    sell_filled_qty = 0.0
     inventory_history = [0.0]
     spread_history: list[float] = []
     mid_price_history: list[float] = []
@@ -262,6 +305,21 @@ def run_mm_backtest(
             config=config,
         )
 
+        best_bid = max(order_book.bids.keys()) if order_book.bids else 0.0
+        best_ask = min(order_book.asks.keys()) if order_book.asks else float("inf")
+        crossed = False
+        if best_bid < best_ask:
+            raw_bid, raw_ask = bid_price, ask_price
+            bid_price, ask_price, crossed, suppress_bid, suppress_ask = _enforce_passive_geometry(
+                bid_price, ask_price, best_bid, best_ask
+            )
+            if crossed:
+                quote_crossings += 1
+            if suppress_bid:
+                bid_qty = 0.0
+            if suppress_ask:
+                ask_qty = 0.0
+
         bid_stale = check_quote_staleness(
             quote_price=bid_price,
             mid_price_at_fill_time=mid_price,
@@ -279,24 +337,32 @@ def run_mm_backtest(
             cancels += 1
             continue
 
-        buy_fill_result = simulate_fill(
-            quote_price=bid_price,
-            quote_qty=bid_qty,
-            side="BUY",
-            available_depth=ask_depth,
-            mid_price_at_fill_time=mid_price,
-            volatility_regime=volatility_regime,
-            latency_ms=latency_model.sample_latency(),
+        buy_fill_result = (
+            simulate_fill(
+                quote_price=bid_price,
+                quote_qty=bid_qty,
+                side="BUY",
+                available_depth=ask_depth,
+                mid_price_at_fill_time=mid_price,
+                volatility_regime=volatility_regime,
+                latency_ms=latency_model.sample_latency(),
+            )
+            if bid_qty > 0
+            else FillResult(filled=False, fill_price=0.0, fill_qty=0.0, adverse_selection_bps=0.0, reason="suppressed")
         )
 
-        sell_fill_result = simulate_fill(
-            quote_price=ask_price,
-            quote_qty=ask_qty,
-            side="SELL",
-            available_depth=bid_depth,
-            mid_price_at_fill_time=mid_price,
-            volatility_regime=volatility_regime,
-            latency_ms=latency_model.sample_latency(),
+        sell_fill_result = (
+            simulate_fill(
+                quote_price=ask_price,
+                quote_qty=ask_qty,
+                side="SELL",
+                available_depth=bid_depth,
+                mid_price_at_fill_time=mid_price,
+                volatility_regime=volatility_regime,
+                latency_ms=latency_model.sample_latency(),
+            )
+            if ask_qty > 0
+            else FillResult(filled=False, fill_price=0.0, fill_qty=0.0, adverse_selection_bps=0.0, reason="suppressed")
         )
 
         fills_this_event = []
@@ -342,6 +408,23 @@ def run_mm_backtest(
                 is_maker=True,
                 adverse_selection_bps=adverse_selection_bps,
             )
+
+            if side == "BUY":
+                spread_capture_bps = (mid_price - fill_result.fill_price) * 10_000.0 / fill_result.fill_price
+                buy_fills += 1
+                buy_filled_qty += fill_result.fill_qty
+            else:
+                spread_capture_bps = (fill_result.fill_price - mid_price) * 10_000.0 / fill_result.fill_price
+                sell_fills += 1
+                sell_filled_qty += fill_result.fill_qty
+
+            fill_notional = fill_result.fill_price * fill_result.fill_qty
+            gross_spread_capture_usd += spread_capture_bps / 10_000.0 * fill_notional
+            fee_bps = config.maker_fee_bps
+            total_fees_usd += fee_bps / 10_000.0 * fill_notional
+            total_adverse_selection_usd += adverse_selection_bps / 10_000.0 * fill_notional
+            if crossed:
+                total_execution_effects_usd += (config.taker_fee_bps - config.maker_fee_bps) / 10_000.0 * fill_notional
 
             position_change = fill_result.fill_qty if side == "BUY" else -fill_result.fill_qty
             position += position_change
@@ -446,6 +529,15 @@ def run_mm_backtest(
         pnl_notional_usd=float(total_pnl_notional_usd),
         inventory_mtm_bps=float(inventory_mtm_bps),
         as_by_horizon=as_by_horizon_mean,
+        gross_spread_capture_usd=float(gross_spread_capture_usd),
+        fees_usd=float(total_fees_usd),
+        adverse_selection_usd_total=float(total_adverse_selection_usd),
+        execution_effects_usd=float(total_execution_effects_usd),
+        buy_fills=buy_fills,
+        sell_fills=sell_fills,
+        buy_filled_qty=buy_filled_qty,
+        sell_filled_qty=sell_filled_qty,
+        quote_crossings=quote_crossings,
     )
 
 
