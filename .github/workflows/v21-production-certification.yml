@@ -222,6 +222,7 @@ jobs:
               --paper-evidence evidence/paper_validation.json \
               --testnet-evidence evidence/testnet_validation.json \
               --tests-evidence evidence/tests.json \
+              --expected-git-commit "$GITHUB_SHA" \
               --explicit-authorization \
               --output evidence/v21_deployment_gate.json
           else
@@ -231,6 +232,7 @@ jobs:
               --paper-evidence evidence/paper_validation.json \
               --testnet-evidence evidence/testnet_validation.json \
               --tests-evidence evidence/tests.json \
+              --expected-git-commit "$GITHUB_SHA" \
               --output evidence/v21_deployment_gate.json
           fi
 
