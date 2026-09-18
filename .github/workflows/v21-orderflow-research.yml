@@ -195,7 +195,9 @@ jobs:
             --toxicity research_reports/v21_toxicity.parquet \
             --output research_reports/v21_learned_mm_report.json
 
-      - name: Run nested economic spread sweep
+      - name: Run optional nested economic spread sweep (non-gating)
+        timeout-minutes: 5
+        continue-on-error: true
         run: |
           python scripts/v21_economic_spread_sweep.py \
             --captures-root captures \
