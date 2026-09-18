@@ -166,14 +166,18 @@ The spread component accounts for minimum economic edge, observed spread, realiz
 
 ### Hard passive invariant
 
-A maker quote must satisfy:
+A maker quote may improve the current BBO and sit inside the spread. The hard invariant is that it must not cross the opposite side:
 
-bid <= current_best_bid
-ask >= current_best_ask
+bid < current_best_ask
+ask > current_best_bid
+
+and, when both sides are enabled:
+
+bid < ask
 
 after tick-size normalization.
 
-If the requested price would cross the book, the order is suppressed, not silently converted into a different price.
+If the requested price would cross the opposite BBO, the order is suppressed, not silently converted into a different price.
 
 A crossing request is recorded as an execution-model diagnostic.
 
