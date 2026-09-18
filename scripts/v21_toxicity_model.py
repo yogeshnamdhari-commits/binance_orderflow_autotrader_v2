@@ -144,6 +144,7 @@ def extract_toxicity_session(capture_dir: Path, session: str) -> pd.DataFrame:
                 "_mid": mid,
                 "_bid": current_bid,
                 "_ask": current_ask,
+                "split_start_ms": session_midpoint,
             }
             continue
 
@@ -202,6 +203,7 @@ def extract_toxicity_session(capture_dir: Path, session: str) -> pd.DataFrame:
                 "timestamp_ms": now,
                 "session": session,
                 "half": current_feature["half"],
+                "split_start_ms": current_feature.get("split_start_ms", session_midpoint),
                 "side": side,
                 "adverse_bps_100ms": adverse_bps,
                 "toxic": int(adverse_bps > 0.0),
@@ -217,6 +219,7 @@ def extract_toxicity_session(capture_dir: Path, session: str) -> pd.DataFrame:
 def _fit_eval(train: pd.DataFrame, test: pd.DataFrame) -> dict[str, Any]:
     train = train.replace([np.inf, -np.inf], np.nan).dropna(subset=FEATURES + ["toxic"])
     test = test.replace([np.inf, -np.inf], np.nan).dropna(subset=FEATURES + ["toxic"])
+    train = train[train["timestamp_ms"] <= (train["split_start_ms"] - 100)]
     if len(train) < 100 or len(test) < 30:
         return {"status": "INSUFFICIENT_DATA", "train_rows": len(train), "test_rows": len(test)}
 
