@@ -16,7 +16,7 @@ def _frame(n: int = 300, seed: int = 7) -> pd.DataFrame:
     frame["timestamp_ms"] = np.arange(n)
     frame["session"] = "A"
     frame["half"] = 0
-    frame["split_start_ms"] = 200
+    frame["split_start_ms"] = 5_000
     return frame
 
 
@@ -35,7 +35,7 @@ def test_toxicity_model_evaluation_returns_metrics():
     frame["toxic"] = (frame["queue_imbalance"] > 0).astype(int)
     frame["adverse_bps_100ms"] = frame["toxic"] * 0.1
     frame["timestamp_ms"] = np.arange(160)
-    frame["split_start_ms"] = 80
+    frame["split_start_ms"] = 5_000
     result = _fit_eval(frame.iloc[:120], frame.iloc[120:])
     assert result["status"] == "OK"
     assert 0.0 <= result["auc"] <= 1.0
