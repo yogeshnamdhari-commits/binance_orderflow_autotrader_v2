@@ -85,7 +85,9 @@ def test_inventory_shift_is_stabilizing():
         max_position_notional_usd=5_000.0,
         half_spread_bps=2.0,
     )
-    assert long_decision.reservation_shift_bps < short_decision.reservation_shift_bps
+    assert long_decision.ask_price is not None
+    assert short_decision.ask_price is not None
+    assert long_decision.ask_price < short_decision.ask_price
 
 
 def test_alpha_inference_is_deterministic():
