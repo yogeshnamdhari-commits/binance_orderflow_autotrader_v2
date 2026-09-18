@@ -361,13 +361,24 @@ class V21LiveController:
         return {"status": "LIVE_APPLIED", "actions": actions, "plan": plan}
 
     def cancel_all(self) -> dict[str, object]:
-        actions = []
+        # Exchange-wide symbol cancellation is the authoritative safety
+        # action; local cleanup follows the exchange response. This prevents
+        # orphaned quotes when local state has lost an order binding.
+        actions: list[dict[str, object]] = []
+        bulk = self.gateway.cancel_all(self.symbol)
+        actions.append({"action": "cancel_all_exchange", "result": bulk.status})
+        if bulk.status in {
+            "CANCEL_ALL_UNKNOWN",
+            "CANCEL_ALL_UNSUPPORTED",
+            "BLOCKED_LIVE_DISABLED",
+        }:
+            self.risk.emergency_stop()
+            return {"status": "CANCEL_ALL_BLOCKED", "actions": actions}
+
         for side, order_id in list(self._active.items()):
-            result = self.gateway.cancel(order_id)
-            actions.append({"action": "cancel", "side": side, "result": result.status})
-            if result.status in {"CANCEL_UNKNOWN", "REJECTED_UNKNOWN_ORDER"}:
-                self.risk.emergency_stop()
+            actions.append({"action": "clear_local", "side": side, "order_id": order_id})
             self._active.pop(side, None)
             self._active_price.pop(side, None)
+
         self.risk.update_orders(len(self.gateway.manager.open_orders))
         return {"status": "CANCELLED_ALL", "actions": actions}
