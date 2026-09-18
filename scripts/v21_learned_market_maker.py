@@ -35,7 +35,7 @@ from scripts.v21_toxicity_model import _future_mid
 from app.research.v21_orderflow_core import BookTop, CausalOrderFlowState
 
 
-MAKER_FEE_BPS = 1.0
+MAKER_FEE_BPS = 2.0
 HALF_SPREAD_BPS = 2.5
 INVENTORY_PENALTY_BPS = 2.0
 MAX_POSITION_NOTIONAL_USD = 5000.0
@@ -403,7 +403,7 @@ def replay_test_session(
         max_position_notional_usd=MAX_POSITION_NOTIONAL_USD,
         quote_size_usd=QUOTE_SIZE_USD,
         maker_fee_bps=MAKER_FEE_BPS,
-        taker_fee_bps=2.0,
+        taker_fee_bps=5.0,
         live_order_submission=False,
     )
     baseline_result = run_event_backtest(
