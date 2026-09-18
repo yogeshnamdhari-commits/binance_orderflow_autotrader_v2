@@ -25,10 +25,11 @@ def _write(tmp_path: Path, name: str, payload: dict) -> Path:
 
 
 def _common(tmp_path: Path):
+    commit = "abc123"
     return {
-        "economic_certification": _write(tmp_path, "econ.json", {"status": "CERTIFIED"}),
+        "economic_certification": _write(tmp_path, "econ.json", {"status": "CERTIFIED", "github_sha": commit}),
         "model_bundle": _bundle(tmp_path),
-        "paper_evidence": _write(tmp_path, "paper.json", {"status": "PASS"}),
+        "paper_evidence": _write(tmp_path, "paper.json", {"status": "PASS", "github_sha": commit}),
         "testnet_evidence": _write(
             tmp_path,
             "testnet.json",
@@ -37,19 +38,28 @@ def _common(tmp_path: Path):
                 "reconciled_open_orders": True,
                 "reconciled_position_snapshot": True,
                 "rest_order_lifecycle": "PASS",
+                "github_sha": commit,
             },
         ),
         "tests_evidence": _write(
             tmp_path,
             "tests.json",
-            {"status": "PASS", "risk_controls_passed": True},
+            {"status": "PASS", "risk_controls_passed": True, "github_sha": commit},
         ),
     }
 
 
 def test_deployment_gate_requires_explicit_authorization(tmp_path):
     args = _common(tmp_path)
-    report = evaluate(**args, explicit_authorization=False)
+    bundle = json.loads(args["model_bundle"].read_text())
+    bundle["source_commit"] = "abc123"
+    canonical = dict(bundle)
+    canonical.pop("bundle_sha256", None)
+    bundle["bundle_sha256"] = hashlib.sha256(
+        json.dumps(canonical, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+    args["model_bundle"].write_text(json.dumps(bundle), encoding="utf-8")
+    report = evaluate(**args, explicit_authorization=False, expected_git_commit="abc123")
     assert report["status"] == "LOCKED"
     assert report["checks"]["explicit_authorization"] is False
     assert report["live_order_submission"] is False
@@ -75,3 +85,21 @@ def test_deployment_gate_authorizes_only_when_all_checks_pass(tmp_path):
     assert report["checks"]["tests_passed"] is True
     assert report["checks"]["risk_controls_passed"] is True
     assert report["live_order_submission"] is False
+
+
+def test_deployment_gate_rejects_mixed_commit_evidence(tmp_path):
+    args = _common(tmp_path)
+    bad = json.loads(args["paper_evidence"].read_text())
+    bad["github_sha"] = "different"
+    args["paper_evidence"].write_text(json.dumps(bad), encoding="utf-8")
+    bundle = json.loads(args["model_bundle"].read_text())
+    bundle["source_commit"] = "abc123"
+    canonical = dict(bundle)
+    canonical.pop("bundle_sha256", None)
+    bundle["bundle_sha256"] = hashlib.sha256(
+        json.dumps(canonical, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+    args["model_bundle"].write_text(json.dumps(bundle), encoding="utf-8")
+    report = evaluate(**args, explicit_authorization=True, expected_git_commit="abc123")
+    assert report["status"] == "LOCKED"
+    assert report["checks"]["evidence_commit_provenance_valid"] is False
