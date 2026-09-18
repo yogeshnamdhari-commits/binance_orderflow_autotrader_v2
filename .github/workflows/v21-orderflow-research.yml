@@ -37,6 +37,7 @@ jobs:
             scripts/v21_toxicity_model.py \
             scripts/v21_ablation_research.py \
             scripts/v21_move_regression.py \
+            scripts/v21_learned_market_maker.py \
             tests/test_v21_orderflow_research.py \
             tests/test_v21_decision_engine.py
 
@@ -116,6 +117,14 @@ jobs:
           python scripts/v21_move_regression.py \
             --dataset research_reports/v21_orderflow.parquet \
             --output research_reports/v21_move_regression.json
+
+      - name: Replay learned V21 market maker
+        run: |
+          python scripts/v21_learned_market_maker.py \
+            --captures-root captures \
+            --dataset research_reports/v21_orderflow.parquet \
+            --toxicity research_reports/v21_toxicity.parquet \
+            --output research_reports/v21_learned_mm_report.json
 
       - name: Build toxicity dataset
         run: |
