@@ -10,7 +10,9 @@ outer test half.
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +25,35 @@ from scripts.v21_learned_market_maker import (
 
 
 SPREAD_GRID_BPS = (0.50, 0.75, 1.00, 1.25, 1.50, 1.75, 2.25, 2.50)
+
+
+
+def _inner_replay(args: tuple[Path, str, Any, float]) -> dict[str, Any]:
+    """Evaluate one inner-validation spread in an isolated worker."""
+    captures_root, inner_session, models, spread = args
+    result = replay_test_session(
+        captures_root / inner_session,
+        inner_session,
+        models,
+        half_spread_bps=spread,
+    )
+    return {
+        "half_spread_bps": spread,
+        "net_pnl_usd": result["net_pnl_usd"],
+        "baseline_net_pnl_usd": result["baseline_net_pnl_usd"],
+        "improvement_vs_fixed_baseline_usd": result["improvement_vs_fixed_baseline_usd"],
+        "fills": result["stats"]["fills"],
+        "filled_qty": result["stats"]["filled_qty"],
+        "fees_usd": result["fees_usd"],
+        "final_inventory": result["final_inventory"],
+        "test_depth_events": result["test_depth_events"],
+        "test_trade_events": result["test_trade_events"],
+    }
+
+
+def _max_workers(grid_size: int) -> int:
+    cpus = os.cpu_count() or 1
+    return max(1, min(grid_size, cpus))
 
 
 def run(captures_root: Path, dataset_path: Path, toxicity_path: Path) -> dict[str, Any]:
@@ -38,26 +69,18 @@ def run(captures_root: Path, dataset_path: Path, toxicity_path: Path) -> dict[st
 
         models, sizes = _build_models(dataset, toxicity, train_sessions)
 
-        selection: dict[str, dict[str, Any]] = {}
-        for spread in SPREAD_GRID_BPS:
-            result = replay_test_session(
-                captures_root / inner_session,
-                inner_session,
-                models,
-                half_spread_bps=spread,
-            )
-            selection[f"{spread:.2f}"] = {
-                "half_spread_bps": spread,
-                "net_pnl_usd": result["net_pnl_usd"],
-                "baseline_net_pnl_usd": result["baseline_net_pnl_usd"],
-                "improvement_vs_fixed_baseline_usd": result["improvement_vs_fixed_baseline_usd"],
-                "fills": result["stats"]["fills"],
-                "filled_qty": result["stats"]["filled_qty"],
-                "fees_usd": result["fees_usd"],
-                "final_inventory": result["final_inventory"],
-                "test_depth_events": result["test_depth_events"],
-                "test_trade_events": result["test_trade_events"],
-            }
+        worker_args = [
+            (captures_root, inner_session, models, float(spread))
+            for spread in SPREAD_GRID_BPS
+        ]
+        with concurrent.futures.ProcessPoolExecutor(
+            max_workers=_max_workers(len(worker_args))
+        ) as executor:
+            validation_rows = list(executor.map(_inner_replay, worker_args))
+        selection = {
+            f"{float(row['half_spread_bps']):.2f}": row
+            for row in validation_rows
+        }
 
         eligible = [
             v for v in selection.values()
@@ -113,6 +136,8 @@ def run(captures_root: Path, dataset_path: Path, toxicity_path: Path) -> dict[st
             "evaluate selected spread on untouched outer-session second half"
         ),
         "spread_grid_bps": list(SPREAD_GRID_BPS),
+        "parallel_inner_replay": True,
+        "inner_worker_count": _max_workers(len(SPREAD_GRID_BPS)),
         "sessions": sessions,
         "folds": outer,
     }
