@@ -10,6 +10,10 @@ on:
 env:
   PYTHONPATH: .
   SOURCE_RUN_ID: 35288111136
+  RESEARCH_ARTIFACT_RUN_ID: 35316776236
+  RESEARCH_SOURCE_COMMIT: 73abb0a0559af51bd70f0a3d1bbbfc3d702cab00
+  EXPECTED_ORDERFLOW_SHA256: 5c5d8afd4a0a6096b316e3d85094d510b8079bd3f9933800e0247c03f1f667a4
+  EXPECTED_TOXICITY_SHA256: 77af3beb342b624d5fe66d051adf12f944dfd5389c33b7c7b0002e6c87e136cb
 
 jobs:
   v21-research:
@@ -93,47 +97,32 @@ jobs:
             test -f captures/$s/events.jsonl
           done
 
-      - name: Build causal dataset
+      - name: Reuse verified research datasets
         run: |
+          set -euo pipefail
+          git fetch --no-tags --depth 1 origin "${RESEARCH_SOURCE_COMMIT}"
+          if git diff --name-only "${RESEARCH_SOURCE_COMMIT}" HEAD -- scripts/v21_orderflow_dataset.py scripts/v21_toxicity_model.py app/mm/book.py app/mm/execution_replay.py scripts/v20_event_backtest_capture.py | grep -q .; then
+            echo "Research data dependencies changed since verified source commit" >&2
+            exit 1
+          fi
           mkdir -p research_reports
-          python scripts/v21_orderflow_dataset.py \
-            --captures-root captures \
-            --output research_reports/v21_orderflow.parquet
 
-      - name: Evaluate two-stage order-flow alpha
+      - name: Download verified research artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: v21-orderflow-research
+          path: research_reports
+          repository: ${{ github.repository }}
+          run-id: ${{ env.RESEARCH_ARTIFACT_RUN_ID }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify research artifact integrity
         run: |
-          python scripts/v21_orderflow_models.py \
-            --dataset research_reports/v21_orderflow.parquet \
-            --output research_reports/v21_alpha_report.json
-
-      - name: Evaluate order-flow feature ablation
-        run: |
-          python scripts/v21_ablation_research.py \
-            --dataset research_reports/v21_orderflow.parquet \
-            --output research_reports/v21_ablation_report.json
-
-      - name: Evaluate signed move magnitude
-        run: |
-          python scripts/v21_move_regression.py \
-            --dataset research_reports/v21_orderflow.parquet \
-            --output research_reports/v21_move_regression.json
-
-      - name: Build toxicity dataset
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          import pandas as pd
-          from scripts.v21_toxicity_model import extract_toxicity_session
-          frames = [
-              extract_toxicity_session(Path("captures") / s, s)
-              for s in ("A", "B", "C", "D")
-          ]
-          df = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
-          Path("research_reports/v21_toxicity.parquet").parent.mkdir(parents=True, exist_ok=True)
-          df.to_parquet("research_reports/v21_toxicity.parquet", index=False)
-          print({"rows": len(df), "sides": sorted(df.side.unique().tolist()) if len(df) else []})
-          PY
-
+          set -euo pipefail
+          test -f research_reports/v21_orderflow.parquet
+          test -f research_reports/v21_toxicity.parquet
+          test "$(sha256sum research_reports/v21_orderflow.parquet | awk '{print $1}')" = "${EXPECTED_ORDERFLOW_SHA256}"
+          test "$(sha256sum research_reports/v21_toxicity.parquet | awk '{print $1}')" = "${EXPECTED_TOXICITY_SHA256}"
       - name: Replay learned V21 market maker
         run: |
           python scripts/v21_learned_market_maker.py \
