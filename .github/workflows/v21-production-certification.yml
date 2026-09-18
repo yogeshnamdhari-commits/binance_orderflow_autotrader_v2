@@ -56,9 +56,9 @@ jobs:
         with:
           name: v21-orderflow-research
           path: evidence/research
-          repository: ${ github.repository }
-          run-id: ${ inputs.research_run_id }
-          github-token: ${ secrets.GITHUB_TOKEN }
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.research_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Verify economic certification and provenance
         run: |
@@ -136,7 +136,7 @@ jobs:
             tests/test_v20_user_stream_runtime.py
 
       - name: Write tests evidence
-        if: ${ steps.tests.outcome == 'success' }
+        if: ${{ steps.tests.outcome == 'success' }}
         run: |
           python - <<'PY'
           import json
@@ -157,7 +157,7 @@ jobs:
           PY
 
       - name: Write failed tests evidence
-        if: ${ steps.tests.outcome != 'success' }
+        if: ${{ steps.tests.outcome != 'success' }}
         run: |
           python - <<'PY'
           import json
@@ -178,10 +178,10 @@ jobs:
           PY
 
       - name: Run authenticated testnet lifecycle rehearsal
-        if: ${ inputs.run_testnet }
+        if: ${{ inputs.run_testnet }}
         env:
-          BINANCE_API_KEY: ${ secrets.BINANCE_TESTNET_API_KEY }
-          BINANCE_API_SECRET: ${ secrets.BINANCE_TESTNET_API_SECRET }
+          BINANCE_API_KEY: ${{ secrets.BINANCE_TESTNET_API_KEY }}
+          BINANCE_API_SECRET: ${{ secrets.BINANCE_TESTNET_API_SECRET }}
           BINANCE_TESTNET_ORDER_ENABLE: "1"
         run: |
           set -euo pipefail
@@ -192,7 +192,7 @@ jobs:
             --output evidence/testnet_validation.json
 
       - name: Record testnet not-run state when disabled
-        if: ${ !inputs.run_testnet }
+        if: ${{ !inputs.run_testnet }}
         run: |
           cat > evidence/testnet_validation.json <<'JSON'
           {
@@ -208,7 +208,7 @@ jobs:
         id: gate
         if: always()
         env:
-          OPERATOR_AUTH: ${ inputs.operator_authorize }
+          OPERATOR_AUTH: ${{ inputs.operator_authorize }}
         run: |
           set -euo pipefail
           if [ "$OPERATOR_AUTH" = "true" ]; then
@@ -234,7 +234,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: v21-production-certification-${ github.sha }
+          name: v21-production-certification-${{ github.sha }}
           path: evidence
           if-no-files-found: error
           retention-days: 90
