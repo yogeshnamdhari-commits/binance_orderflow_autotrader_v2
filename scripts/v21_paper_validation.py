@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 
 from app.models import BookState, DepthEvent
@@ -106,6 +107,7 @@ def run(bundle_path: Path) -> dict:
     }
     return {
         "status": "PASS" if all(checks.values()) else "FAIL",
+        "github_sha": os.getenv("GITHUB_SHA", ""),
         "checks": checks,
         "risk_controls_passed": all(checks.values()),
         "controller_status": result["status"],
