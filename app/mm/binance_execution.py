@@ -104,8 +104,14 @@ class BinanceUSDMExecutionAdapter:
             client_id=str(data.get("clientOrderId", submission.client_id)),
         )
 
-    def cancel(self, order_id: str) -> ExecutionResult:
-        response = self._signed_request("DELETE", "/fapi/v1/order", {"orderId": order_id})
+    def cancel(self, order_id: str, symbol: str | None = None) -> ExecutionResult:
+        if not symbol:
+            raise ValueError("symbol is required for Binance order cancellation")
+        response = self._signed_request(
+            "DELETE",
+            "/fapi/v1/order",
+            {"symbol": symbol.upper(), "orderId": order_id},
+        )
         data = response.json()
         return ExecutionResult(
             status=str(data.get("status", "CANCELLED")),
