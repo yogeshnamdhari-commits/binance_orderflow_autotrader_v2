@@ -105,6 +105,21 @@ class OrderStateManager:
     def get(self, order_id):
         return self._orders.get(order_id)
 
+    def get_by_client_id(self, client_id):
+        order_id = self._by_client.get(client_id)
+        return self.get(order_id) if order_id else None
+
+    def _reset_sequence_from_orders(self):
+        max_seq = 0
+        for order_id in self._orders:
+            if not isinstance(order_id, str) or not order_id.startswith("ORD-"):
+                continue
+            try:
+                max_seq = max(max_seq, int(order_id[4:]))
+            except ValueError:
+                continue
+        self._seq = itertools.count(max_seq + 1)
+
     def mark_filled(self, order_id, fill_price, fill_qty):
         o = self._orders.get(order_id)
         if o is None:
@@ -199,6 +214,7 @@ class OrderStateManager:
             o = OrderState.from_dict(d)
             self._orders[o.order_id] = o
             self._by_client[o.client_id] = o.order_id
+        self._reset_sequence_from_orders()
         return len(self._orders)
 
 
