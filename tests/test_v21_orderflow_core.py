@@ -21,6 +21,15 @@ def test_ofi_top_of_book_formula():
     assert CausalOrderFlowState.ofi_event(previous, current) == pytest.approx(7.0)
 
 
+def test_ofi_1000ms_feature_is_exposed():
+    state = CausalOrderFlowState()
+    state.update_book(1_000, BookTop(100.0, 10.0, 100.1, 10.0))
+    state.update_book(1_500, BookTop(100.0, 14.0, 100.1, 8.0))
+    f = state.snapshot(1_500)
+    assert hasattr(f, "ofi_1000ms")
+    assert f.ofi_1000ms == f.ofi_500ms
+
+
 def test_trade_imbalance_is_causal():
     state = CausalOrderFlowState()
     state.update_book(1_000, BookTop(100.0, 10.0, 100.1, 10.0))
