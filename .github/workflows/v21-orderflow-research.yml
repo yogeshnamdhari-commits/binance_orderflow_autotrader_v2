@@ -142,22 +142,6 @@ jobs:
             --toxicity research_reports/v21_toxicity.parquet \
             --output research_reports/v21_learned_mm_report.json
 
-      - name: Build toxicity dataset
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          import pandas as pd
-          from scripts.v21_toxicity_model import extract_toxicity_session
-          frames = [
-              extract_toxicity_session(Path("captures") / s, s)
-              for s in ("A", "B", "C", "D")
-          ]
-          df = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
-          Path("research_reports/v21_toxicity.parquet").parent.mkdir(parents=True, exist_ok=True)
-          df.to_parquet("research_reports/v21_toxicity.parquet", index=False)
-          print({"rows": len(df), "sides": sorted(df.side.unique().tolist()) if len(df) else []})
-          PY
-
       - name: Evaluate toxicity model
         run: |
           python scripts/v21_toxicity_model.py \
