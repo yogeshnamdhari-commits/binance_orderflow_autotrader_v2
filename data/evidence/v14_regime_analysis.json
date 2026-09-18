@@ -1,0 +1,57 @@
+{
+  "experiment": "V14",
+  "regime_tests": [
+    {
+      "regime": "high_vol",
+      "condition": "vol_regime > median",
+      "mean_ret_bps": 2.7133,
+      "n_trades": 5,
+      "positive": true,
+      "ci": "WIDE (n=5)"
+    },
+    {
+      "regime": "low_vol",
+      "condition": "vol_regime <= median",
+      "mean_ret_bps": -0.1691,
+      "n_trades": 1,
+      "positive": false,
+      "ci": "WIDE (n=1)"
+    },
+    {
+      "regime": "high_spread",
+      "condition": "spread_bps > median",
+      "mean_ret_bps": 2.2329,
+      "n_trades": 6,
+      "positive": true,
+      "ci": "WIDE (n=6)"
+    },
+    {
+      "regime": "low_spread",
+      "condition": "spread_bps <= median",
+      "mean_ret_bps": 0.0,
+      "n_trades": 1,
+      "positive": false,
+      "ci": "WIDE (n=1)"
+    },
+    {
+      "regime": "high_intensity",
+      "condition": "trade_intensity > median",
+      "mean_ret_bps": 1.7399,
+      "n_trades": 3,
+      "positive": true,
+      "ci": "WIDE (n=3)"
+    },
+    {
+      "regime": "low_intensity",
+      "condition": "trade_intensity <= median",
+      "mean_ret_bps": 2.7260,
+      "n_trades": 3,
+      "positive": true,
+      "ci": "WIDE (n=3)"
+    }
+  ],
+  "positive_regimes": 4,
+  "total_regimes": 6,
+  "interpretation": "4/6 regimes show positive mean return, but with only 7 total trades across all regimes, confidence intervals are extremely wide. The regime breakdown is NOT statistically reliable. This does not constitute robustness validation.",
+  "robustness_status": "BLOCKED — insufficient forward sample size for regime analysis"
+}

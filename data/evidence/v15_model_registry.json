@@ -1,0 +1,23 @@
+{
+  "experiment": "V15",
+  "model_type": "GradientBoostingRegressor",
+  "model_path": "archive/v15/v15_frozen_model.joblib",
+  "model_checksum": "c48e95d537822367",
+  "feature_names": [
+    "book_imbalance_l1",
+    "book_imbalance_l5",
+    "aggressive_trade_imbalance",
+    "microprice_deviation_bps",
+    "depth_pressure",
+    "trade_intensity",
+    "spread_bps",
+    "vol_regime",
+    "signed_vol_imbalance",
+    "liquidity_state",
+    "vol_regime_flag",
+    "liquidity_regime_flag",
+    "spread_regime_flag"
+  ],
+  "config_hash": "aa505ca8abe09376",
+  "status": "FROZEN"
+}

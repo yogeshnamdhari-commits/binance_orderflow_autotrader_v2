@@ -1,0 +1,97 @@
+{
+  "timestamp": "2026-09-07T22:35:29.050383+00:00",
+  "experiment": "V16",
+  "parent_experiment": "V15",
+  "status": "PRE-REGISTERED",
+  "hypothesis": "Event-time order-flow features (OFI, trade imbalance, queue pressure, microprice displacement) combined with separate return-magnitude and fill-probability models, evaluated through walk-forward validation with realistic maker/taker execution costs, will achieve positive net executable EV on BTCUSDT 10s horizon. V15 proved GBR can predict return magnitude in-sample (R2=0.82) but failed forward because (a) model overfit, (b) fixed 75% fill probability was unrealistic, (c) no walk-forward validation. V16 addresses all three.",
+  "prediction_horizon_ms": 10000,
+  "feature_construction": "event-time (not fixed bars) \u2014 features computed at each order-book event",
+  "feature_families": {
+    "A_OFI": [
+      "ofi_l1_best",
+      "ofi_l1_normalized",
+      "ofi_l1_depth_normalized"
+    ],
+    "B_trade_flow": [
+      "signed_trade_imbalance",
+      "aggressive_buy_vol",
+      "aggressive_sell_vol",
+      "trade_intensity",
+      "burstiness",
+      "volume_imbalance"
+    ],
+    "C_queue_book": [
+      "bid_queue_imbalance",
+      "ask_queue_imbalance",
+      "multi_level_depth_imbalance",
+      "depth_slope",
+      "spread_bps",
+      "microprice_displacement",
+      "book_pressure"
+    ],
+    "D_dynamics": [
+      "ofi_change",
+      "queue_imbalance_change",
+      "persistence",
+      "event_intensity",
+      "short_term_volatility"
+    ],
+    "E_regime": [
+      "spread_regime",
+      "volatility_regime",
+      "liquidity_regime",
+      "activity_regime"
+    ]
+  },
+  "queue_pressure_definition": "Queue pressure = (depth_added_at_touch - depth_removed_at_touch) / (depth_added_at_touch + depth_removed_at_touch + eps) over the lookback window. This is a proxy for queue position: high queue pressure means more orders are being added than removed at the touch, suggesting the queue is growing and new orders are behind existing ones. Limitations: does not account for order sizes, hidden liquidity, or cross-exchange queue dynamics.",
+  "target_definition": "10s forward mid-price return in bps (regression target). Separate binary target for fill probability (was the order filled within 10s at the predicted price or better?).",
+  "models": {
+    "return_model": "GradientBoostingRegressor (predicts return magnitude in bps)",
+    "fill_probability_model": "LogisticRegression (predicts fill probability 0-1)",
+    "baseline": "naive mean return + naive fill rate"
+  },
+  "expected_pnl_formula": "expected_pnl = fill_probability * predicted_return - execution_cost",
+  "execution_assumptions": {
+    "maker_rebate_bps": -2.0,
+    "taker_fee_bps": 5.0,
+    "slippage_bps": 0.1,
+    "adverse_selection_bps": 0.3,
+    "latency_bps": 0.1,
+    "exit_cost_bps": 3.0,
+    "maker_fill_probability_model": "logistic_regression_on_queue_pressure_spread_liquidity",
+    "non_fill_opportunity_cost_bps": 0.5
+  },
+  "walk_forward": {
+    "n_folds": 5,
+    "train_pct": 0.6,
+    "validate_pct": 0.2,
+    "forward_pct": 0.2,
+    "min_obs_per_fold": 100
+  },
+  "acceptance_thresholds": {
+    "net_ev_bps": "> 0",
+    "ci_95_lower": "> 0",
+    "p_value": "< 0.05",
+    "positive_regimes": ">= 4/6",
+    "min_trades": 100,
+    "min_fold_success_rate": ">= 3/5 folds positive"
+  },
+  "failure_conditions": [
+    "net_ev <= 0",
+    "CI includes zero or negative",
+    "p >= 0.05",
+    "< 4/6 regimes positive",
+    "< 100 trades in forward",
+    "< 3/5 walk-forward folds positive",
+    "model overfits (train R2 > 0.5, test R2 < 0)"
+  ],
+  "stopping_rule": "If V16 fails economic gate, conclude BTCUSDT short-horizon order-flow strategy is not economically viable under tested conditions. Do NOT create V17.",
+  "data_rules": [
+    "V16 calibration uses ONLY data/v16/calibration/",
+    "V14/V15 data EXCLUDED",
+    "Forward capture must start AFTER calibration ends",
+    "Model frozen before any forward data seen",
+    "No forward-data contamination"
+  ],
+  "config_hash": "e07dd90923983920"
+}

@@ -1,0 +1,28 @@
+{
+  "timestamp": "2026-09-05T05:18:00+05:30",
+  "forward_session": "a81b222592ed47f3ad4a357b0d0f6845",
+  "n_observations": 28,
+  "config_assumptions": {
+    "spread_capture_bps": 2.0,
+    "fee_rebate_bps": 0.5,
+    "inventory_cost_bps": 0.2,
+    "exit_cost_bps": 0.3,
+    "cancellation_cost_bps": 0.05
+  },
+  "realistic_assumptions": {
+    "spread_capture_bps": 0.0,
+    "fee_rebate_bps": -0.02,
+    "inventory_cost_bps": 0.2,
+    "exit_cost_bps": 0.3,
+    "cancellation_cost_bps": 0.05
+  },
+  "results": {
+    "config_net_ev_bps": 1.3039999366027655,
+    "realistic_net_ev_bps": -0.4060000633972352,
+    "actual_spread_bps": 0.01257174537855291,
+    "breakeven_spread_capture_bps": 0.5700000000000001
+  },
+  "conclusion": "Strategy is NOT economically viable with realistic assumptions.",
+  "reason": "spread_capture_bps=2.0 assumes crossing the spread, but strategy is passive (posting liquidity).",
+  "recommendation": "Either change to aggressive/taker strategy, or find a venue where spread capture is achievable."
+}

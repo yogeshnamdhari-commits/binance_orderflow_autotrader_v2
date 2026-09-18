@@ -1,0 +1,35 @@
+{
+  "timestamp": "2026-09-07T17:30:00Z",
+  "experiment": "V13",
+  "parent_experiment": "V12",
+  "status": "PRE-REGISTERED",
+  "config_hash": "14dfaab9e88f47bf",
+  "metadata": {
+    "version": "V13-orderflow-persistence-2s",
+    "experiment_id": "V13-20260907",
+    "hypothesis": "Order-flow signed trade imbalance + order-book imbalance predict BTCUSDT 2s-ahead returns (persistence peak), where V12 at 500ms showed no signal.",
+    "config_hash": "14dfaab9e88f47bf",
+    "prediction_horizon_ms": 2000,
+    "feature_window_ms": 2000,
+    "source_datasets": "NEW real Binance captures (not V12 forward data)",
+    "creation_timestamp": "2026-09-07"
+  },
+  "hypothesis": "Order-flow signed trade imbalance and order-book imbalance predict BTCUSDT 2s-ahead returns, where V12 showed no signal at 500ms.",
+  "scientific_basis": [
+    "Cont & de Prado (2016) order-flow persistence",
+    "Bianchi et al. (2022) trade imbalance sign",
+    "V12 null result at 500ms horizon"
+  ],
+  "key_changes_vs_v12": [
+    "prediction horizon: 500ms -> 2000ms",
+    "feature window: 1000ms -> 2000ms",
+    "new signed-trade-imbalance feature",
+    "new order-flow-persistence trend feature",
+    "maker/taker aware cost modeling"
+  ],
+  "leakage_prevention": "V13 calibration uses NEW captures. V12 forward data (f717fc...) is explicitly excluded from V13 calibration dir.",
+  "v12_forward_data_excluded": [
+    "data/v12/forward/f717fc7963014dbe871eb2da90efe93d"
+  ],
+  "decision_rule": "V13 proceeds to forward only if val AUC > 0.55 AND no parameter fishing."
+}

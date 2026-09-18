@@ -1,0 +1,18 @@
+{
+  "checksums": {
+    "events.jsonl": "17b0f9364d5bf5f44274e05c9993de4fd7e14fc5320b18a7260ac0cc912ed26b",
+    "manifest.json": "e204cbbe8155bfd89e8c96715d027998a4fe798a9ee620c2010faf23bd8e540e",
+    "snapshot.json": "f9c0c49fe57247c4301a585adead639f9b5b38d9777d25ef7c5c8d99511b22ab"
+  },
+  "end_ns": 1788782494858190000,
+  "event_count": 45466,
+  "schema_version": "v10.raw.v1",
+  "session_id": "6270a46989f64509b8d85d05c3730233",
+  "start_ns": 1788782253990306000,
+  "streams": [
+    "btcusdt@depth@100ms",
+    "btcusdt@trade",
+    "btcusdt@bookTicker"
+  ],
+  "symbol": "BTCUSDT"
+}

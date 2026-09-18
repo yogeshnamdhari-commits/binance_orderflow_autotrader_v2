@@ -1,0 +1,28 @@
+{
+  "timestamp": "2026-09-04T23:40:45.943133+00:00",
+  "forward_session": "a81b222592ed47f3ad4a357b0d0f6845",
+  "n_observations": 28,
+  "n_filled": 19,
+  "mean_spread_bps": 0.01257174537855291,
+  "median_spread_bps": 0.012571792793127864,
+  "mean_spread_cost_bps": 0.006285872689276455,
+  "mean_maker_fee_bps": -0.013571428571428571,
+  "mean_explicit_cost_bps": -0.007285555882152116,
+  "mean_gross_ev_bps": 0.0,
+  "mean_net_ev_bps": 0.007285555882152116,
+  "min_edge_required_bps": 0.007285555882152116,
+  "sensitivity": {
+    "0.0": 0.007285555882152116,
+    "0.01": -0.002714444117847883,
+    "0.05": -0.042714444117847895,
+    "0.1": -0.09271444411784788,
+    "0.5": -0.492714444117848
+  },
+  "limitations": [
+    "Execution costs estimated from market data only",
+    "No actual fill prices recorded",
+    "No actual slippage measured",
+    "No latency measurements",
+    "Assumes perfect fill at quoted price"
+  ]
+}

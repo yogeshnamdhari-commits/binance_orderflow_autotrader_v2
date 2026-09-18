@@ -1,0 +1,22 @@
+{
+  "status": "COMPLETED",
+  "duration_ms": 1788779089210,
+  "position_side": "FLAT",
+  "position_qty_btc": 0.0,
+  "realized_pnl_bps": 0.0,
+  "unrealized_pnl_bps": 0.0,
+  "funding_accrued_bps": 0.0,
+  "risk_state": "NORMAL",
+  "daily_pnl_bps": 0.0,
+  "orders_submitted": 0,
+  "alerts": [
+    {
+      "severity": "AlertSeverity.WARNING",
+      "component": "signal",
+      "message": "low signal frequency (0.00 Hz)",
+      "ts_ms": 1788779066144,
+      "metric": "signal_rate_hz",
+      "value": 0.0
+    }
+  ]
+}

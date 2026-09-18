@@ -1,0 +1,13 @@
+{
+  "end_ns": 1788546363006209000,
+  "event_count": 1131,
+  "schema_version": "v10.raw.v1",
+  "session_id": "a81b222592ed47f3ad4a357b0d0f6845",
+  "start_ns": 1788546346959786000,
+  "streams": [
+    "btcusdt@depth@100ms",
+    "btcusdt@trade",
+    "btcusdt@bookTicker"
+  ],
+  "symbol": "BTCUSDT"
+}
