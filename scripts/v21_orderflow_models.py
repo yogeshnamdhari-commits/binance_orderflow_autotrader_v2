@@ -50,7 +50,7 @@ def _fit_model(x: pd.DataFrame, y: pd.Series) -> Pipeline:
 
 def _clean(frame: pd.DataFrame, horizon: int) -> pd.DataFrame:
     cols = FEATURES + [f"move_{horizon}ms", f"direction_{horizon}ms"]
-    out = frame[["timestamp_ms", "session", "half", *cols]].copy()
+    out = frame[["timestamp_ms", "session", "half", "split_start_ms", *cols]].copy()
     out = out.replace([np.inf, -np.inf], np.nan).dropna(subset=cols)
     return out
 
