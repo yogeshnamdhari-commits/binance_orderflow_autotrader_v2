@@ -44,6 +44,7 @@ jobs:
             scripts/v21_learned_market_maker.py \
             scripts/v21_economic_spread_sweep.py \
             scripts/v21_economic_risk_sweep.py \
+            scripts/v21_certification_gate.py \
             tests/test_v21_orderflow_research.py \
             tests/test_v21_decision_engine.py
 
@@ -154,6 +155,13 @@ jobs:
           python scripts/v21_toxicity_model.py \
             --input research_reports/v21_toxicity.parquet \
             --output research_reports/v21_toxicity_report.json
+
+      - name: Run fail-closed V21 economic certification gate
+        run: |
+          python scripts/v21_certification_gate.py \
+            --learned research_reports/v21_learned_mm_report.json \
+            --risk-sweep research_reports/v21_economic_risk_sweep.json \
+            --output research_reports/v21_certification_report.json
 
       - name: Publish V21 research artifacts
         if: always()
