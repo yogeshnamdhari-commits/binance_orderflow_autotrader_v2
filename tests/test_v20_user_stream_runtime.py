@@ -17,6 +17,19 @@ class Adapter:
         return ExecutionResult("CANCELED", order_id, "cancelled")
 
 
+def healthy_test_risk():
+    risk = LiveRiskGate(RiskLimits())
+    risk.update_market_health(10, True)
+    risk.update_user_stream_health(10, True)
+    risk.update_reconciliation(True)
+    risk.update_quote_age(10)
+    risk.update_position(0.0, 100000.0)
+    risk.update_orders(0)
+    risk.update_pnl(0.0)
+    risk.update_api_errors(0)
+    return risk
+
+
 class FakeWS:
     def __init__(self):
         self.closed = False
@@ -64,6 +77,40 @@ def test_expired_stream_clears_key_and_closes_socket():
     assert ws.closed is True
     assert stream.guard.connected is False
     assert statuses[-1]["status"] == "LISTEN_KEY_EXPIRED"
+
+
+def test_runtime_binds_exchange_order_after_restart_lookup():
+    from app.mm.execution import OrderStateManager
+    from app.mm.execution_gateway import Submission
+
+    manager = OrderStateManager()
+    seed = manager.create("BTCUSDT", "BUY", 0.001, 100000.0, "cid-restart")
+    assert seed is not None
+
+    gateway = ExecutionGateway(Adapter(), healthy_test_risk(), manager, live_enabled=False)
+    runtime = V20LiveRuntime(gateway, gateway.risk_gate)
+    result = runtime.apply_order_update(
+        OrderUpdate(
+            symbol="BTCUSDT",
+            client_id="cid-restart",
+            order_id="EX-RESTART",
+            side="BUY",
+            status="NEW",
+            execution_type="NEW",
+            qty=0.001,
+            filled_qty=0.0,
+            avg_price=0.0,
+            last_fill_qty=0.0,
+            last_fill_price=0.0,
+            trade_id="",
+            commission=0.0,
+            commission_asset="USDT",
+            event_ts_ms=1000,
+        ),
+        100000.0,
+    )
+    assert result is not None
+    assert gateway.local_order_id("EX-RESTART") == seed.order_id
 
 
 def test_runtime_user_failure_latches_risk():
