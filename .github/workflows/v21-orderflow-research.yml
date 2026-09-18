@@ -29,13 +29,19 @@ jobs:
         run: |
           python -m py_compile \
             app/research/v21_orderflow_core.py \
+            app/research/v21_decision_engine.py \
             scripts/v21_orderflow_dataset.py \
             scripts/v21_orderflow_models.py \
             scripts/v21_toxicity_model.py \
-            tests/test_v21_orderflow_research.py
+            tests/test_v21_orderflow_research.py \
+            tests/test_v21_decision_engine.py
 
       - name: Test V21 research
-        run: python -m pytest -q tests/test_v21_orderflow_core.py tests/test_v21_orderflow_research.py
+        run: |
+          python -m pytest -q \
+            tests/test_v21_orderflow_core.py \
+            tests/test_v21_orderflow_research.py \
+            tests/test_v21_decision_engine.py
 
       - name: Download capture A
         uses: actions/download-artifact@v4
