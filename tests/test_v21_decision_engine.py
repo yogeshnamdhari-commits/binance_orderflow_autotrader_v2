@@ -35,7 +35,7 @@ def test_high_toxicity_can_disable_one_side():
         sell_toxicity=ToxicityEstimate(0.0, 0.0),
         inventory_notional_usd=0.0,
         max_position_notional_usd=5_000.0,
-        half_spread_bps=4.0,
+        half_spread_bps=6.0,
     )
     assert not decision.bid_enabled
     assert decision.ask_enabled
