@@ -292,6 +292,12 @@ def _decision(
     bid_enabled = bid is not None and bid_edge >= MIN_EDGE_BPS
     ask_enabled = ask is not None and ask_edge >= MIN_EDGE_BPS
 
+    inventory_notional = inventory * top.mid
+    if inventory_notional >= MAX_POSITION_NOTIONAL_USD:
+        bid_enabled = False
+    if inventory_notional <= -MAX_POSITION_NOTIONAL_USD:
+        ask_enabled = False
+
     if not bid_enabled and not ask_enabled:
         return None, {
             "p_move": p_move,
