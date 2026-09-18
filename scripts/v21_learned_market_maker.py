@@ -28,6 +28,7 @@ from sklearn.preprocessing import StandardScaler
 from app.mm.book import OrderBook
 from app.mm.config import V20Config
 from app.mm.execution_replay import PassiveQuoteReplay, QuoteIntent, Side, TradeEvent
+from app.mm.event_backtest import run_event_backtest
 from scripts.v20_event_backtest_capture import load_events, load_snapshot
 from scripts.v21_orderflow_dataset import FEATURES, HORIZONS_MS
 from scripts.v21_toxicity_model import _future_mid
@@ -361,6 +362,41 @@ def replay_test_session(
     events.sort(key=lambda z: (z[0], z[1]))
 
     activated = False
+    split_book = OrderBook.from_snapshot(snapshot)
+    for e in sorted(depth, key=lambda x: (x.timestamp_ns, x.final_update_id)):
+        if e.timestamp_ns // 1_000_000 > split_start:
+            break
+        split_book.apply_update(e)
+    validation_snapshot = type(snapshot)(
+        timestamp_ns=split_book.timestamp_ns,
+        last_update_id=split_book.last_update_id,
+        bids=split_book.get_depth("bid", levels=1000),
+        asks=split_book.get_depth("ask", levels=1000),
+    )
+    test_depth_events = [
+        e for e in depth if e.timestamp_ns // 1_000_000 > split_start
+    ]
+    test_trade_events = [
+        e for e in trades if e.timestamp_ns // 1_000_000 > split_start
+    ]
+    baseline_cfg = V20Config(
+        symbol="BTCUSDT",
+        base_half_spread_bps=HALF_SPREAD_BPS,
+        max_half_spread_bps=4.0,
+        inventory_target=0.0,
+        inventory_penalty_bps=INVENTORY_PENALTY_BPS,
+        max_position_notional_usd=MAX_POSITION_NOTIONAL_USD,
+        quote_size_usd=QUOTE_SIZE_USD,
+        maker_fee_bps=MAKER_FEE_BPS,
+        taker_fee_bps=2.0,
+        live_order_submission=False,
+    )
+    baseline_result = run_event_backtest(
+        validation_snapshot,
+        test_depth_events,
+        test_trade_events,
+        baseline_cfg,
+    )
     for ts_ns, kind, event in events:
         now = ts_ns // 1_000_000
         if kind == 0:
@@ -458,6 +494,9 @@ def replay_test_session(
         "net_pnl_usd": float(net_pnl),
         "realized_cash_usd": float(cash),
         "fees_usd": float(fees),
+        "baseline_net_pnl_usd": float(baseline_result.net_pnl_usd),
+        "improvement_vs_fixed_baseline_usd": float(net_pnl - baseline_result.net_pnl_usd),
+        "baseline_fills": int(baseline_result.fills),
         "final_inventory": float(inventory),
         "stats": decision_stats,
         "test_depth_events": sum(1 for e in depth if e.timestamp_ns // 1_000_000 > split_start),
