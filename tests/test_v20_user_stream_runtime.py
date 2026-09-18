@@ -119,3 +119,17 @@ def test_runtime_user_failure_latches_risk():
     runtime = V20LiveRuntime(gateway, risk)
     runtime.handle_user_stream_failure("MARGIN_CALL")
     assert risk.state.emergency_latched
+
+
+def test_user_stream_selects_testnet_endpoints_from_order_base_url(monkeypatch):
+    monkeypatch.setenv("BINANCE_ORDER_BASE_URL", "https://testnet.binancefuture.com")
+    stream = BinanceUSDMUserStream(api_key="test-key")
+    assert stream.control_url == "wss://testnet.binancefuture.com/ws-fapi/v1"
+    assert stream.private_stream_base == "wss://stream.binancefuture.com/private/ws"
+
+
+def test_user_stream_selects_mainnet_endpoints_by_default(monkeypatch):
+    monkeypatch.delenv("BINANCE_ORDER_BASE_URL", raising=False)
+    stream = BinanceUSDMUserStream(api_key="test-key")
+    assert stream.control_url == "wss://ws-fapi.binance.com/ws-fapi/v1"
+    assert stream.private_stream_base == "wss://fstream.binance.com/private/ws"
