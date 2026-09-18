@@ -29,6 +29,7 @@ def evaluate(
     testnet_evidence: Path,
     tests_evidence: Path,
     explicit_authorization: bool,
+    expected_git_commit: str | None = None,
 ) -> dict[str, Any]:
     econ = _read(economic_certification)
     paper = _read(paper_evidence)
@@ -43,8 +44,32 @@ def evaluate(
         json.dumps(canonical, sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()
 
+    provenance_reports = {
+        "economic": econ,
+        "paper": paper,
+        "testnet": testnet,
+        "tests": tests,
+    }
+    provenance_ok = True
+    provenance_reasons: list[str] = []
+    if expected_git_commit:
+        for name, evidence in provenance_reports.items():
+            evidence_sha = str(evidence.get("github_sha", ""))
+            if evidence_sha != expected_git_commit:
+                provenance_ok = False
+                provenance_reasons.append(
+                    f"{name}_git_commit_mismatch:{evidence_sha}!={expected_git_commit}"
+                )
+        bundle_sha = str(bundle.get("source_commit", ""))
+        if bundle_sha != expected_git_commit:
+            provenance_ok = False
+            provenance_reasons.append(
+                f"model_bundle_git_commit_mismatch:{bundle_sha}!={expected_git_commit}"
+            )
+
     checks = {
         "economic_certified": econ.get("status") == "CERTIFIED",
+        "evidence_commit_provenance_valid": provenance_ok,
         "model_bundle_present": model_bundle.is_file(),
         "model_bundle_hash_valid": bool(expected) and expected == actual,
         "model_training_disabled_in_live": (
@@ -68,6 +93,8 @@ def evaluate(
         "live_order_submission": False,
         "checks": checks,
         "model_bundle_sha256": expected,
+        "expected_git_commit": expected_git_commit or "",
+        "provenance_reasons": provenance_reasons,
         "reason": (
             "All deployment gates passed; operator authorization is present."
             if authorized
@@ -84,6 +111,7 @@ def main() -> int:
     parser.add_argument("--testnet-evidence", type=Path, required=True)
     parser.add_argument("--tests-evidence", type=Path, required=True)
     parser.add_argument("--explicit-authorization", action="store_true")
+    parser.add_argument("--expected-git-commit", default="")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
@@ -94,6 +122,7 @@ def main() -> int:
         testnet_evidence=args.testnet_evidence,
         tests_evidence=args.tests_evidence,
         explicit_authorization=args.explicit_authorization,
+        expected_git_commit=args.expected_git_commit or None,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
