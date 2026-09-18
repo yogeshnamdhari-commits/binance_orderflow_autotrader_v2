@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -75,6 +76,7 @@ def evaluate(
     certified = all(checks.values())
     return {
         "status": "CERTIFIED" if certified else "NOT_CERTIFIED",
+        "github_sha": os.getenv("GITHUB_SHA", ""),
         "protocol": "nested walk-forward economic gate",
         "outer_folds": outer,
         "aggregate": {
