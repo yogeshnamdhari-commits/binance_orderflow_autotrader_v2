@@ -18,7 +18,7 @@ class Submission:
 
 class ExecutionAdapter(Protocol):
     def submit(self, submission: Submission) -> ExecutionResult: ...
-    def cancel(self, order_id: str) -> ExecutionResult: ...
+    def cancel(self, order_id: str, symbol: str | None = None) -> ExecutionResult: ...
 
 
 class ExecutionGateway:
@@ -65,6 +65,12 @@ class ExecutionGateway:
         # average price/commission and therefore controls local fill state.
         return result
 
+    def bind_exchange_order(self, exchange_order_id: str, local_order_id: str) -> None:
+        """Restore the exchange-to-local binding after restart/reconciliation."""
+        if self.manager.get(local_order_id) is None:
+            raise ValueError(f"unknown_local_order:{local_order_id}")
+        self._exchange_to_local[str(exchange_order_id)] = str(local_order_id)
+
     def local_order_id(self, exchange_order_id: str) -> str | None:
         return self._exchange_to_local.get(str(exchange_order_id))
 
@@ -74,7 +80,7 @@ class ExecutionGateway:
         if order is None:
             return ExecutionResult("REJECTED_UNKNOWN_ORDER", None, "unknown order")
         try:
-            result = self.adapter.cancel(str(order_id))
+            result = self.adapter.cancel(str(order_id), order.symbol)
         except Exception as exc:
             self.risk_gate.emergency_stop()
             return ExecutionResult("CANCEL_UNKNOWN", str(order_id),
