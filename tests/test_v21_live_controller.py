@@ -18,6 +18,9 @@ class Adapter:
     def cancel(self, order_id, symbol=None):
         return ExecutionResult("CANCELLED", order_id, "cancelled")
 
+    def cancel_all(self, symbol):
+        return ExecutionResult("CANCELLED_ALL", None, f"cancelled all {symbol}")
+
 
 def bundle():
     n = len(FEATURES)
@@ -94,3 +97,15 @@ def test_controller_rejects_unsynchronized_book():
         assert str(exc) == "book_not_synchronized"
     else:
         raise AssertionError("unsynchronized book was accepted")
+
+def test_controller_kill_switch_cancels_exchange_symbol_orders():
+    risk = healthy_risk()
+    gateway = ExecutionGateway(Adapter(), risk, OrderStateManager(), live_enabled=True)
+    controller = V21LiveController(
+        gateway=gateway, risk=risk, model=bundle(), symbol="BTCUSDT",
+        tick_size=0.1, maker_fee_bps=1.0, live_authorized=False
+    )
+    result = controller.cancel_all()
+    assert result["status"] == "CANCELLED_ALL"
+    assert result["actions"][0]["action"] == "cancel_all_exchange"
+    assert result["actions"][0]["result"] == "CANCELLED_ALL"
