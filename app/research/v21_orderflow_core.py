@@ -315,17 +315,24 @@ class PassiveQuotePlanner:
         raw_bid = reservation * (1.0 - half_spread_bps / 10_000.0)
         raw_ask = reservation * (1.0 + half_spread_bps / 10_000.0)
 
-        bid_cross = raw_bid > top.bid_price + 1e-12
-        ask_cross = raw_ask < top.ask_price - 1e-12
+        # A maker quote may improve the current BBO by sitting inside the spread.
+        # It is marketable only when it crosses the opposite side.
+        bid_cross = raw_bid >= top.ask_price - 1e-12
+        ask_cross = raw_ask <= top.bid_price + 1e-12
 
         bid = None if bid_cross else self._floor_tick(raw_bid)
         ask = None if ask_cross else self._ceil_tick(raw_ask)
 
-        if bid is not None and bid > top.bid_price:
+        if bid is not None and bid >= top.ask_price:
             bid = None
             bid_cross = True
-        if ask is not None and ask < top.ask_price:
+        if ask is not None and ask <= top.bid_price:
             ask = None
+            ask_cross = True
+        if bid is not None and ask is not None and bid >= ask:
+            bid = None
+            ask = None
+            bid_cross = True
             ask_cross = True
 
         bid_capture = ((top.mid - bid) * 10_000.0 / bid) if bid and bid > 0 else 0.0
