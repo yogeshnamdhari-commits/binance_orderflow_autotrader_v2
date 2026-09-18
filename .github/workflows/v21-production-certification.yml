@@ -131,6 +131,7 @@ jobs:
             tests/test_v21_production_model.py \
             tests/test_v21_live_controller.py \
             tests/test_v21_deployment_gate.py \
+            tests/test_v21_certification_gate.py \
             tests/test_binance_execution.py \
             tests/test_v20_production_controls.py \
             tests/test_v20_user_stream_runtime.py
