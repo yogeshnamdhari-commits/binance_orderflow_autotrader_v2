@@ -62,6 +62,9 @@ def _evaluate_fold(
 ) -> dict[str, Any]:
     train = _clean(train, horizon)
     test = _clean(test, horizon)
+    # Purge the final max-horizon observations of the training half so no
+    # training label can reach into the untouched validation half.
+    train = train[train["timestamp_ms"] <= (train["split_start_ms"] - max(HORIZONS_MS))]
     if len(train) < 100 or len(test) < 50:
         return {
             "status": "INSUFFICIENT_DATA",
