@@ -34,6 +34,13 @@ class BinanceUSDMUserStream:
         default_private = self.TESTNET_PRIVATE_STREAM_BASE if testnet else self.PRIVATE_STREAM_BASE
         self.control_url = (control_url or os.getenv("BINANCE_USER_STREAM_API_URL") or default_control).rstrip("/")
         self.private_stream_base = (private_stream_base or os.getenv("BINANCE_PRIVATE_STREAM_BASE_URL") or default_private).rstrip("/")
+
+        if testnet:
+            if "ws-fapi.binance.com" in self.control_url or "fstream.binance.com" in self.private_stream_base:
+                raise RuntimeError("testnet_endpoint_environment_mismatch")
+        else:
+            if "testnet.binancefuture.com" in self.control_url or "stream.binancefuture.com" in self.private_stream_base:
+                raise RuntimeError("mainnet_endpoint_environment_mismatch")
         self.stop_flag = False
         self.listen_key: str | None = None
         self._private_ws = None
