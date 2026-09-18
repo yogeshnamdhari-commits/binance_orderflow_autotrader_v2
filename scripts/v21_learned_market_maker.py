@@ -79,7 +79,7 @@ def _huber(x: pd.DataFrame, y: pd.Series) -> HuberRegressor:
 
 
 def _clean_training(df: pd.DataFrame, target: str, horizon: int) -> pd.DataFrame:
-    cols = ["timestamp_ms", "split_start_ms", *FEATURES, target]
+    cols = ["timestamp_ms", "split_start_ms", "mid", "future_mid_250ms", *FEATURES, target]
     out = df[cols].replace([np.inf, -np.inf], np.nan).dropna()
     out = out[out["timestamp_ms"] <= out["split_start_ms"] - max(HORIZONS_MS)]
     return out
