@@ -7,6 +7,10 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  actions: write
+  contents: read
+
 env:
   PYTHONPATH: .
 
@@ -141,3 +145,21 @@ jobs:
 
       - name: Aggregate certification
         run: python scripts/v20_certification_aggregate.py cert_reports
+
+  handoff-v21:
+    needs: performance-certification
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Launch V21 research from exact capture run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh workflow run v21-orderflow-research.yml \
+            --repo "${{ github.repository }}" \
+            --ref research/v21-orderflow-latest \
+            -f source_run_id="${{ github.run_id }}" \
+            -f source_sha="${{ github.sha }}"
+          echo "Dispatched V21 research using V20 run ${{ github.run_id }} at ${{ github.sha }}"
