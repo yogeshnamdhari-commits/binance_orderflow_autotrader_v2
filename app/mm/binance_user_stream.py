@@ -166,7 +166,7 @@ class BinanceUSDMUserStream:
             try:
                 if not self.listen_key:
                     self.start_stream()
-                url = f"{self.private_stream_base}?listenKey={self.listen_key}&events=ORDER_TRADE_UPDATE/ACCOUNT_UPDATE"
+                url = f"{self.private_stream_base}/{self.listen_key}"
                 self._private_ws = websocket.WebSocketApp(
                     url,
                     on_open=self._on_open,
