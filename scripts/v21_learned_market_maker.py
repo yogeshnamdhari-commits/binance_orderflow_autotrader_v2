@@ -49,8 +49,8 @@ class FoldModels:
     move: Pipeline
     direction: Pipeline
     magnitude: HuberRegressor
-    toxicity_buy: HuberRegressor
-    toxicity_sell: HuberRegressor
+    markout_buy: HuberRegressor
+    markout_sell: HuberRegressor
     feature_scale: Pipeline | None = None
 
 
@@ -127,7 +127,7 @@ def _build_models(
     tox = toxicity[
         toxicity["session"].isin(train_sessions) & (toxicity["half"] == 0)
     ].replace([np.inf, -np.inf], np.nan).dropna(
-        subset=FEATURES + ["adverse_bps_100ms", "side", "timestamp_ms", "split_start_ms"]
+        subset=FEATURES + ["markout_bps_250ms", "side", "timestamp_ms", "split_start_ms"]
     )
     tox = tox[tox["timestamp_ms"] <= tox["split_start_ms"] - TOXICITY_HORIZON_MS]
     tox_buy = tox[tox["side"] == "BUY"]
@@ -140,8 +140,8 @@ def _build_models(
             move=move_model,
             direction=direction_model,
             magnitude=magnitude_model,
-            toxicity_buy=_huber(tox_buy[FEATURES], tox_buy["adverse_bps_100ms"]),
-            toxicity_sell=_huber(tox_sell[FEATURES], tox_sell["adverse_bps_100ms"]),
+            markout_buy=_huber(tox_buy[FEATURES], tox_buy["markout_bps_250ms"]),
+            markout_sell=_huber(tox_sell[FEATURES], tox_sell["markout_bps_250ms"]),
         ),
         {
             **train_sizes,
@@ -259,8 +259,8 @@ def _decision(
     abs_move = max(0.0, float(models.magnitude.predict(x)[0]))
     expected_signed = p_move * (2.0 * p_up - 1.0) * abs_move
 
-    tox_buy = max(0.0, float(models.toxicity_buy.predict(x)[0]))
-    tox_sell = max(0.0, float(models.toxicity_sell.predict(x)[0]))
+    markout_buy = float(models.markout_buy.predict(x)[0])
+    markout_sell = float(models.markout_sell.predict(x)[0])
 
     inventory_fraction = max(-1.0, min(1.0, inventory * top.mid / MAX_POSITION_NOTIONAL_USD))
     inventory_shift = -inventory_fraction * INVENTORY_PENALTY_BPS
@@ -280,18 +280,15 @@ def _decision(
     if ask_cross:
         ask = None
 
-    bid_edge = (
-        ((top.mid - bid) * 10_000.0 / top.mid if bid else 0.0)
-        + expected_signed
-        - MAKER_FEE_BPS
-        - toxicity_multiplier * tox_buy
-    )
-    ask_edge = (
-        ((ask - top.mid) * 10_000.0 / top.mid if ask else 0.0)
-        - expected_signed
-        - MAKER_FEE_BPS
-        - toxicity_multiplier * tox_sell
-    )
+    # Conditional markout is measured from the hypothetical fill price to the
+    # future mid, so it already contains the benefit/cost of quote distance.
+    # Do not add an independent spread-capture term: that would double count.
+    # The multiplier only increases the penalty on negative markout.
+    conservative_buy_markout = markout_buy - max(0.0, -markout_buy) * max(0.0, toxicity_multiplier - 1.0)
+    conservative_sell_markout = markout_sell - max(0.0, -markout_sell) * max(0.0, toxicity_multiplier - 1.0)
+    inventory_cost_bps = abs(inventory_fraction) * INVENTORY_PENALTY_BPS
+    bid_edge = conservative_buy_markout - MAKER_FEE_BPS - inventory_cost_bps
+    ask_edge = conservative_sell_markout - MAKER_FEE_BPS - inventory_cost_bps
 
     bid_enabled = bid is not None and bid_edge >= min_edge_bps
     ask_enabled = ask is not None and ask_edge >= min_edge_bps
@@ -308,8 +305,8 @@ def _decision(
             "p_up": p_up,
             "abs_move_bps": abs_move,
             "expected_signed_move_bps": expected_signed,
-            "tox_buy_bps": tox_buy,
-            "tox_sell_bps": tox_sell,
+            "markout_buy_bps": markout_buy,
+            "markout_sell_bps": markout_sell,
             "toxicity_multiplier": toxicity_multiplier,
             "bid_edge_bps": bid_edge,
             "ask_edge_bps": ask_edge,
@@ -548,7 +545,7 @@ def run(captures_root: Path, toxicity_path: Path, dataset_path: Path) -> dict[st
         }
 
     return {
-        "protocol": "train earlier-session first halves; replay later-session second halves",
+        "protocol": "train earlier-session first halves; replay later-session second halves; economic edge uses causal conditional 250ms fill markout",
         "sessions": sessions,
         "config": {
             "maker_fee_bps": MAKER_FEE_BPS,
