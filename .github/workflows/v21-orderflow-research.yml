@@ -95,6 +95,9 @@ jobs:
             test -n "$INPUT_SOURCE_SHA"
             test "$source_sha" = "$INPUT_SOURCE_SHA"
             echo "Using exact dispatched V20 run $run_id from feature commit $source_sha; matrix artifacts will be validated below"
+            jobs_json="$(gh api "repos/${{ github.repository }}/actions/runs/$run_id/jobs?per_page=100")"
+            python -c 'import json,sys; rows=[j for j in json.load(sys.stdin).get("jobs",[]) if j.get("name","").startswith("performance-certification (")]; assert len(rows)==4, rows; assert all(j.get("conclusion")=="success" for j in rows), [(j.get("name"),j.get("conclusion")) for j in rows]' <<< "$jobs_json"
+            echo "All four V20 certification session jobs succeeded"
           else
             base_sha="$(gh api repos/${{ github.repository }}/git/ref/heads/feature/v20-market-making --jq '.object.sha')"
             json="$(gh run list --workflow=v20-performance-certification.yml --branch feature/v20-market-making --status success --limit 20 --json databaseId,headSha)"
