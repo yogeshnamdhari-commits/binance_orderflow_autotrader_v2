@@ -21,6 +21,7 @@ class BinanceExecutionConfig:
     api_secret: str
     recv_window_ms: int = 5000
     timeout_s: float = 5.0
+    server_time_refresh_s: float = 30.0
 
     @classmethod
     def from_env(cls) -> "BinanceExecutionConfig":
@@ -48,10 +49,33 @@ class BinanceUSDMExecutionAdapter:
         self.session.headers.update({"X-MBX-APIKEY": config.api_key})
         self._constraints: dict[str, SymbolConstraints] = {}
         self._exchange_info_loaded = False
+        self._server_time_offset_ms = 0
+        self._server_time_synced_monotonic = 0.0
+
+    def _sync_server_time(self) -> None:
+        """Calibrate local wall-clock against Binance server time."""
+        start_ms = int(time.time() * 1000)
+        response = self.session.get(
+            f"{self.config.base_url}/fapi/v1/time",
+            timeout=self.config.timeout_s,
+        )
+        end_ms = int(time.time() * 1000)
+        response.raise_for_status()
+        payload = response.json()
+        server_ms = int(payload["serverTime"])
+        midpoint_ms = (start_ms + end_ms) // 2
+        self._server_time_offset_ms = server_ms - midpoint_ms
+        self._server_time_synced_monotonic = time.monotonic()
+
+    def _timestamp_ms(self) -> int:
+        age = time.monotonic() - self._server_time_synced_monotonic
+        if self._server_time_synced_monotonic <= 0.0 or age >= self.config.server_time_refresh_s:
+            self._sync_server_time()
+        return int(time.time() * 1000) + self._server_time_offset_ms
 
     def _signed_request(self, method: str, path: str, params: dict) -> requests.Response:
         params = dict(params)
-        params.setdefault("timestamp", int(time.time() * 1000))
+        params.setdefault("timestamp", self._timestamp_ms())
         params.setdefault("recvWindow", self.config.recv_window_ms)
         query = urlencode(params)
         signature = hmac.new(
