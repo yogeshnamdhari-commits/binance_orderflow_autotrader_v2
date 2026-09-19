@@ -10,6 +10,10 @@ on:
 env:
   PYTHONPATH: .
 
+concurrency:
+  group: v20-performance-certification-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   performance-certification:
     strategy:
@@ -52,7 +56,9 @@ jobs:
             tests/test_v20_event_backtest_capture.py \
             tests/test_v20_performance_certify.py \
             tests/test_v20_certification_aggregate.py \
-            tests/research/test_v10_capture_runner.py
+            tests/research/test_v10_capture_runner.py \
+            tests/test_binance_execution_time_sync.py \
+            tests/test_binance_user_stream_path.py
 
       - name: Wait for independent session window
         if: matrix.delay_minutes > 0
@@ -103,7 +109,7 @@ jobs:
             --capture-dir "${{ steps.locate.outputs.capture_dir }}" \
             --baseline-config app/mm/config_v20_eco_v1_actual_fees.json \
             --candidate-config app/mm/config_backtest_toxicity_v1.json \
-            --maker-fee-bps 1.0 \
+            --maker-fee-bps 2.0 \
             --output data/cert_reports/${{ matrix.session }}/v20_performance_certification.json
 
       - name: Publish session certification report
