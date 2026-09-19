@@ -71,6 +71,7 @@ def _split_events(
         last_update_id=book.last_update_id,
         bids=book.get_depth("bid", levels=1000),
         asks=book.get_depth("ask", levels=1000),
+        bridge_complete=True,
     )
     return snapshot, train_depth, train_trades, validation_snapshot, valid_depth, valid_trades
 
@@ -160,6 +161,7 @@ def _bucket_results(
                 last_update_id=book.last_update_id,
                 bids=book.get_depth("bid", levels=1000),
                 asks=book.get_depth("ask", levels=1000),
+                bridge_complete=True,
             )
     return results
 
