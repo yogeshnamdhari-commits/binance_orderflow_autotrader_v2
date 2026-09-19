@@ -59,7 +59,7 @@ def freeze(dataset_path: Path, toxicity_path: Path, sessions: list[str], output:
     models, sizes = _build_models(dataset, toxicity, sessions)
     payload = {
         "schema_version": 1,
-        "source_commit": os.getenv("GITHUB_SHA", ""),
+        "source_commit": os.getenv("RESEARCH_COMMIT_SHA", os.getenv("GITHUB_SHA", "")),
         "model_family": "v21_two_stage_orderflow_mm",
         "horizon_ms": 250,
         "features": list(FEATURES),

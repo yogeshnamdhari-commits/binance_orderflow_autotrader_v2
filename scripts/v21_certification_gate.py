@@ -76,7 +76,7 @@ def evaluate(
     certified = all(checks.values())
     return {
         "status": "CERTIFIED" if certified else "NOT_CERTIFIED",
-        "github_sha": os.getenv("GITHUB_SHA", ""),
+        "github_sha": os.getenv("RESEARCH_COMMIT_SHA", os.getenv("GITHUB_SHA", "")),
         "protocol": "nested walk-forward economic gate",
         "outer_folds": outer,
         "aggregate": {

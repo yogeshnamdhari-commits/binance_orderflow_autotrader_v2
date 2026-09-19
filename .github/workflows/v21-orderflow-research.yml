@@ -11,6 +11,7 @@ env:
   PYTHONPATH: .
   SOURCE_RUN_ID: 35288111136
   RESEARCH_SOURCE_COMMIT: 73abb0a0559af51bd70f0a3d1bbbfc3d702cab00
+  RESEARCH_COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
 jobs:
   v21-research:
@@ -18,6 +19,8 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -173,7 +176,7 @@ jobs:
           provenance = {
               "schema_version": 1,
               "source_run_id": int(os.environ["SOURCE_RUN_ID"]),
-              "github_sha": os.environ.get("GITHUB_SHA", ""),
+              "github_sha": os.environ.get("RESEARCH_COMMIT_SHA", os.environ.get("GITHUB_SHA", "")),
               "source_commit": os.environ.get("RESEARCH_SOURCE_COMMIT", ""),
               "captures": ["A", "B", "C", "D"],
               "orderflow_sha256": sha("research_reports/v21_orderflow.parquet"),
