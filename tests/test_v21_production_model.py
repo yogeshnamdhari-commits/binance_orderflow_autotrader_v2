@@ -10,7 +10,7 @@ from scripts.v21_orderflow_dataset import FEATURES
 def make_payload():
     n = len(FEATURES)
     base = {
-        "schema_version": 1,
+        "schema_version": 2,
         "model_family": "test",
         "horizon_ms": 250,
         "features": list(FEATURES),
@@ -21,8 +21,8 @@ def make_payload():
         "move": {"mean": [0.0] * n, "scale": [1.0] * n, "coef": [0.0] * n, "intercept": 0.0},
         "direction": {"mean": [0.0] * n, "scale": [1.0] * n, "coef": [0.0] * n, "intercept": 0.0},
         "magnitude": {"coef": [0.0] * n, "intercept": 1.5},
-        "toxicity_buy": {"coef": [0.0] * n, "intercept": 0.25},
-        "toxicity_sell": {"coef": [0.0] * n, "intercept": 0.50},
+        "markout_buy": {"coef": [0.0] * n, "intercept": 2.50},
+        "markout_sell": {"coef": [0.0] * n, "intercept": 2.75},
         "production_inference": {"training_in_live_process": False, "feature_order_locked": True},
     }
     raw = json.dumps(base, sort_keys=True, separators=(",", ":")).encode()
@@ -42,8 +42,8 @@ def test_frozen_bundle_hash_and_prediction():
     assert pred.p_up == 0.5
     assert pred.abs_move_bps == 1.5
     assert pred.expected_signed_move_bps == 0.0
-    assert pred.toxicity_buy_bps == 0.25
-    assert pred.toxicity_sell_bps == 0.50
+    assert pred.conditional_markout_buy_bps == 2.50
+    assert pred.conditional_markout_sell_bps == 2.75
 
 
 def test_bundle_rejects_wrong_feature_order():
