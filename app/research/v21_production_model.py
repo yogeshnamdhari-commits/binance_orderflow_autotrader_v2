@@ -41,8 +41,8 @@ class V21Prediction:
     p_up: float
     abs_move_bps: float
     expected_signed_move_bps: float
-    toxicity_buy_bps: float
-    toxicity_sell_bps: float
+    conditional_markout_buy_bps: float
+    conditional_markout_sell_bps: float
 
 
 class V21ModelBundle:
