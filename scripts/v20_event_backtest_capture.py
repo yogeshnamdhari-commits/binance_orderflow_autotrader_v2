@@ -91,7 +91,7 @@ def load_events(capture_dir: Path) -> tuple[list[L2Update], list[TradeEvent], di
                 u = int(data["u"])
                 pu = int(data.get("pu", previous_depth_u))
                 if first_depth:
-                    if not (U <= snapshot.last_update_id + 1 <= u):
+                    if not (U <= snapshot.last_update_id <= u):
                         raise ValueError(
                             "first depth event is not a valid snapshot bridge: "
                             f"snapshot={snapshot.last_update_id}, U={U}, u={u}"
