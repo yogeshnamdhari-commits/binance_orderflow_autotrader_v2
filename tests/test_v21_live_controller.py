@@ -25,7 +25,7 @@ class Adapter:
 def bundle():
     n = len(FEATURES)
     payload = {
-        "schema_version": 1,
+        "schema_version": 2,
         "model_family": "test",
         "horizon_ms": 250,
         "features": list(FEATURES),
@@ -36,8 +36,8 @@ def bundle():
         "move": {"mean": [0.0] * n, "scale": [1.0] * n, "coef": [0.0] * n, "intercept": 0.0},
         "direction": {"mean": [0.0] * n, "scale": [1.0] * n, "coef": [0.0] * n, "intercept": 0.0},
         "magnitude": {"coef": [0.0] * n, "intercept": 1.5},
-        "toxicity_buy": {"coef": [0.0] * n, "intercept": 0.10},
-        "toxicity_sell": {"coef": [0.0] * n, "intercept": 0.10},
+        "markout_buy": {"coef": [0.0] * n, "intercept": 3.50},
+        "markout_sell": {"coef": [0.0] * n, "intercept": 3.50},
     }
     raw = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
     payload["bundle_sha256"] = hashlib.sha256(raw).hexdigest()
