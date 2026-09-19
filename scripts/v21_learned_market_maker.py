@@ -378,6 +378,7 @@ def replay_test_session(
         last_update_id=split_book.last_update_id,
         bids=split_book.get_depth("bid", levels=1000),
         asks=split_book.get_depth("ask", levels=1000),
+        bridge_complete=True,
     )
     test_depth_events = [
         e for e in depth if e.timestamp_ns // 1_000_000 > split_start
