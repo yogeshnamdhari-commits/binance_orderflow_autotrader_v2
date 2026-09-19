@@ -9,8 +9,6 @@ on:
 
 env:
   PYTHONPATH: .
-  SOURCE_RUN_ID: 35288111136
-  RESEARCH_SOURCE_COMMIT: 73abb0a0559af51bd70f0a3d1bbbfc3d702cab00
   RESEARCH_COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
 jobs:
@@ -68,13 +66,28 @@ jobs:
             tests/test_v21_live_controller.py \
             tests/test_binance_execution.py
 
+      - name: Resolve latest successful V20 capture run
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          json="$(gh run list --workflow=v20-performance-certification.yml --branch feature/v20-market-making --status success --limit 5 --json databaseId,headSha)"
+          run_id="$(printf '%s' "$json" | python -c 'import json,sys; rows=json.load(sys.stdin); print(rows[0]["databaseId"] if rows else "")')"
+          source_sha="$(printf '%s' "$json" | python -c 'import json,sys; rows=json.load(sys.stdin); print(rows[0]["headSha"] if rows else "")')"
+          test -n "$run_id"
+          test -n "$source_sha"
+          echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+          echo "source_sha=$source_sha" >> "$GITHUB_OUTPUT"
+          echo "Using V20 capture run $run_id from commit $source_sha"
+
       - name: Download capture A
         uses: actions/download-artifact@v4
         with:
           name: v20-authentic-capture-A
           path: captures/A
           repository: ${{ github.repository }}
-          run-id: ${{ env.SOURCE_RUN_ID }}
+          run-id: ${{ steps.source.outputs.run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download capture B
@@ -175,9 +188,9 @@ jobs:
           toxicity = pd.read_parquet("research_reports/v21_toxicity.parquet")
           provenance = {
               "schema_version": 1,
-              "source_run_id": int(os.environ["SOURCE_RUN_ID"]),
+              "source_run_id": int("${{ steps.source.outputs.run_id }}"),
               "github_sha": os.environ.get("RESEARCH_COMMIT_SHA", os.environ.get("GITHUB_SHA", "")),
-              "source_commit": os.environ.get("RESEARCH_SOURCE_COMMIT", ""),
+              "source_commit": "${{ steps.source.outputs.source_sha }}",
               "captures": ["A", "B", "C", "D"],
               "orderflow_sha256": sha("research_reports/v21_orderflow.parquet"),
               "toxicity_sha256": sha("research_reports/v21_toxicity.parquet"),
