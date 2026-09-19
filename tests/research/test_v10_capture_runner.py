@@ -8,7 +8,7 @@ import pytest
 
 from app.v10_capture import (
     _depth_update_id_range,
-    fetch_ws_snapshot_with_retries,
+    fetch_rest_snapshot_with_retries,
     find_bridging_index,
 )
 from app.v10_recorder import V10Recorder
@@ -48,7 +48,7 @@ def test_depth_update_id_range_returns_none_for_malformed():
     assert _depth_update_id_range('{"e":"trade"}') is None
 
 
-def test_find_bridging_index_accepts_exact_bridge():
+def test_find_bridging_index_accepts_snapshot_bracket():
     events = [
         (_depth_update_payload(U=100, u=105, pu=99), 0, "btcusdt@depth@100ms"),
         (_depth_update_payload(U=101, u=110, pu=100), 0, "btcusdt@depth@100ms"),
@@ -89,7 +89,7 @@ def test_snapshot_retry_succeeds_after_transient_failure(monkeypatch):
             raise RuntimeError("temporary websocket failure")
         return {"lastUpdateId": 123, "bids": [], "asks": []}
 
-    monkeypatch.setattr("app.v10_capture.fetch_ws_snapshot", fake_fetch)
+    monkeypatch.setattr("app.v10_capture.fetch_rest_snapshot", fake_fetch)
     monkeypatch.setattr("app.v10_capture.time.sleep", lambda _seconds: None)
 
     result = fetch_ws_snapshot_with_retries("BTCUSDT", attempts=3, retry_delay_seconds=0.0)
