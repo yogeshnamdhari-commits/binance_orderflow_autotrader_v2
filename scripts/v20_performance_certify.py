@@ -208,7 +208,6 @@ def main() -> int:
     bootstrap = manifest.get("bootstrap", {})
     if bootstrap.get("status") != "BRIDGED":
         raise SystemExit("CERTIFICATION_BLOCKED: capture bootstrap is not BRIDGED")
-        raise SystemExit("CERTIFICATION_BLOCKED: capture bootstrap is not BRIDGED")
     if str(manifest.get("symbol", "")).upper() != "BTCUSDT":
         raise SystemExit("CERTIFICATION_BLOCKED: symbol must be BTCUSDT")
 
