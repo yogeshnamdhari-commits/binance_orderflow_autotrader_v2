@@ -72,14 +72,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          json="$(gh run list --workflow=v20-performance-certification.yml --branch feature/v20-market-making --status success --limit 5 --json databaseId,headSha)"
-          run_id="$(printf '%s' "$json" | python -c 'import json,sys; rows=json.load(sys.stdin); print(rows[0]["databaseId"] if rows else "")')"
-          source_sha="$(printf '%s' "$json" | python -c 'import json,sys; rows=json.load(sys.stdin); print(rows[0]["headSha"] if rows else "")')"
+          base_sha="$(gh api repos/${{ github.repository }}/git/ref/heads/feature/v20-market-making --jq '.object.sha')"
+          json="$(gh run list --workflow=v20-performance-certification.yml --branch feature/v20-market-making --status success --limit 20 --json databaseId,headSha)"
+          run_id="$(printf '%s' "$json" | python -c 'import json,sys; base=sys.argv[1]; rows=[r for r in json.load(sys.stdin) if r.get("headSha")==base]; print(rows[0]["databaseId"] if rows else "")' "$base_sha")"
+          source_sha="$(printf '%s' "$json" | python -c 'import json,sys; base=sys.argv[1]; rows=[r for r in json.load(sys.stdin) if r.get("headSha")==base]; print(rows[0]["headSha"] if rows else "")' "$base_sha")"
           test -n "$run_id"
           test -n "$source_sha"
+          test "$source_sha" = "$base_sha"
           echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
           echo "source_sha=$source_sha" >> "$GITHUB_OUTPUT"
-          echo "Using V20 capture run $run_id from commit $source_sha"
+          echo "Using V20 capture run $run_id from current feature commit $source_sha"
 
       - name: Download capture A
         uses: actions/download-artifact@v4
@@ -96,7 +98,7 @@ jobs:
           name: v20-authentic-capture-B
           path: captures/B
           repository: ${{ github.repository }}
-          run-id: ${{ env.SOURCE_RUN_ID }}
+          run-id: ${{ steps.source.outputs.run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download capture C
