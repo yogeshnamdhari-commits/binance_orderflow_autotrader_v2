@@ -182,18 +182,19 @@ class V21LiveController:
             bid_cross = True
             ask_cross = True
 
-        bid_edge = (
-            ((top.mid - bid) * 10_000.0 / top.mid if bid else 0.0)
-            + prediction.expected_signed_move_bps
-            - self.maker_fee_bps
-            - self.toxicity_multiplier * prediction.toxicity_buy_bps
+        conservative_buy_markout = (
+            prediction.conditional_markout_buy_bps
+            - max(0.0, -prediction.conditional_markout_buy_bps)
+            * max(0.0, self.toxicity_multiplier - 1.0)
         )
-        ask_edge = (
-            ((ask - top.mid) * 10_000.0 / top.mid if ask else 0.0)
-            - prediction.expected_signed_move_bps
-            - self.maker_fee_bps
-            - self.toxicity_multiplier * prediction.toxicity_sell_bps
+        conservative_sell_markout = (
+            prediction.conditional_markout_sell_bps
+            - max(0.0, -prediction.conditional_markout_sell_bps)
+            * max(0.0, self.toxicity_multiplier - 1.0)
         )
+        inventory_cost_bps = abs(inventory_fraction) * self.inventory_penalty_bps
+        bid_edge = conservative_buy_markout - self.maker_fee_bps - inventory_cost_bps
+        ask_edge = conservative_sell_markout - self.maker_fee_bps - inventory_cost_bps
 
         bid_enabled = bid is not None and bid_edge >= self.min_edge_bps
         ask_enabled = ask is not None and ask_edge >= self.min_edge_bps
