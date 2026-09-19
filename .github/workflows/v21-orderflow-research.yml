@@ -139,7 +139,7 @@ jobs:
           name: v20-authentic-capture-C
           path: captures/C
           repository: ${{ github.repository }}
-          run-id: ${{ env.SOURCE_RUN_ID }}
+          run-id: ${{ steps.source.outputs.run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download capture D
@@ -148,7 +148,7 @@ jobs:
           name: v20-authentic-capture-D
           path: captures/D
           repository: ${{ github.repository }}
-          run-id: ${{ env.SOURCE_RUN_ID }}
+          run-id: ${{ steps.source.outputs.run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Verify captures
