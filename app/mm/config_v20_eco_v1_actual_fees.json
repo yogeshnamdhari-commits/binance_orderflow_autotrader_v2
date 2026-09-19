@@ -9,7 +9,7 @@
   "cancel_on_adverse_selection": true,
   "adverse_selection_threshold_bps": 0.75,
   "min_top_level_qty": 0.0,
-  "maker_fee_bps": 1.0,
-  "taker_fee_bps": 2.0,
+  "maker_fee_bps": 2.0,
+  "taker_fee_bps": 5.0,
   "live_order_submission": false
 }
