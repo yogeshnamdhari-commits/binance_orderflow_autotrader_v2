@@ -18,7 +18,7 @@ from .v10_recorder import V10Recorder
 
 DEFAULT_WS = "wss://fstream.binance.com/public"
 DEFAULT_STREAMS = ["btcusdt@depth@100ms", "btcusdt@trade", "btcusdt@bookTicker"]
-DEPTH_API_WS = "wss://ws-fapi.binance.com/ws-fapi/v1"
+DEPTH_REST_URL = "https://fapi.binance.com/fapi/v1/depth"
 
 
 def build_ws_url(base_url: str, streams: list[str]) -> str:
@@ -43,33 +43,42 @@ def capture_output_path(root: str | Path, session_id: str) -> Path:
     return Path(root) / session_id
 
 
-def fetch_ws_snapshot(symbol: str, limit: int = 1000) -> dict[str, object]:
-    """Request a live USDⓈ-M order-book snapshot over Binance's public WS API."""
-    import uuid
-    import websocket
+def fetch_rest_snapshot(symbol: str, limit: int = 1000) -> dict[str, object]:
+    """Request the authoritative USDⓈ-M depth snapshot used by Binance's local-book procedure."""
+    import requests
 
-    request = {
-        "id": str(uuid.uuid4()),
-        "method": "depth",
-        "params": {
-            "symbol": symbol.upper(),
-            "limit": limit,
-        },
-    }
-    connection = websocket.create_connection(DEPTH_API_WS, timeout=10)
-    try:
-        connection.send(json.dumps(request, separators=(",", ":")))
-        response = json.loads(connection.recv())
-    finally:
-        connection.close()
+    response = requests.get(
+        DEPTH_REST_URL,
+        params={"symbol": symbol.upper(), "limit": limit},
+        timeout=10,
+    )
+    response.raise_for_status()
+    payload = response.json()
+    if not isinstance(payload, dict) or "lastUpdateId" not in payload:
+        raise RuntimeError(f"invalid Binance REST depth snapshot response: {payload}")
+    return payload
 
-    if response.get("status") != 200:
-        raise RuntimeError(f"Binance WS depth snapshot failed: {response}")
-    result = response.get("result")
-    if not isinstance(result, dict) or "lastUpdateId" not in result:
-        raise RuntimeError(f"invalid Binance WS depth snapshot response: {response}")
-    return result
 
+def fetch_rest_snapshot_with_retries(
+    symbol: str,
+    *,
+    limit: int = 1000,
+    attempts: int = 3,
+    retry_delay_seconds: float = 1.0,
+) -> dict[str, object]:
+    """Retry transient public REST snapshot failures; fail closed if unavailable."""
+    if attempts < 1:
+        raise ValueError("attempts must be >= 1")
+    last_error: Exception | None = None
+    for attempt in range(1, attempts + 1):
+        try:
+            return fetch_rest_snapshot(symbol, limit=limit)
+        except Exception as exc:
+            last_error = exc
+            if attempt < attempts and retry_delay_seconds > 0:
+                time.sleep(retry_delay_seconds)
+    assert last_error is not None
+    raise last_error
 
 def fetch_ws_snapshot_with_retries(
     symbol: str,
@@ -108,14 +117,14 @@ def _depth_update_id_range(raw_json: str) -> tuple[int, int] | None:
 def find_bridging_index(
     buffered_events: list[tuple[str, int, str | None]], snapshot_id: int
 ) -> int | None:
-    """Find the first depthUpdate satisfying U <= snapshot_id+1 <= u."""
+    """Find the first depthUpdate satisfying U <= snapshot_id <= u."""
     for idx, item in enumerate(buffered_events):
         raw_json = item[0]
         range_result = _depth_update_id_range(raw_json)
         if range_result is None:
             continue
         U, u = range_result
-        if U <= snapshot_id + 1 <= u:
+        if U <= snapshot_id <= u:
             return idx
     return None
 
@@ -136,6 +145,7 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
 
     state: dict[str, object] = {
         "snapshot_id": None,
+        "snapshot_source": "REST",
         "bridge_found": False,
         "snapshot_fetched": False,
         "bridge_deadline": None,
@@ -152,7 +162,7 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
             if state["snapshot_fetched"] or state["bridge_found"]:
                 return
             try:
-                snap = fetch_ws_snapshot_with_retries(symbol.upper(), attempts=3, retry_delay_seconds=1.0)
+                snap = fetch_rest_snapshot_with_retries(symbol.upper(), attempts=3, retry_delay_seconds=1.0)
                 snapshot_id = int(snap["lastUpdateId"])
                 (session_dir / "snapshot.json").write_text(
                     json.dumps(snap, indent=2, sort_keys=True) + "\n",
@@ -163,7 +173,7 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
                 first_bridge = find_bridging_index(state["buffered"], snapshot_id)
                 if first_bridge is not None:
                     state["bridge_found"] = True
-                    recorder.record_bootstrap(snapshot_id, first_bridge, state["buffered"])
+                    recorder.record_bootstrap(snapshot_id, first_bridge, state["buffered"], snapshot_source=str(state["snapshot_source"]))
                     for idx in range(first_bridge, len(state["buffered"])):
                         raw, ns, _stream = state["buffered"][idx]
                         recorder.handle_message(raw, receive_ns=ns)
