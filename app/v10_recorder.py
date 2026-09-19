@@ -92,6 +92,7 @@ class V10Recorder:
         snapshot_id: int,
         bridge_index: int,
         buffered: list[tuple[str, int, str | None]],
+        snapshot_source: str = "REST",
     ) -> None:
         first_raw = buffered[bridge_index][0]
         range_result = _depth_update_id_range(first_raw)
@@ -107,6 +108,7 @@ class V10Recorder:
         self.session._manifest["bootstrap"] = {
             "status": "BRIDGED",
             "snapshot_last_update_id": snapshot_id,
+            "snapshot_source": snapshot_source,
             "first_bridge_index": bridge_index,
             "first_U": first_U,
             "first_u": first_u,
