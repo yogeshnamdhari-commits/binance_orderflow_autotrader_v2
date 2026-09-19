@@ -161,17 +161,13 @@ class V21LiveController:
         )
         inventory_shift = -inventory_fraction * self.inventory_penalty_bps
         reservation_shift = prediction.expected_signed_move_bps + inventory_shift
-        reservation = top.mid * (1.0 + reservation_shift / 10_000.0)
 
-        half = self.half_spread_bps / 10_000.0
-        raw_bid = reservation * (1.0 - half)
-        raw_ask = reservation * (1.0 + half)
-
-        bid = self._floor_tick(raw_bid)
-        ask = self._ceil_tick(raw_ask)
-
-        bid_cross = bid >= top.ask_price
-        ask_cross = ask <= top.bid_price
+        # Production-candidate quoting is BBO-only so its economic decision
+        # uses the same price basis as the conditional markout model.
+        bid = float(top.bid_price)
+        ask = float(top.ask_price)
+        bid_cross = False
+        ask_cross = False
         if bid_cross:
             bid = None
         if ask_cross:
