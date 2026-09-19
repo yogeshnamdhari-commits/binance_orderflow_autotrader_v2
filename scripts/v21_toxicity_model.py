@@ -26,6 +26,8 @@ from app.mm.execution_replay import Side
 from scripts.v20_event_backtest_capture import load_events, load_snapshot
 from scripts.v21_orderflow_dataset import FEATURES
 
+MARKOUT_HORIZON_MS = 250
+
 
 def _past_mid(mid_history: deque[tuple[int, float]], now: int, window: int) -> float | None:
     target = now - window
@@ -187,15 +189,18 @@ def extract_toxicity_session(capture_dir: Path, session: str) -> pd.DataFrame:
             trade_history.append((now, signed, notional))
             continue
 
-        future = _future_mid(mid_times, mids, now, 100)
-        if future is None:
+        future_100 = _future_mid(mid_times, mids, now, 100)
+        future_markout = _future_mid(mid_times, mids, now, MARKOUT_HORIZON_MS)
+        if future_100 is None or future_markout is None:
             trade_history.append((now, signed, notional))
             continue
 
         if side == "BUY":
-            adverse_bps = max(0.0, (fill_price - future) * 10_000.0 / fill_price)
+            adverse_bps = max(0.0, (fill_price - future_100) * 10_000.0 / fill_price)
+            markout_bps = (future_markout - fill_price) * 10_000.0 / fill_price
         else:
-            adverse_bps = max(0.0, (future - fill_price) * 10_000.0 / fill_price)
+            adverse_bps = max(0.0, (future_100 - fill_price) * 10_000.0 / fill_price)
+            markout_bps = (fill_price - future_markout) * 10_000.0 / fill_price
 
         row = {k: current_feature[k] for k in FEATURES}
         row.update(
@@ -206,6 +211,7 @@ def extract_toxicity_session(capture_dir: Path, session: str) -> pd.DataFrame:
                 "split_start_ms": current_feature.get("split_start_ms", session_midpoint),
                 "side": side,
                 "adverse_bps_100ms": adverse_bps,
+                "markout_bps_250ms": markout_bps,
                 "toxic": int(adverse_bps > 0.0),
                 "fill_price": fill_price,
             }
@@ -217,8 +223,8 @@ def extract_toxicity_session(capture_dir: Path, session: str) -> pd.DataFrame:
 
 
 def _fit_eval(train: pd.DataFrame, test: pd.DataFrame) -> dict[str, Any]:
-    train = train.replace([np.inf, -np.inf], np.nan).dropna(subset=FEATURES + ["toxic"])
-    test = test.replace([np.inf, -np.inf], np.nan).dropna(subset=FEATURES + ["toxic"])
+    train = train.replace([np.inf, -np.inf], np.nan).dropna(subset=FEATURES + ["toxic", "markout_bps_250ms"])
+    test = test.replace([np.inf, -np.inf], np.nan).dropna(subset=FEATURES + ["toxic", "markout_bps_250ms"])
     train = train[train["timestamp_ms"] <= (train["split_start_ms"] - 100)]
     if len(train) < 100 or len(test) < 30:
         return {"status": "INSUFFICIENT_DATA", "train_rows": len(train), "test_rows": len(test)}
@@ -246,6 +252,8 @@ def _fit_eval(train: pd.DataFrame, test: pd.DataFrame) -> dict[str, Any]:
         "log_loss": float(log_loss(y_test, p, labels=[0, 1])),
         "accuracy_at_0_5": float(accuracy_score(y_test, p >= 0.5)),
         "mean_observed_adverse_bps": float(test["adverse_bps_100ms"].mean()),
+        "mean_observed_markout_bps_250ms": float(test["markout_bps_250ms"].mean()),
+        "median_observed_markout_bps_250ms": float(test["markout_bps_250ms"].median()),
         "mean_predicted_toxicity": float(p.mean()),
     }
 
