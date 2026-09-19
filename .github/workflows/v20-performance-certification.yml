@@ -67,7 +67,7 @@ jobs:
           run_capture(
               symbol='BTCUSDT',
               output_dir='data/cert_capture',
-              duration_seconds=1800,
+              duration_seconds=3600,
           )
           PY
 
