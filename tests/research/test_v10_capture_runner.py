@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from app.mm.book import L2Snapshot, L2Update, OrderBook
 from app.v10_capture import (
     _depth_update_id_range,
     fetch_rest_snapshot_with_retries,
@@ -222,3 +223,56 @@ def test_no_silent_fallback_makes_capture_replayable():
     raw = _depth_update_payload(U=200, u=250, pu=199)
     idx = find_bridging_index([(raw, 0, "stream")], snapshot_id=snapshot_id)
     assert idx is None, "u > snapshot_id alone must not create a bridge"
+
+
+def test_orderbook_accepts_snapshot_bridging_event():
+    snapshot = L2Snapshot(
+        timestamp_ns=0,
+        last_update_id=100,
+        bids=[(99.0, 1.0)],
+        asks=[(101.0, 1.0)],
+    )
+    book = OrderBook.from_snapshot(snapshot)
+    book.apply_update(
+        L2Update(
+            timestamp_ns=1,
+            first_update_id=98,
+            final_update_id=105,
+            prev_final_update_id=97,
+            bids=[(99.0, 2.0)],
+            asks=[],
+        )
+    )
+    assert book.last_update_id == 105
+    assert book.bids[99.0] == 2.0
+
+
+def test_orderbook_requires_exact_pu_after_initial_bridge():
+    snapshot = L2Snapshot(
+        timestamp_ns=0,
+        last_update_id=100,
+        bids=[(99.0, 1.0)],
+        asks=[(101.0, 1.0)],
+    )
+    book = OrderBook.from_snapshot(snapshot)
+    book.apply_update(L2Update(1, 99, 105, 97, [(99.0, 2.0)], []))
+    try:
+        book.apply_update(L2Update(2, 106, 110, 104, [], [(101.0, 2.0)]))
+    except ValueError as exc:
+        assert "Sequence gap" in str(exc)
+    else:
+        raise AssertionError("sequence gap was silently accepted")
+
+
+def test_orderbook_ignores_stale_duplicate_without_advancing_state():
+    snapshot = L2Snapshot(
+        timestamp_ns=0,
+        last_update_id=100,
+        bids=[(99.0, 1.0)],
+        asks=[(101.0, 1.0)],
+    )
+    book = OrderBook.from_snapshot(snapshot)
+    book.apply_update(L2Update(1, 99, 105, 97, [(99.0, 2.0)], []))
+    book.apply_update(L2Update(2, 99, 105, 97, [(99.0, 3.0)], []))
+    assert book.last_update_id == 105
+    assert book.bids[99.0] == 2.0
