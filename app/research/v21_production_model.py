@@ -48,7 +48,7 @@ class V21Prediction:
 class V21ModelBundle:
     """Immutable inference-only representation of a frozen V21 model."""
 
-    SCHEMA_VERSION = 1
+    SCHEMA_VERSION = 2
 
     def __init__(self, payload: dict):
         if int(payload.get("schema_version", -1)) != self.SCHEMA_VERSION:
@@ -94,8 +94,8 @@ class V21ModelBundle:
         self._validate_logit(self.payload["move"], "move")
         self._validate_logit(self.payload["direction"], "direction")
         self._validate_huber(self.payload["magnitude"], "magnitude")
-        self._validate_huber(self.payload["toxicity_buy"], "toxicity_buy")
-        self._validate_huber(self.payload["toxicity_sell"], "toxicity_sell")
+        self._validate_huber(self.payload["markout_buy"], "markout_buy")
+        self._validate_huber(self.payload["markout_sell"], "markout_sell")
 
     @classmethod
     def from_file(cls, path: str | Path) -> "V21ModelBundle":
@@ -133,13 +133,13 @@ class V21ModelBundle:
         p_up = self._logit_probability(self.payload["direction"], arr)
         abs_move = max(0.0, self._huber_predict(self.payload["magnitude"], arr))
         expected = p_move * (2.0 * p_up - 1.0) * abs_move
-        tox_buy = max(0.0, self._huber_predict(self.payload["toxicity_buy"], arr))
-        tox_sell = max(0.0, self._huber_predict(self.payload["toxicity_sell"], arr))
+        markout_buy = self._huber_predict(self.payload["markout_buy"], arr)
+        markout_sell = self._huber_predict(self.payload["markout_sell"], arr)
         return V21Prediction(
             p_move=p_move,
             p_up=p_up,
             abs_move_bps=abs_move,
             expected_signed_move_bps=expected,
-            toxicity_buy_bps=tox_buy,
-            toxicity_sell_bps=tox_sell,
+            conditional_markout_buy_bps=markout_buy,
+            conditional_markout_sell_bps=markout_sell,
         )
