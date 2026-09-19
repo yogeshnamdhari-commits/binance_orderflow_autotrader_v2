@@ -1,11 +1,20 @@
 name: V21 Order-Flow Research
 
 on:
-  push:
-    branches: [research/v21-orderflow-core, research/v21-orderflow-latest]
   workflow_dispatch:
-  pull_request:
-    branches: [feature/v20-market-making]
+    inputs:
+      source_run_id:
+        description: "Exact V20 capture workflow run ID"
+        required: false
+        type: string
+      source_sha:
+        description: "Feature branch SHA that produced the V20 capture run"
+        required: false
+        type: string
+
+permissions:
+  actions: read
+  contents: read
 
 env:
   PYTHONPATH: .
@@ -68,23 +77,44 @@ jobs:
             tests/test_v21_live_controller.py \
             tests/test_binance_execution.py
 
-      - name: Resolve latest successful V20 capture run
+      - name: Resolve exact V20 capture run
         id: source
         env:
           GH_TOKEN: ${{ github.token }}
+          INPUT_RUN_ID: ${{ inputs.source_run_id }}
+          INPUT_SOURCE_SHA: ${{ inputs.source_sha }}
         run: |
           set -euo pipefail
-          base_sha="$(gh api repos/${{ github.repository }}/git/ref/heads/feature/v20-market-making --jq '.object.sha')"
-          json="$(gh run list --workflow=v20-performance-certification.yml --branch feature/v20-market-making --status success --limit 20 --json databaseId,headSha)"
-          run_id="$(printf '%s' "$json" | python -c 'import json,sys; base=sys.argv[1]; rows=[r for r in json.load(sys.stdin) if r.get("headSha")==base]; print(rows[0]["databaseId"] if rows else "")' "$base_sha")"
-          source_sha="$(printf '%s' "$json" | python -c 'import json,sys; base=sys.argv[1]; rows=[r for r in json.load(sys.stdin) if r.get("headSha")==base]; print(rows[0]["headSha"] if rows else "")' "$base_sha")"
-          test -n "$run_id"
-          test -n "$source_sha"
-          test "$source_sha" = "$base_sha"
+          if [ -n "$INPUT_RUN_ID" ]; then
+            run_id="$INPUT_RUN_ID"
+            run_json="$(gh api "repos/${{ github.repository }}/actions/runs/$run_id")"
+            run_status="$(printf '%s' "$run_json" | python -c 'import json,sys; print(json.load(sys.stdin).get("status",""))')"
+            run_conclusion="$(printf '%s' "$run_json" | python -c 'import json,sys; print(json.load(sys.stdin).get("conclusion") or "")')"
+            source_sha="$(printf '%s' "$run_json" | python -c 'import json,sys; print(json.load(sys.stdin).get("head_sha",""))')"
+            test -n "$source_sha"
+            test -n "$INPUT_SOURCE_SHA"
+            test "$source_sha" = "$INPUT_SOURCE_SHA"
+            if [ "$run_status" != "completed" ]; then
+              echo "V20 source run $run_id has not completed yet: status=$run_status"
+              exit 1
+            fi
+            if [ "$run_conclusion" != "success" ] && [ "$run_conclusion" != "failure" ]; then
+              echo "V20 source run $run_id has unsupported conclusion=$run_conclusion"
+              exit 1
+            fi
+            echo "Using exact dispatched V20 run $run_id from feature commit $source_sha"
+          else
+            base_sha="$(gh api repos/${{ github.repository }}/git/ref/heads/feature/v20-market-making --jq '.object.sha')"
+            json="$(gh run list --workflow=v20-performance-certification.yml --branch feature/v20-market-making --status success --limit 20 --json databaseId,headSha)"
+            run_id="$(printf '%s' "$json" | python -c 'import json,sys; base=sys.argv[1]; rows=[r for r in json.load(sys.stdin) if r.get("headSha")==base]; print(rows[0]["databaseId"] if rows else "")' "$base_sha")"
+            source_sha="$(printf '%s' "$json" | python -c 'import json,sys; base=sys.argv[1]; rows=[r for r in json.load(sys.stdin) if r.get("headSha")==base]; print(rows[0]["headSha"] if rows else "")' "$base_sha")"
+            test -n "$run_id"
+            test -n "$source_sha"
+            test "$source_sha" = "$base_sha"
+            echo "Using latest successful V20 run $run_id from feature commit $source_sha"
+          fi
           echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
           echo "source_sha=$source_sha" >> "$GITHUB_OUTPUT"
-          echo "Using V20 capture run $run_id from current feature commit $source_sha"
-
       - name: Download capture A
         uses: actions/download-artifact@v4
         with:
