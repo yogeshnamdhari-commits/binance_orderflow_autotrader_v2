@@ -265,20 +265,14 @@ def _decision(
     inventory_fraction = max(-1.0, min(1.0, inventory * top.mid / MAX_POSITION_NOTIONAL_USD))
     inventory_shift = -inventory_fraction * INVENTORY_PENALTY_BPS
     reservation_shift = expected_signed + inventory_shift
-    reservation = top.mid * (1.0 + reservation_shift / 10_000.0)
-    half = half_spread_bps / 10_000.0
-    raw_bid = reservation * (1.0 - half)
-    raw_ask = reservation * (1.0 + half)
 
-    bid = np.floor(raw_bid / 0.1) * 0.1
-    ask = np.ceil(raw_ask / 0.1) * 0.1
-
-    bid_cross = bid >= top.ask_price
-    ask_cross = ask <= top.bid_price
-    if bid_cross:
-        bid = None
-    if ask_cross:
-        ask = None
+    # Certified replay uses BBO quotes only. The conditional markout labels
+    # are measured from a hypothetical fill at the observed BBO; allowing
+    # inside-spread price improvement would create a label/decision mismatch.
+    bid = float(top.bid_price)
+    ask = float(top.ask_price)
+    bid_cross = False
+    ask_cross = False
 
     # Conditional markout is measured from the hypothetical fill price to the
     # future mid, so it already contains the benefit/cost of quote distance.
