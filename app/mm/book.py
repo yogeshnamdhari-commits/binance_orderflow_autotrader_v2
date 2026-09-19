@@ -13,6 +13,7 @@ class L2Snapshot:
     last_update_id: int
     bids: list[tuple[float, float]]
     asks: list[tuple[float, float]]
+    bridge_complete: bool = False
 
 
 @dataclass
@@ -35,7 +36,7 @@ class OrderBook:
     last_update_id: int
     bids: dict[float, float] = field(default_factory=dict)
     asks: dict[float, float] = field(default_factory=dict)
-    _awaiting_first_diff: bool = True
+    _awaiting_first_diff: bool = field(default=True, repr=False, compare=False)
 
     @classmethod
     def from_snapshot(cls, snapshot: L2Snapshot) -> OrderBook:
@@ -43,6 +44,7 @@ class OrderBook:
         book = cls(
             timestamp_ns=snapshot.timestamp_ns,
             last_update_id=snapshot.last_update_id,
+            _awaiting_first_diff=not snapshot.bridge_complete,
         )
         for price, qty in snapshot.bids:
             book.bids[float(price)] = float(qty)
