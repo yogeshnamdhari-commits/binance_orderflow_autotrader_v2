@@ -4,6 +4,8 @@ import json
 import sys
 from pathlib import Path
 
+MIN_CAPTURE_DURATION_NS = 3_300 * 1_000_000_000
+
 
 def inspect_capture(capture_dir: str | Path) -> dict[str, object]:
     root = Path(capture_dir)
@@ -51,6 +53,14 @@ def inspect_capture(capture_dir: str | Path) -> dict[str, object]:
         raise RuntimeError(f"CERTIFICATION_CAPTURE_INVALID: {parse_errors} malformed JSON event rows")
     if manifest.get("symbol") != "BTCUSDT":
         raise RuntimeError(f"CERTIFICATION_CAPTURE_INVALID: expected BTCUSDT, got {manifest.get('symbol')!r}")
+    start_ns = manifest.get("start_ns")
+    end_ns = manifest.get("end_ns")
+    if not isinstance(start_ns, int) or not isinstance(end_ns, int) or end_ns <= start_ns:
+        raise RuntimeError("CERTIFICATION_CAPTURE_INVALID: missing or invalid capture duration")
+    if end_ns - start_ns < MIN_CAPTURE_DURATION_NS:
+        raise RuntimeError(
+            "CERTIFICATION_CAPTURE_INVALID: capture duration below 55 minutes"
+        )
     bootstrap = manifest.get("bootstrap") or {}
     if bootstrap.get("status") != "BRIDGED":
         raise RuntimeError(f"CERTIFICATION_CAPTURE_INVALID: bootstrap status={bootstrap.get('status')!r}")
@@ -75,6 +85,7 @@ def inspect_capture(capture_dir: str | Path) -> dict[str, object]:
         "first_event_receive_ns": first_event_ns,
         "last_event_receive_ns": last_event_ns,
         "bootstrap_status": bootstrap.get("status"),
+        "duration_seconds": (end_ns - start_ns) / 1_000_000_000,
     }
 
 
