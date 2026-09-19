@@ -90,21 +90,11 @@ jobs:
           if [ -n "$INPUT_RUN_ID" ]; then
             run_id="$INPUT_RUN_ID"
             run_json="$(gh api "repos/${{ github.repository }}/actions/runs/$run_id")"
-            run_status="$(printf '%s' "$run_json" | python -c 'import json,sys; print(json.load(sys.stdin).get("status",""))')"
-            run_conclusion="$(printf '%s' "$run_json" | python -c 'import json,sys; print(json.load(sys.stdin).get("conclusion") or "")')"
             source_sha="$(printf '%s' "$run_json" | python -c 'import json,sys; print(json.load(sys.stdin).get("head_sha",""))')"
             test -n "$source_sha"
             test -n "$INPUT_SOURCE_SHA"
             test "$source_sha" = "$INPUT_SOURCE_SHA"
-            if [ "$run_status" != "completed" ]; then
-              echo "V20 source run $run_id has not completed yet: status=$run_status"
-              exit 1
-            fi
-            if [ "$run_conclusion" != "success" ] && [ "$run_conclusion" != "failure" ]; then
-              echo "V20 source run $run_id has unsupported conclusion=$run_conclusion"
-              exit 1
-            fi
-            echo "Using exact dispatched V20 run $run_id from feature commit $source_sha"
+            echo "Using exact dispatched V20 run $run_id from feature commit $source_sha; matrix artifacts will be validated below"
           else
             base_sha="$(gh api repos/${{ github.repository }}/git/ref/heads/feature/v20-market-making --jq '.object.sha')"
             json="$(gh run list --workflow=v20-performance-certification.yml --branch feature/v20-market-making --status success --limit 20 --json databaseId,headSha)"
