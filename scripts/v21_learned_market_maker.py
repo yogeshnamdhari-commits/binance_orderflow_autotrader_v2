@@ -41,7 +41,7 @@ INVENTORY_PENALTY_BPS = 2.0
 MAX_POSITION_NOTIONAL_USD = 5000.0
 QUOTE_SIZE_USD = 100.0
 MIN_EDGE_BPS = 0.10
-TOXICITY_HORIZON_MS = 100
+MARKOUT_HORIZON_MS = 250
 
 
 @dataclass
@@ -129,7 +129,7 @@ def _build_models(
     ].replace([np.inf, -np.inf], np.nan).dropna(
         subset=FEATURES + ["markout_bps_250ms", "side", "timestamp_ms", "split_start_ms"]
     )
-    tox = tox[tox["timestamp_ms"] <= tox["split_start_ms"] - TOXICITY_HORIZON_MS]
+    tox = tox[tox["timestamp_ms"] <= tox["split_start_ms"] - MARKOUT_HORIZON_MS]
     tox_buy = tox[tox["side"] == "BUY"]
     tox_sell = tox[tox["side"] == "SELL"]
     if len(tox_buy) < 100 or len(tox_sell) < 100:
@@ -320,8 +320,8 @@ def _decision(
         "p_up": p_up,
         "abs_move_bps": abs_move,
         "expected_signed_move_bps": expected_signed,
-        "tox_buy_bps": tox_buy,
-        "tox_sell_bps": tox_sell,
+        "markout_buy_bps": markout_buy,
+        "markout_sell_bps": markout_sell,
         "bid_edge_bps": bid_edge,
         "ask_edge_bps": ask_edge,
         "quote_enabled": True,
