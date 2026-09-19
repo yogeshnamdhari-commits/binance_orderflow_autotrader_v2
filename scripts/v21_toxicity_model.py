@@ -225,7 +225,7 @@ def extract_toxicity_session(capture_dir: Path, session: str) -> pd.DataFrame:
 def _fit_eval(train: pd.DataFrame, test: pd.DataFrame) -> dict[str, Any]:
     train = train.replace([np.inf, -np.inf], np.nan).dropna(subset=FEATURES + ["toxic", "markout_bps_250ms"])
     test = test.replace([np.inf, -np.inf], np.nan).dropna(subset=FEATURES + ["toxic", "markout_bps_250ms"])
-    train = train[train["timestamp_ms"] <= (train["split_start_ms"] - 100)]
+    train = train[train["timestamp_ms"] <= (train["split_start_ms"] - MARKOUT_HORIZON_MS)]
     if len(train) < 100 or len(test) < 30:
         return {"status": "INSUFFICIENT_DATA", "train_rows": len(train), "test_rows": len(test)}
 
