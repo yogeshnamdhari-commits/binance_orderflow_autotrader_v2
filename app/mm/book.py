@@ -35,6 +35,7 @@ class OrderBook:
     last_update_id: int
     bids: dict[float, float] = field(default_factory=dict)
     asks: dict[float, float] = field(default_factory=dict)
+    _awaiting_first_diff: bool = True
 
     @classmethod
     def from_snapshot(cls, snapshot: L2Snapshot) -> OrderBook:
@@ -55,14 +56,24 @@ class OrderBook:
         if self.last_update_id is None:
             raise ValueError("OrderBook must be initialized from snapshot before applying updates")
 
-        if update.prev_final_update_id != self.last_update_id:
-            if update.prev_final_update_id < self.last_update_id:
-                pass
-            else:
+        # Binance's first diff-depth event must bracket the snapshot lastUpdateId.
+        # After that one bridge event, every subsequent event must have pu == prior u.
+        if update.final_update_id <= self.last_update_id:
+            return
+
+        if self._awaiting_first_diff:
+            if not (update.first_update_id <= self.last_update_id <= update.final_update_id):
                 raise ValueError(
-                    f"Sequence gap: expected {self.last_update_id}, "
-                    f"got {update.prev_final_update_id}"
+                    "Initial depth bridge invalid: "
+                    f"snapshot={self.last_update_id}, U={update.first_update_id}, "
+                    f"u={update.final_update_id}"
                 )
+            self._awaiting_first_diff = False
+        elif update.prev_final_update_id != self.last_update_id:
+            raise ValueError(
+                f"Sequence gap: expected pu={self.last_update_id}, "
+                f"got pu={update.prev_final_update_id}"
+            )
 
         for price, qty in update.bids:
             price = float(price)
