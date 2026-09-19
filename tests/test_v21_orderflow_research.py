@@ -34,6 +34,7 @@ def test_toxicity_model_evaluation_returns_metrics():
     frame = pd.DataFrame({f: rng.normal(size=160) for f in FEATURES})
     frame["toxic"] = (frame["queue_imbalance"] > 0).astype(int)
     frame["adverse_bps_100ms"] = frame["toxic"] * 0.1
+    frame["markout_bps_250ms"] = np.where(frame["toxic"] > 0, -0.2, 0.3)
     frame["timestamp_ms"] = np.arange(160)
     frame["split_start_ms"] = 5_000
     result = _fit_eval(frame.iloc[:120], frame.iloc[120:])
