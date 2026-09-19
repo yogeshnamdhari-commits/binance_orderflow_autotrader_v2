@@ -74,13 +74,17 @@ class BinanceMarketFeed:
                                [(float(p), float(q)) for p, q in m['b']],
                                [(float(p), float(q)) for p, q in m['a']])
                 with self.lock:
+                    applied = False
                     if not self.ready:
                         self.buffer.append(e)
                     else:
-                        if self.book.apply(e) == 'GAP':
+                        result = self.book.apply(e)
+                        if result == 'GAP':
                             self.ready = False
                             self.status_cb({'status': 'BOOK_GAP'})
-                if self.ready:
+                        elif result == 'OK':
+                            applied = True
+                if self.ready and applied:
                     self.flow.on_book_event(e)
             elif ev in ('aggTrade', 'trade'):
                 self.flow.on_trade(TradeEvent(

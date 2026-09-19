@@ -1,0 +1,246 @@
+name: V21 Production Certification
+
+on:
+  workflow_dispatch:
+    inputs:
+      research_run_id:
+        description: "Successful V21 Order-Flow Research run ID for this exact commit"
+        required: true
+        type: string
+      run_testnet:
+        description: "Run the authenticated Binance USD-M testnet lifecycle rehearsal"
+        required: true
+        default: false
+        type: boolean
+      operator_authorize:
+        description: "Record explicit operator authorization for deployment-gate evaluation (does not enable live orders)"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  PYTHONPATH: .
+  BINANCE_ORDER_BASE_URL: https://testnet.binancefuture.com
+
+jobs:
+  certify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+
+      - name: Verify commit identity
+        run: |
+          set -euo pipefail
+          test -n "$GITHUB_SHA"
+          git rev-parse HEAD
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+
+      - name: Download V21 research artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: v21-orderflow-research
+          path: evidence/research
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.research_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify economic certification and provenance
+        run: |
+          set -euo pipefail
+          test -f evidence/research/v21_certification_report.json
+          test -f evidence/research/v21_production_model_bundle.json
+          test -f evidence/research/v21_dataset_provenance.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import os
+
+          econ = json.loads(Path("evidence/research/v21_certification_report.json").read_text())
+          provenance = json.loads(Path("evidence/research/v21_dataset_provenance.json").read_text())
+
+          if econ.get("status") != "CERTIFIED":
+              raise SystemExit(f"ECONOMIC_CERTIFICATION_NOT_CERTIFIED: {econ.get('status')}")
+          if provenance.get("github_sha") != os.environ["GITHUB_SHA"]:
+              raise SystemExit(
+                  "RESEARCH_PROVENANCE_COMMIT_MISMATCH:"
+                  f"{provenance.get('github_sha')}!={os.environ['GITHUB_SHA']}"
+              )
+          if not provenance.get("required_future_mid_250ms"):
+              raise SystemExit("MISSING_REQUIRED_FUTURE_MID_250MS_SCHEMA")
+          print({"economic_status": econ["status"], "provenance_sha": provenance["github_sha"]})
+          PY
+
+      - name: Verify frozen model integrity
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          path = Path("evidence/research/v21_production_model_bundle.json")
+          bundle = json.loads(path.read_text())
+          expected = bundle.get("bundle_sha256", "")
+          canonical = dict(bundle)
+          canonical.pop("bundle_sha256", None)
+          actual = hashlib.sha256(
+              json.dumps(canonical, sort_keys=True, separators=(",", ":")).encode()
+          ).hexdigest()
+
+          if not expected or expected != actual:
+              raise SystemExit(f"MODEL_BUNDLE_HASH_INVALID:{expected}:{actual}")
+          if bundle.get("production_inference", {}).get("training_in_live_process") is not False:
+              raise SystemExit("LIVE_MODEL_TRAINING_NOT_DISABLED")
+          if bundle.get("production_inference", {}).get("feature_order_locked") is not True:
+              raise SystemExit("FEATURE_ORDER_NOT_LOCKED")
+          print({"model_bundle_sha256": expected})
+          PY
+
+      - name: Run independent paper validation
+        run: |
+          set -euo pipefail
+          python scripts/v21_paper_validation.py \
+            --model-bundle evidence/research/v21_production_model_bundle.json \
+            --output evidence/paper_validation.json
+
+      - name: Run V20/V21 production tests
+        id: tests
+        run: |
+          set -euo pipefail
+          python -m compileall app tests scripts
+          python -m pytest -q \
+            tests/test_v21_orderflow_core.py \
+            tests/test_v21_orderflow_research.py \
+            tests/test_v21_decision_engine.py \
+            tests/test_v21_production_model.py \
+            tests/test_v21_live_controller.py \
+            tests/test_v21_deployment_gate.py \
+            tests/test_v21_certification_gate.py \
+            tests/test_binance_execution.py \
+            tests/test_v20_production_controls.py \
+            tests/test_v20_user_stream_runtime.py
+
+      - name: Write tests evidence
+        if: ${{ steps.tests.outcome == 'success' }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          Path("evidence/tests.json").write_text(
+              json.dumps(
+                  {
+                      "status": "PASS",
+                      "risk_controls_passed": True,
+                      "github_sha": os.environ["GITHUB_SHA"],
+                  },
+                  indent=2,
+                  sort_keys=True,
+              ) + "\n"
+          )
+          PY
+
+      - name: Write failed tests evidence
+        if: ${{ steps.tests.outcome != 'success' }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          Path("evidence/tests.json").write_text(
+              json.dumps(
+                  {
+                      "status": "FAIL",
+                      "risk_controls_passed": False,
+                      "github_sha": os.environ["GITHUB_SHA"],
+                  },
+                  indent=2,
+                  sort_keys=True,
+              ) + "\n"
+          )
+          PY
+
+      - name: Run authenticated testnet lifecycle rehearsal
+        if: ${{ inputs.run_testnet }}
+        env:
+          BINANCE_API_KEY: ${{ secrets.BINANCE_TESTNET_API_KEY }}
+          BINANCE_API_SECRET: ${{ secrets.BINANCE_TESTNET_API_SECRET }}
+          BINANCE_TESTNET_ORDER_ENABLE: "1"
+          BINANCE_ORDER_BASE_URL: https://testnet.binancefuture.com
+          BINANCE_USER_STREAM_API_URL: wss://testnet.binancefuture.com/ws-fapi/v1
+          BINANCE_PRIVATE_STREAM_BASE_URL: wss://stream.binancefuture.com/private/ws
+        run: |
+          set -euo pipefail
+          test -n "$BINANCE_API_KEY"
+          test -n "$BINANCE_API_SECRET"
+          python scripts/v21_testnet_rehearsal.py \
+            --symbol BTCUSDT \
+            --output evidence/testnet_validation.json
+
+      - name: Record testnet not-run state when disabled
+        if: ${{ !inputs.run_testnet }}
+        run: |
+          cat > evidence/testnet_validation.json <<'JSON'
+          {
+            "status": "NOT_RUN",
+            "private_stream_connected": false,
+            "reconciled_open_orders": false,
+            "reconciled_position_snapshot": false,
+            "rest_order_lifecycle": "NOT_RUN"
+          }
+          JSON
+
+      - name: Evaluate final deployment gate
+        id: gate
+        if: always()
+        env:
+          OPERATOR_AUTH: ${{ inputs.operator_authorize }}
+        run: |
+          set -euo pipefail
+          if [ "$OPERATOR_AUTH" = "true" ]; then
+            python scripts/v21_deployment_gate.py \
+              --economic-certification evidence/research/v21_certification_report.json \
+              --model-bundle evidence/research/v21_production_model_bundle.json \
+              --paper-evidence evidence/paper_validation.json \
+              --testnet-evidence evidence/testnet_validation.json \
+              --tests-evidence evidence/tests.json \
+              --expected-git-commit "$GITHUB_SHA" \
+              --explicit-authorization \
+              --output evidence/v21_deployment_gate.json
+          else
+            python scripts/v21_deployment_gate.py \
+              --economic-certification evidence/research/v21_certification_report.json \
+              --model-bundle evidence/research/v21_production_model_bundle.json \
+              --paper-evidence evidence/paper_validation.json \
+              --testnet-evidence evidence/testnet_validation.json \
+              --tests-evidence evidence/tests.json \
+              --expected-git-commit "$GITHUB_SHA" \
+              --output evidence/v21_deployment_gate.json
+          fi
+
+      - name: Publish certification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v21-production-certification-${{ github.sha }}
+          path: evidence
+          if-no-files-found: error
+          retention-days: 90

@@ -92,3 +92,40 @@ def test_production_gate_is_not_ready_when_live_submission_enabled():
     )
     assert not result.ready
     assert "live_submission_requires_explicit_deployment_gate" in result.reasons
+
+    
+def test_order_state_restart_preserves_client_lookup_and_sequence(tmp_path):
+    from app.mm.execution import OrderStateManager
+
+    path = tmp_path / "orders.json"
+    first = OrderStateManager()
+    o1 = first.create("BTCUSDT", "BUY", 0.001, 100000.0, "cid-1")
+    first.create("BTCUSDT", "SELL", 0.001, 100010.0, "cid-2")
+    first.save(path)
+
+    restored = OrderStateManager()
+    assert restored.load(path) == 2
+    assert restored.get_by_client_id("cid-1").order_id == o1.order_id
+    o3 = restored.create("BTCUSDT", "BUY", 0.001, 99990.0, "cid-3")
+    assert o3.order_id == "ORD-3"
+
+
+def test_gateway_passes_symbol_to_cancel_adapter():
+    class SymbolAwareAdapter:
+        def __init__(self):
+            self.cancel_args = None
+        def submit(self, submission):
+            return ExecutionResult("NEW", "EX-77", "accepted", submission.client_id)
+        def cancel(self, order_id, symbol=None):
+            self.cancel_args = (order_id, symbol)
+            return ExecutionResult("CANCELLED", order_id, "cancelled")
+
+    manager = OrderStateManager()
+    gate = healthy_gate()
+    gateway = ExecutionGateway(SymbolAwareAdapter(), gate, manager, live_enabled=True)
+    result = gateway.submit(Submission("BTCUSDT", "BUY", 0.001, 100000.0, "cid-77"))
+    assert result.order_id == "EX-77"
+    cancelled = gateway.cancel("EX-77")
+    assert cancelled.status == "CANCELLED"
+    assert gateway.adapter.cancel_args == ("EX-77", "BTCUSDT")
+
