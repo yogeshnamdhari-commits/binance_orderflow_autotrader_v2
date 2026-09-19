@@ -54,6 +54,15 @@ def inspect_capture(capture_dir: str | Path) -> dict[str, object]:
     bootstrap = manifest.get("bootstrap") or {}
     if bootstrap.get("status") != "BRIDGED":
         raise RuntimeError(f"CERTIFICATION_CAPTURE_INVALID: bootstrap status={bootstrap.get('status')!r}")
+    if bootstrap.get("snapshot_source") != "REST":
+        raise RuntimeError("CERTIFICATION_CAPTURE_INVALID: snapshot source must be Binance USD-M REST depth")
+    snapshot_id = bootstrap.get("snapshot_last_update_id")
+    first_U = bootstrap.get("first_U")
+    first_u = bootstrap.get("first_u")
+    if not all(isinstance(x, int) for x in (snapshot_id, first_U, first_u)):
+        raise RuntimeError("CERTIFICATION_CAPTURE_INVALID: incomplete bootstrap sequence metadata")
+    if not (first_U <= snapshot_id <= first_u):
+        raise RuntimeError("CERTIFICATION_CAPTURE_INVALID: first depth event does not bracket snapshot lastUpdateId")
 
     return {
         "capture_dir": str(root),
