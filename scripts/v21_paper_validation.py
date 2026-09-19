@@ -87,7 +87,7 @@ def run(bundle_path: Path) -> dict:
         model=model,
         symbol="BTCUSDT",
         tick_size=0.1,
-        maker_fee_bps=1.0,
+        maker_fee_bps=2.0,
         live_authorized=False,
     )
 
