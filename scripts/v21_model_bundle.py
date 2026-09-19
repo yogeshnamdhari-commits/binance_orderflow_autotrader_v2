@@ -58,9 +58,9 @@ def freeze(dataset_path: Path, toxicity_path: Path, sessions: list[str], output:
 
     models, sizes = _build_models(dataset, toxicity, sessions)
     payload = {
-        "schema_version": 1,
+        "schema_version": 2,
         "source_commit": os.getenv("RESEARCH_COMMIT_SHA", os.getenv("GITHUB_SHA", "")),
-        "model_family": "v21_two_stage_orderflow_mm",
+        "model_family": "v21_two_stage_orderflow_conditional_markout_mm",
         "horizon_ms": 250,
         "features": list(FEATURES),
         "training_sessions": list(sessions),
@@ -70,13 +70,14 @@ def freeze(dataset_path: Path, toxicity_path: Path, sessions: list[str], output:
         "move": _logit_payload(models.move),
         "direction": _logit_payload(models.direction),
         "magnitude": _huber_payload(models.magnitude),
-        "toxicity_buy": _huber_payload(models.toxicity_buy),
-        "toxicity_sell": _huber_payload(models.toxicity_sell),
+        "markout_buy": _huber_payload(models.markout_buy),
+        "markout_sell": _huber_payload(models.markout_sell),
         "production_inference": {
             "training_in_live_process": False,
             "feature_order_locked": True,
             "online_scaling": "frozen_training_mean_and_scale",
             "economic_signal_horizon_ms": 250,
+            "economic_edge_definition": "conditional_future_mid_markout_from_hypothetical_fill_minus_fee_minus_inventory_risk",
         },
     }
     canonical = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
