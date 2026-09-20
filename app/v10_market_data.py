@@ -1,8 +1,6 @@
 """Research-only V10 market-data capture primitives.
 
-This module deliberately does not place orders and does not depend on the
-production trading path. It preserves raw Binance WebSocket payloads while
-adding only local observability metadata needed for later replay/audit.
+Raw Binance payloads are preserved exactly. Sequence validation is fail-closed.
 """
 
 from __future__ import annotations
@@ -35,7 +33,6 @@ class NormalizedEvent:
 
 
 def normalize_ws_event(raw_json: str, receive_ns: int | None = None) -> NormalizedEvent:
-    """Parse only envelope metadata while retaining the exact raw JSON text."""
     if not isinstance(raw_json, str):
         raise TypeError("raw_json must be a string")
     payload = json.loads(raw_json)
@@ -56,46 +53,127 @@ def normalize_ws_event(raw_json: str, receive_ns: int | None = None) -> Normaliz
 
 
 class DepthSequenceValidator:
-    """Validate Binance diff-depth continuity without modifying input events."""
+    """Strict diff-depth validator.
+
+    The first accepted event is validated against an externally supplied
+    snapshot bridge in the capture layer. Thereafter pu must equal the prior u.
+    """
 
     def __init__(self) -> None:
         self.previous_u: int | None = None
+        self.bootstrapped = False
 
-    def observe(self, event: dict[str, Any]) -> SequenceStatus:
+    def reset(self) -> None:
+        self.previous_u = None
+        self.bootstrapped = False
+
+    def observe(
+        self,
+        event: dict[str, Any],
+        *,
+        snapshot_last_update_id: int | None = None,
+    ) -> SequenceStatus:
         try:
             first_update = int(event["U"])
             final_update = int(event["u"])
+            if "pu" not in event and self.bootstrapped:
+                return SequenceStatus(
+                    "MALFORMED",
+                    self.previous_u,
+                    first_update,
+                    final_update,
+                    "MISSING_PU_AFTER_BOOTSTRAP",
+                )
             previous_update = event.get("pu")
-            previous_update = int(previous_update) if previous_update is not None else None
+            previous_update = (
+                int(previous_update) if previous_update is not None else None
+            )
         except (KeyError, TypeError, ValueError):
-            return SequenceStatus("MALFORMED", self.previous_u, None, None, "MISSING_OR_INVALID_SEQUENCE_FIELDS")
+            return SequenceStatus(
+                "MALFORMED",
+                self.previous_u,
+                None,
+                None,
+                "MISSING_OR_INVALID_SEQUENCE_FIELDS",
+            )
 
         if first_update > final_update:
-            return SequenceStatus("MALFORMED", self.previous_u, first_update, final_update, "U_GT_U")
+            return SequenceStatus(
+                "MALFORMED",
+                self.previous_u,
+                first_update,
+                final_update,
+                "U_GT_U",
+            )
 
-        if self.previous_u is None:
+        if not self.bootstrapped:
+            if snapshot_last_update_id is None:
+                self.previous_u = final_update
+                return SequenceStatus(
+                    "FIRST",
+                    None,
+                    first_update,
+                    final_update,
+                    "SNAPSHOT_BRIDGE_PENDING",
+                )
+            expected = int(snapshot_last_update_id) + 1
+            if not (first_update <= expected <= final_update):
+                return SequenceStatus(
+                    "GAP",
+                    int(snapshot_last_update_id),
+                    first_update,
+                    final_update,
+                    "INITIAL_BRIDGE_MISMATCH",
+                )
             self.previous_u = final_update
-            return SequenceStatus("FIRST", None, first_update, final_update)
+            self.bootstrapped = True
+            return SequenceStatus(
+                "BRIDGED",
+                int(snapshot_last_update_id),
+                first_update,
+                final_update,
+            )
 
-        previous = self.previous_u
-        if previous_update is not None and previous_update != previous:
+        previous = int(self.previous_u)
+        if previous_update is None or previous_update != previous:
             self.previous_u = final_update
-            return SequenceStatus("GAP", previous, first_update, final_update, "PU_MISMATCH")
+            return SequenceStatus(
+                "GAP",
+                previous,
+                first_update,
+                final_update,
+                "PU_MISMATCH",
+            )
 
-        if first_update > previous + 1 or final_update <= previous:
+        if final_update <= previous or first_update > previous + 1:
             self.previous_u = final_update
-            return SequenceStatus("GAP", previous, first_update, final_update, "UPDATE_ID_GAP")
+            return SequenceStatus(
+                "GAP",
+                previous,
+                first_update,
+                final_update,
+                "UPDATE_ID_GAP",
+            )
 
         self.previous_u = final_update
-        return SequenceStatus("CONTIGUOUS", previous, first_update, final_update)
+        return SequenceStatus(
+            "CONTIGUOUS",
+            previous,
+            first_update,
+            final_update,
+        )
 
 
 class SessionRecorder:
-    """Append-only raw-event recorder for one research capture session."""
+    SCHEMA_VERSION = "v10.raw.v2"
 
-    SCHEMA_VERSION = "v10.raw.v1"
-
-    def __init__(self, output_dir: str | Path, symbol: str, streams: Iterable[str], session_id: str | None = None) -> None:
+    def __init__(
+        self,
+        output_dir: str | Path,
+        symbol: str,
+        streams: Iterable[str],
+        session_id: str | None = None,
+    ) -> None:
         self.output_dir = Path(output_dir)
         self.symbol = symbol.upper()
         self.streams = list(streams)
@@ -125,7 +203,6 @@ class SessionRecorder:
         return self.session_dir
 
     def reset_event_log_for_bridge(self) -> None:
-        """Discard all pre-bridge rows before deterministic replay begins."""
         if self._events is None or self._manifest is None or self.session_dir is None:
             raise RuntimeError("session is not started")
         self._events.flush()
@@ -155,7 +232,9 @@ class SessionRecorder:
                 "raw_json": raw_json,
                 "parse_error": type(exc).__name__ + ": " + str(exc),
             }
-        self._events.write(json.dumps(row, ensure_ascii=False, separators=(",", ":")) + "\n")
+        self._events.write(
+            json.dumps(row, ensure_ascii=False, separators=(",", ":")) + "\n"
+        )
         self._events.flush()
         self._manifest["event_count"] += 1
 
