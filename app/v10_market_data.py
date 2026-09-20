@@ -124,6 +124,15 @@ class SessionRecorder:
         self._write_manifest()
         return self.session_dir
 
+    def reset_event_log_for_bridge(self) -> None:
+        """Discard all pre-bridge rows before deterministic replay begins."""
+        if self._events is None or self._manifest is None or self.session_dir is None:
+            raise RuntimeError("session is not started")
+        self._events.flush()
+        self._events.close()
+        self._events = (self.session_dir / "events.jsonl").open("w", encoding="utf-8")
+        self._manifest["event_count"] = 0
+
     def record_raw(self, raw_json: str, receive_ns: int | None = None) -> None:
         if self._events is None or self._manifest is None:
             raise RuntimeError("session is not started")
