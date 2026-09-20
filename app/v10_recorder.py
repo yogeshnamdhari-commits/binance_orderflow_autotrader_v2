@@ -1,28 +1,27 @@
 """V10 Binance public market-data capture adapter.
 
 No trading or account endpoints are used here. The adapter exists solely to
-capture public USDⓈ-M WebSocket market data for deterministic research replay.
+capture public USDⓈ-M market data with strict depth provenance.
 """
 
 from __future__ import annotations
 
 import json
-import time
 from pathlib import Path
 from typing import Callable
-from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
-from .v10_market_data import DepthSequenceValidator, SessionRecorder, normalize_ws_event
+from .v10_market_data import (
+    DepthSequenceValidator,
+    SessionRecorder,
+    normalize_ws_event,
+)
 
 
 def _depth_update_id_range(raw_json: str) -> tuple[int, int] | None:
-    """Extract (U, u) from a depthUpdate event raw JSON string."""
     try:
         payload = json.loads(raw_json)
         data = payload.get("data", payload)
-        U = int(data["U"])
-        u = int(data["u"])
-        return U, u
+        return int(data["U"]), int(data["u"])
     except (json.JSONDecodeError, KeyError, TypeError, ValueError):
         return None
 
@@ -54,14 +53,14 @@ class V10Recorder:
         }
 
     def build_stream_url(self) -> str:
-        stream_str = "/".join(self.streams)
-        return f"{self.ws_url}/stream?streams={stream_str}"
+        return f"{self.ws_url}/stream?streams={'/'.join(self.streams)}"
 
     def start(self, start_ns: int | None = None) -> Path:
         return self.session.start(start_ns=start_ns)
 
     def handle_message(self, raw_json: str, receive_ns: int | None = None) -> None:
-        receive_ns = self.clock_ns() if receive_ns is None and self.clock_ns is not None else receive_ns
+        if receive_ns is None and self.clock_ns is not None:
+            receive_ns = self.clock_ns()
         self.session.record_raw(raw_json, receive_ns=receive_ns)
         self._diagnostics["total_events"] += 1
         try:
@@ -73,7 +72,7 @@ class V10Recorder:
         if event.event_type == "depthUpdate":
             self._diagnostics["depth_events"] += 1
             status = self.depth_validator.observe(event.payload.get("data", event.payload))
-            if status.state == "GAP":
+            if status.state in {"GAP", "MALFORMED"}:
                 self._diagnostics["gaps"] += 1
         elif event.event_type in ("trade", "aggTrade"):
             self._diagnostics["trade_events"] += 1
@@ -94,32 +93,36 @@ class V10Recorder:
         buffered: list[tuple[str, int, str | None]],
         snapshot_source: str = "REST",
     ) -> None:
+        if bridge_index < 0 or bridge_index >= len(buffered):
+            raise RuntimeError(f"invalid bridge index: {bridge_index}")
+
         first_raw = buffered[bridge_index][0]
         range_result = _depth_update_id_range(first_raw)
-        first_U, first_u = range_result if range_result is not None else (None, None)
+        if range_result is None:
+            raise RuntimeError("bridge event is not a valid depthUpdate")
+        first_U, first_u = range_result
+        expected = int(snapshot_id) + 1
+        if not (first_U <= expected <= first_u):
+            raise RuntimeError(
+                "bridge event does not bracket snapshot_last_update_id+1: "
+                f"expected={expected}, U={first_U}, u={first_u}"
+            )
+
         first_pu = None
         try:
             payload = json.loads(first_raw)
             data = payload.get("data", payload)
-            first_pu = data.get("pu")
-            first_pu = int(first_pu) if first_pu is not None else None
+            if data.get("pu") is not None:
+                first_pu = int(data["pu"])
         except Exception:
             pass
-        if bridge_index < 0 or bridge_index >= len(buffered):
-            raise RuntimeError(f"invalid bridge index: {bridge_index}")
-        if range_result is None:
-            raise RuntimeError("bridge event is not a valid depthUpdate")
-        if not (first_U <= snapshot_id <= first_u):
-            raise RuntimeError(
-                "bridge event does not bracket snapshot: "
-                f"snapshot={snapshot_id}, U={first_U}, u={first_u}"
-            )
 
-        # The buffered prefix is intentionally non-causal for the local book.
-        # Truncate any rows that may have been written before bridge activation,
-        # then restart sequence validation before replaying only from the bridge.
+        # Pre-bridge events are discarded because they cannot be causally
+        # joined to the snapshot. Sequence validation restarts at the bridge.
         self.session.reset_event_log_for_bridge()
         self.depth_validator = DepthSequenceValidator()
+        self.depth_validator.bootstrap(int(snapshot_id))
+
         for key in (
             "total_events",
             "depth_events",
@@ -132,7 +135,7 @@ class V10Recorder:
 
         self.session._manifest["bootstrap"] = {
             "status": "BRIDGED",
-            "snapshot_last_update_id": snapshot_id,
+            "snapshot_last_update_id": int(snapshot_id),
             "snapshot_source": snapshot_source,
             "first_bridge_index": bridge_index,
             "first_U": first_U,
@@ -140,6 +143,8 @@ class V10Recorder:
             "first_pu": first_pu,
             "pre_bridge_events_skipped": bridge_index,
             "pre_bridge_event_rows_discarded": bridge_index,
+            "bridge_rule": "U <= snapshot_last_update_id + 1 <= u",
+            "post_bridge_rule": "pu == previous_u",
         }
         self.session._write_manifest()
 
