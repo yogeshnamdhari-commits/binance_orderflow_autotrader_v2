@@ -20,6 +20,8 @@ DEFAULT_WS = "wss://fstream.binance.com/public"
 DEFAULT_STREAMS = ["btcusdt@depth@100ms", "btcusdt@trade", "btcusdt@bookTicker"]
 DEPTH_REST_URL = "https://fapi.binance.com/fapi/v1/depth"
 
+DEPTH_API_WS = "wss://ws-fapi.binance.com/ws-fapi/v1"
+
 
 def build_ws_url(base_url: str, streams: list[str]) -> str:
     if not streams:
@@ -57,6 +59,76 @@ def fetch_rest_snapshot(symbol: str, limit: int = 1000) -> dict[str, object]:
     if not isinstance(payload, dict) or "lastUpdateId" not in payload:
         raise RuntimeError(f"invalid Binance REST depth snapshot response: {payload}")
     return payload
+
+
+def fetch_ws_snapshot(symbol: str, limit: int = 1000) -> dict[str, object]:
+    """Request the official USDⓈ-M depth snapshot over Binance WebSocket API."""
+    import uuid
+    import websocket
+
+    request = {
+        "id": str(uuid.uuid4()),
+        "method": "depth",
+        "params": {"symbol": symbol.upper(), "limit": limit},
+    }
+    connection = websocket.create_connection(DEPTH_API_WS, timeout=10)
+    try:
+        connection.send(json.dumps(request, separators=(",", ":")))
+        response = json.loads(connection.recv())
+    finally:
+        connection.close()
+
+    if response.get("status") != 200:
+        raise RuntimeError(f"Binance WS depth snapshot failed: {response}")
+    result = response.get("result")
+    if not isinstance(result, dict) or "lastUpdateId" not in result:
+        raise RuntimeError(f"invalid Binance WS depth snapshot response: {response}")
+    return result
+
+
+def fetch_ws_snapshot_with_retries(
+    symbol: str,
+    *,
+    limit: int = 1000,
+    attempts: int = 3,
+    retry_delay_seconds: float = 1.0,
+) -> dict[str, object]:
+    if attempts < 1:
+        raise ValueError("attempts must be >= 1")
+    last_error: Exception | None = None
+    for attempt in range(1, attempts + 1):
+        try:
+            return fetch_ws_snapshot(symbol, limit=limit)
+        except Exception as exc:
+            last_error = exc
+            if attempt < attempts and retry_delay_seconds > 0:
+                time.sleep(retry_delay_seconds)
+    assert last_error is not None
+    raise last_error
+
+
+def fetch_snapshot_with_fallback(
+    symbol: str,
+    *,
+    limit: int = 1000,
+) -> tuple[dict[str, object], str]:
+    """Prefer REST, then fall back to official WS API if the runner cannot reach REST."""
+    try:
+        return (
+            fetch_rest_snapshot_with_retries(symbol.upper(), limit=limit, attempts=2, retry_delay_seconds=0.5),
+            "REST",
+        )
+    except Exception as rest_error:
+        try:
+            return (
+                fetch_ws_snapshot_with_retries(symbol.upper(), limit=limit, attempts=3, retry_delay_seconds=0.5),
+                "WS_API",
+            )
+        except Exception as ws_error:
+            raise RuntimeError(
+                f"snapshot_acquisition_failed: REST={type(rest_error).__name__}:{rest_error}; "
+                f"WS_API={type(ws_error).__name__}:{ws_error}"
+            ) from ws_error
 
 
 def fetch_rest_snapshot_with_retries(
@@ -162,7 +234,8 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
             if state["snapshot_fetched"] or state["bridge_found"]:
                 return
             try:
-                snap = fetch_rest_snapshot_with_retries(symbol.upper(), attempts=3, retry_delay_seconds=1.0)
+                snap, snapshot_source = fetch_snapshot_with_fallback(symbol.upper(), limit=1000)
+                state["snapshot_source"] = snapshot_source
                 snapshot_id = int(snap["lastUpdateId"])
                 (session_dir / "snapshot.json").write_text(
                     json.dumps(snap, indent=2, sort_keys=True) + "\n",
