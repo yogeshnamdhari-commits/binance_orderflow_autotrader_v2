@@ -1,6 +1,8 @@
 """Research-only V10 market-data capture primitives.
 
-Raw Binance payloads are preserved exactly. Sequence validation is fail-closed.
+Raw Binance WebSocket payloads are preserved exactly. Depth sequence validation
+is fail-closed and separates the initial snapshot bridge from later pu
+continuity checks.
 """
 
 from __future__ import annotations
@@ -53,37 +55,29 @@ def normalize_ws_event(raw_json: str, receive_ns: int | None = None) -> Normaliz
 
 
 class DepthSequenceValidator:
-    """Strict diff-depth validator.
-
-    The first accepted event is validated against an externally supplied
-    snapshot bridge in the capture layer. Thereafter pu must equal the prior u.
-    """
+    """Strict diff-depth validator for a single capture/replay session."""
 
     def __init__(self) -> None:
         self.previous_u: int | None = None
+        self.snapshot_last_update_id: int | None = None
+        self._expect_bridge = False
         self.bootstrapped = False
 
     def reset(self) -> None:
         self.previous_u = None
+        self.snapshot_last_update_id = None
+        self._expect_bridge = False
         self.bootstrapped = False
 
-    def observe(
-        self,
-        event: dict[str, Any],
-        *,
-        snapshot_last_update_id: int | None = None,
-    ) -> SequenceStatus:
+    def bootstrap(self, snapshot_last_update_id: int) -> None:
+        self.reset()
+        self.snapshot_last_update_id = int(snapshot_last_update_id)
+        self._expect_bridge = True
+
+    def observe(self, event: dict[str, Any]) -> SequenceStatus:
         try:
             first_update = int(event["U"])
             final_update = int(event["u"])
-            if "pu" not in event and self.bootstrapped:
-                return SequenceStatus(
-                    "MALFORMED",
-                    self.previous_u,
-                    first_update,
-                    final_update,
-                    "MISSING_PU_AFTER_BOOTSTRAP",
-                )
             previous_update = event.get("pu")
             previous_update = (
                 int(previous_update) if previous_update is not None else None
@@ -106,37 +100,63 @@ class DepthSequenceValidator:
                 "U_GT_U",
             )
 
-        if not self.bootstrapped:
-            if snapshot_last_update_id is None:
-                self.previous_u = final_update
+        if self._expect_bridge:
+            if self.snapshot_last_update_id is None:
                 return SequenceStatus(
-                    "FIRST",
-                    None,
+                    "MALFORMED",
+                    self.previous_u,
                     first_update,
                     final_update,
-                    "SNAPSHOT_BRIDGE_PENDING",
+                    "SNAPSHOT_ID_MISSING",
                 )
-            expected = int(snapshot_last_update_id) + 1
+            expected = self.snapshot_last_update_id + 1
             if not (first_update <= expected <= final_update):
                 return SequenceStatus(
                     "GAP",
-                    int(snapshot_last_update_id),
+                    self.snapshot_last_update_id,
                     first_update,
                     final_update,
                     "INITIAL_BRIDGE_MISMATCH",
                 )
             self.previous_u = final_update
+            self._expect_bridge = False
             self.bootstrapped = True
             return SequenceStatus(
                 "BRIDGED",
-                int(snapshot_last_update_id),
+                self.snapshot_last_update_id,
                 first_update,
                 final_update,
             )
 
-        previous = int(self.previous_u)
-        if previous_update is None or previous_update != previous:
-            self.previous_u = final_update
+        if not self.bootstrapped:
+            return SequenceStatus(
+                "MALFORMED",
+                self.previous_u,
+                first_update,
+                final_update,
+                "BOOTSTRAP_REQUIRED",
+            )
+
+        previous = self.previous_u
+        if previous is None:
+            return SequenceStatus(
+                "MALFORMED",
+                None,
+                first_update,
+                final_update,
+                "PREVIOUS_UPDATE_ID_MISSING",
+            )
+
+        if previous_update is None:
+            return SequenceStatus(
+                "GAP",
+                previous,
+                first_update,
+                final_update,
+                "MISSING_PU_AFTER_BOOTSTRAP",
+            )
+
+        if previous_update != previous:
             return SequenceStatus(
                 "GAP",
                 previous,
@@ -146,7 +166,6 @@ class DepthSequenceValidator:
             )
 
         if final_update <= previous or first_update > previous + 1:
-            self.previous_u = final_update
             return SequenceStatus(
                 "GAP",
                 previous,
