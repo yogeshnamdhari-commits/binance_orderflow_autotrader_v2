@@ -1,9 +1,7 @@
 """CLI for research-only Binance USDⓈ-M public market-data capture.
 
-No authentication or order-placement capability is present. The capture uses
-Binance's public USDⓈ-M WebSocket market stream plus the public WebSocket API
-``depth`` request for an order-book snapshot, avoiding region-blocked REST
-snapshot endpoints while retaining a causal diff-depth bridge.
+No authentication or order-placement capability is present. Snapshot bridging
+uses Binance's snapshot + diff-depth rule and fails closed on ambiguity.
 """
 from __future__ import annotations
 
@@ -19,15 +17,13 @@ from .v10_recorder import V10Recorder
 DEFAULT_WS = "wss://fstream.binance.com/public"
 DEFAULT_STREAMS = ["btcusdt@depth@100ms", "btcusdt@trade", "btcusdt@bookTicker"]
 DEPTH_REST_URL = "https://fapi.binance.com/fapi/v1/depth"
-
 DEPTH_API_WS = "wss://ws-fapi.binance.com/ws-fapi/v1"
 
 
 def build_ws_url(base_url: str, streams: list[str]) -> str:
     if not streams:
         raise ValueError("at least one stream is required")
-    stream_str = "/".join(streams)
-    return f"{base_url}/stream?streams={stream_str}"
+    return f"{base_url}/stream?streams={'/'.join(streams)}"
 
 
 def parse_duration_seconds(value: str) -> int:
@@ -37,8 +33,7 @@ def parse_duration_seconds(value: str) -> int:
     amount = int(match.group(1))
     if amount <= 0:
         raise ValueError("duration must be positive")
-    multiplier = {"s": 1, "m": 60, "h": 3600}[match.group(2)]
-    return amount * multiplier
+    return amount * {"s": 1, "m": 60, "h": 3600}[match.group(2)]
 
 
 def capture_output_path(root: str | Path, session_id: str) -> Path:
@@ -46,7 +41,6 @@ def capture_output_path(root: str | Path, session_id: str) -> Path:
 
 
 def fetch_rest_snapshot(symbol: str, limit: int = 1000) -> dict[str, object]:
-    """Request the authoritative USDⓈ-M depth snapshot used by Binance's local-book procedure."""
     import requests
 
     response = requests.get(
@@ -62,7 +56,6 @@ def fetch_rest_snapshot(symbol: str, limit: int = 1000) -> dict[str, object]:
 
 
 def fetch_ws_snapshot(symbol: str, limit: int = 1000) -> dict[str, object]:
-    """Request the official USDⓈ-M depth snapshot over Binance WebSocket API."""
     import uuid
     import websocket
 
@@ -112,16 +105,19 @@ def fetch_snapshot_with_fallback(
     *,
     limit: int = 1000,
 ) -> tuple[dict[str, object], str]:
-    """Prefer REST, then fall back to official WS API if the runner cannot reach REST."""
     try:
         return (
-            fetch_rest_snapshot_with_retries(symbol.upper(), limit=limit, attempts=2, retry_delay_seconds=0.5),
+            fetch_rest_snapshot_with_retries(
+                symbol.upper(), limit=limit, attempts=2, retry_delay_seconds=0.5
+            ),
             "REST",
         )
     except Exception as rest_error:
         try:
             return (
-                fetch_ws_snapshot_with_retries(symbol.upper(), limit=limit, attempts=3, retry_delay_seconds=0.5),
+                fetch_ws_snapshot_with_retries(
+                    symbol.upper(), limit=limit, attempts=3, retry_delay_seconds=0.5
+                ),
                 "WS_API",
             )
         except Exception as ws_error:
@@ -138,7 +134,6 @@ def fetch_rest_snapshot_with_retries(
     attempts: int = 3,
     retry_delay_seconds: float = 1.0,
 ) -> dict[str, object]:
-    """Retry transient public REST snapshot failures; fail closed if unavailable."""
     if attempts < 1:
         raise ValueError("attempts must be >= 1")
     last_error: Exception | None = None
@@ -152,36 +147,12 @@ def fetch_rest_snapshot_with_retries(
     assert last_error is not None
     raise last_error
 
-def fetch_ws_snapshot_with_retries(
-    symbol: str,
-    *,
-    limit: int = 1000,
-    attempts: int = 3,
-    retry_delay_seconds: float = 1.0,
-) -> dict[str, object]:
-    """Retry transient public depth-snapshot failures without changing bridge semantics."""
-    if attempts < 1:
-        raise ValueError("attempts must be >= 1")
-    last_error: Exception | None = None
-    for attempt in range(1, attempts + 1):
-        try:
-            return fetch_ws_snapshot(symbol, limit=limit)
-        except Exception as exc:
-            last_error = exc
-            if attempt < attempts and retry_delay_seconds > 0:
-                time.sleep(retry_delay_seconds)
-    assert last_error is not None
-    raise last_error
-
 
 def _depth_update_id_range(raw_json: str) -> tuple[int, int] | None:
-    """Extract (U, u) from a depthUpdate event raw JSON string."""
     try:
         payload = json.loads(raw_json)
         data = payload.get("data", payload)
-        U = int(data["U"])
-        u = int(data["u"])
-        return U, u
+        return int(data["U"]), int(data["u"])
     except (json.JSONDecodeError, KeyError, TypeError, ValueError):
         return None
 
@@ -189,19 +160,24 @@ def _depth_update_id_range(raw_json: str) -> tuple[int, int] | None:
 def find_bridging_index(
     buffered_events: list[tuple[str, int, str | None]], snapshot_id: int
 ) -> int | None:
-    """Find the first depthUpdate satisfying U <= snapshot_id <= u."""
+    """Find first diff event satisfying U <= snapshot_id+1 <= u."""
+    expected = int(snapshot_id) + 1
     for idx, item in enumerate(buffered_events):
-        raw_json = item[0]
-        range_result = _depth_update_id_range(raw_json)
-        if range_result is None:
+        seq = _depth_update_id_range(item[0])
+        if seq is None:
             continue
-        U, u = range_result
-        if U <= snapshot_id <= u:
+        U, u = seq
+        if U <= expected <= u:
             return idx
     return None
 
 
-def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_base: str = DEFAULT_WS) -> Path:
+def run_capture(
+    symbol: str,
+    output_dir: str | Path,
+    duration_seconds: int,
+    ws_base: str = DEFAULT_WS,
+) -> Path:
     symbol = symbol.lower()
     streams = [s.replace("btcusdt", symbol, 1) for s in DEFAULT_STREAMS]
     ws_url = build_ws_url(ws_base, streams)
@@ -230,12 +206,13 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
         socket.close()
 
     def fetch_snapshot_and_find_bridge() -> None:
-        buffered_to_replay = None
         with snapshot_lock:
             if state["snapshot_fetched"] or state["bridge_found"]:
                 return
             try:
-                snap, snapshot_source = fetch_snapshot_with_fallback(symbol.upper(), limit=1000)
+                snap, snapshot_source = fetch_snapshot_with_fallback(
+                    symbol.upper(), limit=1000
+                )
                 state["snapshot_source"] = snapshot_source
                 snapshot_id = int(snap["lastUpdateId"])
                 (session_dir / "snapshot.json").write_text(
@@ -257,13 +234,11 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
                     )
                     for raw, ns, _stream in buffered_to_replay[first_bridge:]:
                         recorder.handle_message(raw, receive_ns=ns)
-                    buffered_to_replay = None
                 else:
                     state["bridge_deadline"] = time.monotonic() + 5.0
             except Exception as exc:
                 recorder.record_bootstrap_failure(-1, "SNAPSHOT_FETCH_FAILED", str(exc))
                 close_socket()
-                return
 
     def on_message(_ws, message) -> None:
         receive_ns = time.time_ns()
@@ -273,29 +248,33 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
             return
         stream = parsed.get("stream") if isinstance(parsed, dict) else None
 
-        buffered_to_replay = None
         with snapshot_lock:
             if not state["bridge_found"]:
                 state["buffered"].append((message, receive_ns, stream))
                 if state["snapshot_fetched"] and state["snapshot_id"] is not None:
-                    first_bridge = find_bridging_index(state["buffered"], state["snapshot_id"])
+                    first_bridge = find_bridging_index(
+                        state["buffered"], int(state["snapshot_id"])
+                    )
                     if first_bridge is not None:
                         state["bridge_found"] = True
                         buffered_to_replay = list(state["buffered"])
                         state["buffered"].clear()
                         recorder.record_bootstrap(
-                            state["snapshot_id"],
+                            int(state["snapshot_id"]),
                             first_bridge,
                             buffered_to_replay,
                         )
                         for raw, ns, _stream in buffered_to_replay[first_bridge:]:
                             recorder.handle_message(raw, receive_ns=ns)
                         return
-                    elif state["bridge_deadline"] is not None and time.monotonic() > state["bridge_deadline"]:
+                    if (
+                        state["bridge_deadline"] is not None
+                        and time.monotonic() > state["bridge_deadline"]
+                    ):
                         recorder.record_bootstrap_failure(
                             int(state["snapshot_id"]),
                             "BRIDGE_TIMEOUT",
-                            "No depthUpdate satisfying U <= snapshot_id+1 <= u found within bootstrap window",
+                            "No depthUpdate satisfying U <= snapshot_id+1 <= u found",
                         )
                         close_socket()
                         return
@@ -320,7 +299,7 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
             recorder.record_bootstrap_failure(
                 int(state["snapshot_id"]),
                 "BRIDGE_TIMEOUT",
-                "No depthUpdate satisfying U <= snapshot_id+1 <= u found within bootstrap window",
+                "No depthUpdate satisfying U <= snapshot_id+1 <= u found",
             )
         recorder.close()
 
@@ -333,21 +312,14 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
     )
 
     def force_close_at_deadline() -> None:
-        remaining = max(0.0, deadline - time.monotonic())
-        time.sleep(remaining)
+        time.sleep(max(0.0, deadline - time.monotonic()))
         close_socket()
 
-    deadline_thread = threading.Thread(target=force_close_at_deadline, daemon=True)
-    deadline_thread.start()
-
-    snapshot_thread = threading.Thread(
-        target=lambda: (
-            time.sleep(5.0),
-            fetch_snapshot_and_find_bridge(),
-        ),
+    threading.Thread(target=force_close_at_deadline, daemon=True).start()
+    threading.Thread(
+        target=lambda: (time.sleep(5.0), fetch_snapshot_and_find_bridge()),
         daemon=True,
-    )
-    snapshot_thread.start()
+    ).start()
 
     try:
         socket.run_forever()
@@ -357,7 +329,9 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Capture public Binance USDⓈ-M market data for V10 research")
+    parser = argparse.ArgumentParser(
+        description="Capture public Binance USDⓈ-M market data for V10 research"
+    )
     parser.add_argument("--symbol", default="BTCUSDT")
     parser.add_argument("--duration", default="60s")
     parser.add_argument("--output", default="data/v10")
