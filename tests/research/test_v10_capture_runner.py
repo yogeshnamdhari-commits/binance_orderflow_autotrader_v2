@@ -93,7 +93,7 @@ def test_snapshot_retry_succeeds_after_transient_failure(monkeypatch):
     monkeypatch.setattr("app.v10_capture.fetch_rest_snapshot", fake_fetch)
     monkeypatch.setattr("app.v10_capture.time.sleep", lambda _seconds: None)
 
-    result = fetch_ws_snapshot_with_retries("BTCUSDT", attempts=3, retry_delay_seconds=0.0)
+    result = fetch_rest_snapshot_with_retries("BTCUSDT", attempts=3, retry_delay_seconds=0.0)
 
     assert result["lastUpdateId"] == 123
     assert calls["count"] == 3
@@ -106,7 +106,7 @@ def test_snapshot_retry_exhausts_cleanly(monkeypatch):
         calls["count"] += 1
         raise RuntimeError("persistent websocket failure")
 
-    monkeypatch.setattr("app.v10_capture.fetch_ws_snapshot", fake_fetch)
+    monkeypatch.setattr("app.v10_capture.fetch_rest_snapshot", fake_fetch)
     monkeypatch.setattr("app.v10_capture.time.sleep", lambda _seconds: None)
 
     with pytest.raises(RuntimeError, match="persistent websocket failure"):
