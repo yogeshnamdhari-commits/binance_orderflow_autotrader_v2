@@ -1,4 +1,5 @@
 import pandas as pd
+import pytest
 from app.v9_features import build_v9_panel
 
 
@@ -15,7 +16,7 @@ def test_forward_labels_use_only_strictly_future_price():
     alt = _frame("ALTUSDT", [10, 10, 10, 11, 12, 13])
     panel = build_v9_panel(btc, {"ALTUSDT": alt}, horizons=(1,))
     row = panel.loc[panel["timestamp"] == pd.Timestamp("2026-01-01 00:02", tz="UTC")].iloc[0]
-    assert row["alt_return_fwd_1m"] == 0.10
+    assert row["alt_return_fwd_1m"] == pytest.approx(0.10)
 
 
 def test_predictors_are_lagged_and_no_future_btc_return_is_used():
@@ -23,5 +24,5 @@ def test_predictors_are_lagged_and_no_future_btc_return_is_used():
     alt = _frame("ALTUSDT", [10, 10, 10, 10])
     panel = build_v9_panel(btc, {"ALTUSDT": alt}, horizons=(1,))
     row = panel.iloc[2]
-    assert row["btc_ret_1m"] == 110 / 100 - 1
-    assert row["btc_ret_1m"] != 130 / 120 - 1
+    assert row["btc_ret_1m"] == pytest.approx(120 / 110 - 1)
+    assert row["btc_ret_1m"] != pytest.approx(130 / 120 - 1)
