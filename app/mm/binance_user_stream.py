@@ -16,6 +16,8 @@ class BinanceUSDMUserStream:
 
     CONTROL_URL = "wss://ws-fapi.binance.com/ws-fapi/v1"
     PRIVATE_STREAM_BASE = "wss://fstream.binance.com/private/ws"
+    TESTNET_CONTROL_URL = "wss://testnet.binancefuture.com/ws-fapi/v1"
+    TESTNET_PRIVATE_STREAM_BASE = "wss://stream.binancefuture.com/private/ws"
 
     def __init__(self, api_key: str | None = None, *, guard: UserStreamGuard | None = None,
                  event_cb=None, status_cb=print, control_url: str | None = None,
@@ -26,8 +28,19 @@ class BinanceUSDMUserStream:
         self.guard = guard or UserStreamGuard()
         self.event_cb = event_cb or (lambda _event: None)
         self.status_cb = status_cb
-        self.control_url = (control_url or os.getenv("BINANCE_USER_STREAM_API_URL") or self.CONTROL_URL).rstrip("/")
-        self.private_stream_base = (private_stream_base or os.getenv("BINANCE_PRIVATE_STREAM_BASE_URL") or self.PRIVATE_STREAM_BASE).rstrip("/")
+        order_base_url = os.getenv("BINANCE_ORDER_BASE_URL", "").lower()
+        testnet = any(host in order_base_url for host in ("testnet.binancefuture.com", "demo-fapi.binance.com"))
+        default_control = self.TESTNET_CONTROL_URL if testnet else self.CONTROL_URL
+        default_private = self.TESTNET_PRIVATE_STREAM_BASE if testnet else self.PRIVATE_STREAM_BASE
+        self.control_url = (control_url or os.getenv("BINANCE_USER_STREAM_API_URL") or default_control).rstrip("/")
+        self.private_stream_base = (private_stream_base or os.getenv("BINANCE_PRIVATE_STREAM_BASE_URL") or default_private).rstrip("/")
+
+        if testnet:
+            if "ws-fapi.binance.com" in self.control_url or "fstream.binance.com" in self.private_stream_base:
+                raise RuntimeError("testnet_endpoint_environment_mismatch")
+        else:
+            if "testnet.binancefuture.com" in self.control_url or "stream.binancefuture.com" in self.private_stream_base:
+                raise RuntimeError("mainnet_endpoint_environment_mismatch")
         self.stop_flag = False
         self.listen_key: str | None = None
         self._private_ws = None
