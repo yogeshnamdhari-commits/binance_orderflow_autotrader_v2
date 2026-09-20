@@ -19,6 +19,7 @@ permissions:
 env:
   PYTHONPATH: .
   RESEARCH_COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  RESEARCH_RUN_ID: ${{ github.run_id }}
 
 jobs:
   v21-research:
@@ -218,6 +219,7 @@ jobs:
           provenance = {
               "schema_version": 1,
               "source_run_id": int("${{ steps.source.outputs.run_id }}"),
+              "research_run_id": int(os.environ["RESEARCH_RUN_ID"]),
               "github_sha": os.environ.get("RESEARCH_COMMIT_SHA", os.environ.get("GITHUB_SHA", "")),
               "source_commit": "${{ steps.source.outputs.source_sha }}",
               "captures": ["A", "B", "C", "D"],
