@@ -29,7 +29,7 @@ class BinanceUSDMUserStream:
         self.event_cb = event_cb or (lambda _event: None)
         self.status_cb = status_cb
         order_base_url = os.getenv("BINANCE_ORDER_BASE_URL", "").lower()
-        testnet = "testnet" in order_base_url
+        testnet = any(host in order_base_url for host in ("testnet.binancefuture.com", "demo-fapi.binance.com"))
         default_control = self.TESTNET_CONTROL_URL if testnet else self.CONTROL_URL
         default_private = self.TESTNET_PRIVATE_STREAM_BASE if testnet else self.PRIVATE_STREAM_BASE
         self.control_url = (control_url or os.getenv("BINANCE_USER_STREAM_API_URL") or default_control).rstrip("/")
