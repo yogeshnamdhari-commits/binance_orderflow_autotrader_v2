@@ -18,7 +18,7 @@ permissions:
 
 env:
   PYTHONPATH: .
-  RESEARCH_COMMIT_SHA: ${{ inputs.source_sha || github.event.pull_request.head.sha || github.sha }}
+  RESEARCH_COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
   RESEARCH_RUN_ID: ${{ github.run_id }}
 
 jobs:
@@ -28,7 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.source_sha || github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
