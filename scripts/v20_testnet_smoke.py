@@ -15,6 +15,23 @@ BASE = os.getenv("BINANCE_ORDER_BASE_URL", "https://demo-fapi.binance.com").rstr
 KEY = os.getenv("BINANCE_API_KEY", "")
 SECRET = os.getenv("BINANCE_API_SECRET", "")
 SYMBOL = os.getenv("V20_SYMBOL", "BTCUSDT")
+_SERVER_TIME_OFFSET_MS = 0
+_SERVER_TIME_SYNCED_AT = 0.0
+_SERVER_TIME_REFRESH_S = 30.0
+
+def _server_time_ms() -> int:
+    global _SERVER_TIME_OFFSET_MS, _SERVER_TIME_SYNCED_AT
+    now_mono = time.monotonic()
+    if _SERVER_TIME_SYNCED_AT <= 0.0 or now_mono - _SERVER_TIME_SYNCED_AT >= _SERVER_TIME_REFRESH_S:
+        start_ms = int(time.time() * 1000)
+        probe = requests.get(BASE + "/fapi/v1/time", timeout=10)
+        end_ms = int(time.time() * 1000)
+        probe.raise_for_status()
+        server_ms = int(probe.json()["serverTime"])
+        _SERVER_TIME_OFFSET_MS = server_ms - ((start_ms + end_ms) // 2)
+        _SERVER_TIME_SYNCED_AT = now_mono
+    return int(time.time() * 1000) + _SERVER_TIME_OFFSET_MS
+
 EXECUTE = os.getenv("V20_TESTNET_EXECUTE", "0") == "1"
 
 # Only Binance Futures demo/test infrastructure is accepted here. Production
@@ -38,7 +55,7 @@ def require_env() -> None:
 
 def signed_request(method: str, path: str, params: dict | None = None) -> requests.Response:
     params = dict(params or {})
-    params.setdefault("timestamp", int(time.time() * 1000))
+    params.setdefault("timestamp", _server_time_ms())
     params.setdefault("recvWindow", 5000)
     query = urlencode(params)
     sig = hmac.new(SECRET.encode("utf-8"), query.encode("utf-8"), hashlib.sha256).hexdigest()
