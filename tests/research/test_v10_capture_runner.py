@@ -10,6 +10,7 @@ from app.mm.book import L2Snapshot, L2Update, OrderBook
 from app.v10_capture import (
     _depth_update_id_range,
     fetch_rest_snapshot_with_retries,
+    fetch_snapshot_with_fallback,
     find_bridging_index,
 )
 from app.v10_recorder import V10Recorder
@@ -276,3 +277,18 @@ def test_orderbook_ignores_stale_duplicate_without_advancing_state():
     book.apply_update(L2Update(2, 99, 105, 97, [(99.0, 3.0)], []))
     assert book.last_update_id == 105
     assert book.bids[99.0] == 2.0
+
+
+def test_snapshot_fallback_uses_ws_api_after_rest_failure(monkeypatch):
+    def fail_rest(*_args, **_kwargs):
+        raise RuntimeError("rest blocked")
+
+    monkeypatch.setattr("app.v10_capture.fetch_rest_snapshot_with_retries", fail_rest)
+    monkeypatch.setattr(
+        "app.v10_capture.fetch_ws_snapshot_with_retries",
+        lambda *_args, **_kwargs: {"lastUpdateId": 456, "bids": [], "asks": []},
+    )
+
+    snapshot, source = fetch_snapshot_with_fallback("BTCUSDT")
+    assert snapshot["lastUpdateId"] == 456
+    assert source == "WS_API"
