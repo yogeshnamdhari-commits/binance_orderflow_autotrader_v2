@@ -148,7 +148,9 @@ jobs:
 
   handoff-v21:
     needs: performance-certification
-    if: always()
+    # Never hand off to V21 research unless all four authentic V20
+    # certification jobs completed successfully.
+    if: needs.performance-certification.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
