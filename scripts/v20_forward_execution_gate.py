@@ -35,6 +35,23 @@ HOLD_SECONDS = int(os.getenv("V20_FORWARD_HOLD_SECONDS", "90"))
 
 ALLOWED_HOSTS = {"demo-fapi.binance.com", "testnet.binancefuture.com"}
 
+_SERVER_TIME_OFFSET_MS = 0
+_SERVER_TIME_SYNCED_AT = 0.0
+_SERVER_TIME_REFRESH_S = 30.0
+
+def _server_time_ms() -> int:
+    global _SERVER_TIME_OFFSET_MS, _SERVER_TIME_SYNCED_AT
+    now_mono = time.monotonic()
+    if _SERVER_TIME_SYNCED_AT <= 0.0 or now_mono - _SERVER_TIME_SYNCED_AT >= _SERVER_TIME_REFRESH_S:
+        start_ms = int(time.time() * 1000)
+        probe = requests.get(BASE + "/fapi/v1/time", timeout=15)
+        end_ms = int(time.time() * 1000)
+        probe.raise_for_status()
+        server_ms = int(probe.json()["serverTime"])
+        _SERVER_TIME_OFFSET_MS = server_ms - ((start_ms + end_ms) // 2)
+        _SERVER_TIME_SYNCED_AT = now_mono
+    return int(time.time() * 1000) + _SERVER_TIME_OFFSET_MS
+
 
 def dec(value: object) -> Decimal:
     return Decimal(str(value or "0"))
@@ -42,7 +59,7 @@ def dec(value: object) -> Decimal:
 
 def signed_request(method: str, path: str, params: dict[str, object] | None = None) -> requests.Response:
     p = {str(k): str(v) for k, v in dict(params or {}).items()}
-    p.setdefault("timestamp", str(int(time.time() * 1000)))
+    p.setdefault("timestamp", str(_server_time_ms()))
     p.setdefault("recvWindow", "5000")
     query = urlencode(p)
     p["signature"] = hmac.new(SECRET.encode(), query.encode(), hashlib.sha256).hexdigest()
