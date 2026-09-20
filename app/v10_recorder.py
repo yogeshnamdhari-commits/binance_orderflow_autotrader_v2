@@ -105,6 +105,31 @@ class V10Recorder:
             first_pu = int(first_pu) if first_pu is not None else None
         except Exception:
             pass
+        if bridge_index < 0 or bridge_index >= len(buffered):
+            raise RuntimeError(f"invalid bridge index: {bridge_index}")
+        if range_result is None:
+            raise RuntimeError("bridge event is not a valid depthUpdate")
+        if not (first_U <= snapshot_id <= first_u):
+            raise RuntimeError(
+                "bridge event does not bracket snapshot: "
+                f"snapshot={snapshot_id}, U={first_U}, u={first_u}"
+            )
+
+        # The buffered prefix is intentionally non-causal for the local book.
+        # Truncate any rows that may have been written before bridge activation,
+        # then restart sequence validation before replaying only from the bridge.
+        self.session.reset_event_log_for_bridge()
+        self.depth_validator = DepthSequenceValidator()
+        for key in (
+            "total_events",
+            "depth_events",
+            "trade_events",
+            "book_ticker_events",
+            "parse_errors",
+            "gaps",
+        ):
+            self._diagnostics[key] = 0
+
         self.session._manifest["bootstrap"] = {
             "status": "BRIDGED",
             "snapshot_last_update_id": snapshot_id,
@@ -114,6 +139,7 @@ class V10Recorder:
             "first_u": first_u,
             "first_pu": first_pu,
             "pre_bridge_events_skipped": bridge_index,
+            "pre_bridge_event_rows_discarded": bridge_index,
         }
         self.session._write_manifest()
 
