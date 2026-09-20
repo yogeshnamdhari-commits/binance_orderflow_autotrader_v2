@@ -130,6 +130,9 @@ def test_record_bootstrap_writes_manifest(tmp_path: Path):
         def __init__(self, manifest_ref):
             self._manifest = manifest_ref
 
+        def reset_event_log_for_bridge(self):
+            (session_dir / "events.jsonl").write_text("", encoding="utf-8")
+
         def _write_manifest(self):
             (session_dir / "manifest.json").write_text(
                 json.dumps(self._manifest, indent=2, sort_keys=True) + "\n",
@@ -154,6 +157,39 @@ def test_record_bootstrap_writes_manifest(tmp_path: Path):
     assert loaded["bootstrap"]["status"] == "BRIDGED"
     assert loaded["bootstrap"]["snapshot_last_update_id"] == 100
     assert loaded["bootstrap"]["first_pu"] == 100
+
+
+
+
+def test_record_bootstrap_discards_pre_bridge_event_rows(tmp_path: Path):
+    recorder = V10Recorder(
+        symbol="BTCUSDT",
+        output_dir=tmp_path,
+        ws_url="wss://example.com",
+        streams=["btcusdt@depth@100ms"],
+    )
+    session_dir = recorder.start()
+    pre_bridge = _depth_update_payload(U=10, u=20, pu=9)
+    bridge = _depth_update_payload(U=99, u=105, pu=98)
+
+    recorder.handle_message(pre_bridge, receive_ns=1)
+    assert recorder.session._manifest["event_count"] == 1
+
+    recorder.record_bootstrap(
+        snapshot_id=100,
+        bridge_index=0,
+        buffered=[(bridge, 2, "stream")],
+    )
+
+    assert (session_dir / "events.jsonl").read_text(encoding="utf-8") == ""
+    manifest = json.loads((session_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["event_count"] == 0
+    assert manifest["bootstrap"]["pre_bridge_event_rows_discarded"] == 0
+
+    recorder.handle_message(bridge, receive_ns=2)
+    rows = (session_dir / "events.jsonl").read_text(encoding="utf-8").splitlines()
+    assert len(rows) == 1
+    assert json.loads(rows[0])["raw_json"] == bridge
 
 
 def test_record_bootstrap_failure_writes_manifest(tmp_path: Path):
