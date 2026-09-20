@@ -26,7 +26,7 @@ def bundle():
     n = len(FEATURES)
     payload = {
         "schema_version": 2,
-        "model_family": "test",
+        "model_family": "v21_two_stage_orderflow_conditional_markout_mm",
         "horizon_ms": 250,
         "features": list(FEATURES),
         "training_sessions": ["A"],
@@ -38,6 +38,7 @@ def bundle():
         "magnitude": {"coef": [0.0] * n, "intercept": 1.5},
         "markout_buy": {"coef": [0.0] * n, "intercept": 3.50},
         "markout_sell": {"coef": [0.0] * n, "intercept": 3.50},
+        "production_inference": {"training_in_live_process": False, "feature_order_locked": True, "economic_signal_horizon_ms": 250},
     }
     raw = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
     payload["bundle_sha256"] = hashlib.sha256(raw).hexdigest()
