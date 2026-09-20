@@ -11,7 +11,7 @@ def make_payload():
     n = len(FEATURES)
     base = {
         "schema_version": 2,
-        "model_family": "test",
+        "model_family": "v21_two_stage_orderflow_conditional_markout_mm",
         "horizon_ms": 250,
         "features": list(FEATURES),
         "training_sessions": ["A"],
@@ -23,7 +23,7 @@ def make_payload():
         "magnitude": {"coef": [0.0] * n, "intercept": 1.5},
         "markout_buy": {"coef": [0.0] * n, "intercept": 2.50},
         "markout_sell": {"coef": [0.0] * n, "intercept": 2.75},
-        "production_inference": {"training_in_live_process": False, "feature_order_locked": True},
+        "production_inference": {"training_in_live_process": False, "feature_order_locked": True, "economic_signal_horizon_ms": 250},
     }
     raw = json.dumps(base, sort_keys=True, separators=(",", ":")).encode()
     base["bundle_sha256"] = hashlib.sha256(raw).hexdigest()
@@ -55,3 +55,25 @@ def test_bundle_rejects_wrong_feature_order():
         assert str(exc) == "v21_feature_order_mismatch"
     else:
         raise AssertionError("feature order mismatch was accepted")
+
+
+def test_bundle_rejects_wrong_model_family():
+    payload = make_payload()
+    payload["model_family"] = "wrong_family"
+    try:
+        V21ModelBundle(payload)
+    except ValueError as exc:
+        assert str(exc) == "unsupported_v21_model_family"
+    else:
+        raise AssertionError("wrong model family was accepted")
+
+
+def test_bundle_rejects_live_training():
+    payload = make_payload()
+    payload["production_inference"]["training_in_live_process"] = True
+    try:
+        V21ModelBundle(payload)
+    except ValueError as exc:
+        assert str(exc) == "v21_training_in_live_enabled"
+    else:
+        raise AssertionError("live training flag was accepted")
