@@ -1,0 +1,37 @@
+name: Canonical Market Truth Tests
+
+on:
+  push:
+    branches:
+      - fix/canonical-market-truth-v1
+  pull_request:
+    branches:
+      - fix/canonical-market-truth-v1
+
+env:
+  PYTHONPATH: .
+
+jobs:
+  canonical-market-truth:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+
+      - name: Compile touched modules
+        run: |
+          python -m py_compile             app/mm/book.py             app/mm/market_truth.py             app/v10_market_data.py             app/v10_recorder.py             app/v10_capture.py             scripts/v20_capture_quality_gate.py
+
+      - name: Run canonical truth tests
+        run: |
+          python -m pytest -q             tests/test_depth_provenance_hardening.py             tests/test_market_truth_contract.py
