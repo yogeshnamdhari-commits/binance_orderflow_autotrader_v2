@@ -56,6 +56,17 @@ class V21ModelBundle:
         features = list(payload.get("features", []))
         if features != list(V21_FEATURES):
             raise ValueError("v21_feature_order_mismatch")
+        if payload.get("model_family") != "v21_two_stage_orderflow_conditional_markout_mm":
+            raise ValueError("unsupported_v21_model_family")
+        if int(payload.get("horizon_ms", -1)) != 250:
+            raise ValueError("unsupported_v21_model_horizon")
+        inference = payload.get("production_inference") or {}
+        if inference.get("training_in_live_process") is not False:
+            raise ValueError("v21_training_in_live_enabled")
+        if inference.get("feature_order_locked") is not True:
+            raise ValueError("v21_feature_order_not_locked")
+        if inference.get("economic_signal_horizon_ms") != 250:
+            raise ValueError("v21_economic_horizon_mismatch")
         self.payload = payload
         self.features = tuple(features)
         self.bundle_sha256 = str(payload.get("bundle_sha256", ""))
