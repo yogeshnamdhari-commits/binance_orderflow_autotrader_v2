@@ -16,6 +16,8 @@ on:
 permissions:
   contents: read
 
+# Focused fail-closed regression suite for certification provenance.
+
 jobs:
   provenance:
     runs-on: ubuntu-latest
