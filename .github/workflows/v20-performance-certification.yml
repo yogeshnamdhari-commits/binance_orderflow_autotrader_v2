@@ -166,5 +166,5 @@ jobs:
             --repo "${{ github.repository }}" \
             --ref research/v21-orderflow-latest \
             -f source_run_id="${{ github.run_id }}" \
-            -f source_sha="${{ github.sha }}"
+            -f source_sha="${{ github.event.pull_request.head.sha || github.sha }}"
           echo "Dispatched V21 research using V20 run ${{ github.run_id }} at ${{ github.sha }}"
