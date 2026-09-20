@@ -54,8 +54,8 @@ def inspect_capture(capture_dir: str | Path) -> dict[str, object]:
     bootstrap = manifest.get("bootstrap") or {}
     if bootstrap.get("status") != "BRIDGED":
         raise RuntimeError(f"CERTIFICATION_CAPTURE_INVALID: bootstrap status={bootstrap.get('status')!r}")
-    if bootstrap.get("snapshot_source") != "REST":
-        raise RuntimeError("CERTIFICATION_CAPTURE_INVALID: snapshot source must be Binance USD-M REST depth")
+    if bootstrap.get("snapshot_source") not in {"REST", "WS_API"}:
+        raise RuntimeError("CERTIFICATION_CAPTURE_INVALID: snapshot source is not an approved Binance USD-M snapshot API")
     snapshot_id = bootstrap.get("snapshot_last_update_id")
     first_U = bootstrap.get("first_U")
     first_u = bootstrap.get("first_u")
