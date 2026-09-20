@@ -52,12 +52,15 @@ def evaluate(
         "tests": tests,
     }
     provenance_ok = True
+    research_run_ok = True
+    commit_provenance_ok = True
     provenance_reasons: list[str] = []
 
     research_run_id = str(econ.get("certification_run_id", ""))
     if expected_research_run_id:
         if research_run_id != expected_research_run_id:
             provenance_ok = False
+            research_run_ok = False
             provenance_reasons.append(
                 f"research_run_id_mismatch:{research_run_id}!={expected_research_run_id}"
             )
@@ -66,12 +69,14 @@ def evaluate(
             evidence_sha = str(evidence.get("github_sha", ""))
             if evidence_sha != expected_git_commit:
                 provenance_ok = False
+                commit_provenance_ok = False
                 provenance_reasons.append(
                     f"{name}_git_commit_mismatch:{evidence_sha}!={expected_git_commit}"
                 )
         bundle_sha = str(bundle.get("source_commit", ""))
         if bundle_sha != expected_git_commit:
             provenance_ok = False
+            commit_provenance_ok = False
             provenance_reasons.append(
                 f"model_bundle_git_commit_mismatch:{bundle_sha}!={expected_git_commit}"
             )
@@ -82,7 +87,8 @@ def evaluate(
             econ.get("execution_scope") == "RESEARCH_ONLY"
             and econ.get("live_order_submission") is False
         ),
-        "research_run_provenance_valid": provenance_ok,
+        "research_run_provenance_valid": research_run_ok,
+        "evidence_commit_provenance_valid": commit_provenance_ok,
         "model_bundle_present": model_bundle.is_file(),
         "model_bundle_hash_valid": bool(expected) and expected == actual,
         "model_training_disabled_in_live": (
