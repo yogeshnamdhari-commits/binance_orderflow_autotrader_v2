@@ -121,3 +121,12 @@ data/v10_test3/
 #   app/mm/config.json (authoritative config), app/mm/*.py (code),
 #   data/captures/*/manifest.json, snapshot.json, provenance.json,
 #   v19_evidence*.json, data/mm_backtest_results*.json, data/walk_forward*.json
+
+# ------------------------------------------------------------
+# BINANCE CREDENTIALS — NEVER COMMIT
+# ------------------------------------------------------------
+# Runtime API credential blobs are local-only. Do not use a repository-root
+# credential file as an authorization switch.
+binance_keys.json
+**/binance_keys.json
+app/orderflow/secrets/
