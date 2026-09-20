@@ -1,4 +1,4 @@
-from app.mm.book import L2Snapshot, L2Update
+from app.mm.book import L2Snapshot, L2Update, OrderBook
 from app.mm.config import V20Config
 from app.mm.event_backtest import run_event_backtest
 from app.mm.execution_replay import Side, TradeEvent
@@ -69,3 +69,39 @@ def test_crossing_quotes_are_suppressed_not_clamped():
     assert result.quote_crossings_detected > 0
     assert result.quote_crossings_suppressed > 0
     assert result.fills == 0
+
+
+def test_order_book_accepts_bridge_ending_at_snapshot_id():
+    snapshot = L2Snapshot(
+        timestamp_ns=0,
+        last_update_id=100,
+        bids=[(99.99, 10.0)],
+        asks=[(100.01, 10.0)],
+    )
+    book = OrderBook.from_snapshot(snapshot)
+
+    bridge = L2Update(
+        timestamp_ns=1_000,
+        first_update_id=95,
+        final_update_id=100,
+        prev_final_update_id=94,
+        bids=[],
+        asks=[],
+    )
+    book.apply_update(bridge)
+
+    # The bridge establishes continuity but contains no post-snapshot updates.
+    assert book.last_update_id == 100
+    assert book._awaiting_first_diff is False
+
+    next_update = L2Update(
+        timestamp_ns=2_000,
+        first_update_id=101,
+        final_update_id=110,
+        prev_final_update_id=100,
+        bids=[(99.99, 9.0)],
+        asks=[(100.01, 9.0)],
+    )
+    book.apply_update(next_update)
+
+    assert book.last_update_id == 110

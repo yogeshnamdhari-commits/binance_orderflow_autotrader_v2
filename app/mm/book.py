@@ -59,10 +59,10 @@ class OrderBook:
             raise ValueError("OrderBook must be initialized from snapshot before applying updates")
 
         # Binance's first diff-depth event must bracket the snapshot lastUpdateId.
-        # After that one bridge event, every subsequent event must have pu == prior u.
-        if update.final_update_id <= self.last_update_id:
-            return
-
+        # A valid bridge may end exactly at snapshot.lastUpdateId (u == snapshot).
+        # In that case it establishes the bridge but contributes no post-snapshot
+        # book state, so it must not be discarded before marking the bridge complete.
+        # After the bridge, every subsequent event must have pu == prior u.
         if self._awaiting_first_diff:
             if not (update.first_update_id <= self.last_update_id <= update.final_update_id):
                 raise ValueError(
@@ -71,6 +71,10 @@ class OrderBook:
                     f"u={update.final_update_id}"
                 )
             self._awaiting_first_diff = False
+            if update.final_update_id == self.last_update_id:
+                return
+        elif update.final_update_id <= self.last_update_id:
+            return
         elif update.prev_final_update_id != self.last_update_id:
             raise ValueError(
                 f"Sequence gap: expected pu={self.last_update_id}, "

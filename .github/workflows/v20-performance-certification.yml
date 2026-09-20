@@ -15,7 +15,7 @@ env:
   PYTHONPATH: .
 
 concurrency:
-  group: v20-performance-certification-${{ github.ref }}
+  group: v20-performance-certification-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 jobs:
