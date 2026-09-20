@@ -120,6 +120,14 @@ def test_deployment_gate_rejects_mismatched_research_run(tmp_path):
 
 def test_deployment_gate_emits_non_live_authorization_header(tmp_path):
     args = _common(tmp_path)
+    bundle = json.loads(args["model_bundle"].read_text())
+    bundle["source_commit"] = "abc123"
+    canonical = dict(bundle)
+    canonical.pop("bundle_sha256", None)
+    bundle["bundle_sha256"] = hashlib.sha256(
+        json.dumps(canonical, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+    args["model_bundle"].write_text(json.dumps(bundle), encoding="utf-8")
     report = evaluate(
         **args,
         explicit_authorization=True,
