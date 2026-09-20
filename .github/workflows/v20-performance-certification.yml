@@ -111,6 +111,7 @@ jobs:
           mkdir -p data/cert_reports/${{ matrix.session }}
           python scripts/v20_performance_certify.py \
             --capture-dir "${{ steps.locate.outputs.capture_dir }}" \
+            --session "${{ matrix.session }}" \
             --baseline-config app/mm/config_v20_eco_v1_actual_fees.json \
             --candidate-config app/mm/config_backtest_toxicity_v1.json \
             --maker-fee-bps 2.0 \
