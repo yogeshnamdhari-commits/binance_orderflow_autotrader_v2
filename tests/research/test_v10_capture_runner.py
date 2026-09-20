@@ -148,14 +148,14 @@ def test_record_bootstrap_writes_manifest(tmp_path: Path):
     recorder._manifest = manifest
 
     buffered = [(_depth_update_payload(U=101, u=110, pu=100), 0, "stream")]
-    recorder.record_bootstrap(snapshot_id=100, bridge_index=0, buffered=buffered)
+    recorder.record_bootstrap(snapshot_id=105, bridge_index=0, buffered=buffered)
 
     manifest_path = session_dir / "manifest.json"
     assert manifest_path.exists()
     with open(manifest_path) as f:
         loaded = json.load(f)
     assert loaded["bootstrap"]["status"] == "BRIDGED"
-    assert loaded["bootstrap"]["snapshot_last_update_id"] == 100
+    assert loaded["bootstrap"]["snapshot_last_update_id"] == 105
     assert loaded["bootstrap"]["first_pu"] == 100
 
 
