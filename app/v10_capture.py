@@ -230,6 +230,7 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
         socket.close()
 
     def fetch_snapshot_and_find_bridge() -> None:
+        buffered_to_replay = None
         with snapshot_lock:
             if state["snapshot_fetched"] or state["bridge_found"]:
                 return
@@ -246,16 +247,19 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
                 first_bridge = find_bridging_index(state["buffered"], snapshot_id)
                 if first_bridge is not None:
                     state["bridge_found"] = True
-                    recorder.record_bootstrap(snapshot_id, first_bridge, state["buffered"], snapshot_source=str(state["snapshot_source"]))
-                    for idx in range(first_bridge, len(state["buffered"])):
-                        raw, ns, _stream = state["buffered"][idx]
-                        recorder.handle_message(raw, receive_ns=ns)
+                    buffered_to_replay = list(state["buffered"][first_bridge:])
                     state["buffered"].clear()
+                    recorder.record_bootstrap(snapshot_id, first_bridge, buffered_to_replay, snapshot_source=str(state["snapshot_source"]))
                 else:
                     state["bridge_deadline"] = time.monotonic() + 5.0
             except Exception as exc:
                 recorder.record_bootstrap_failure(-1, "SNAPSHOT_FETCH_FAILED", str(exc))
                 close_socket()
+                return
+
+        if buffered_to_replay is not None:
+            for raw, ns, _stream in buffered_to_replay:
+                recorder.handle_message(raw, receive_ns=ns)
 
     def on_message(_ws, message) -> None:
         receive_ns = time.time_ns()
@@ -265,24 +269,31 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
             return
         stream = parsed.get("stream") if isinstance(parsed, dict) else None
 
-        if not state["bridge_found"]:
-            state["buffered"].append((message, receive_ns, stream))
-            if state["snapshot_fetched"] and state["snapshot_id"] is not None:
-                first_bridge = find_bridging_index(state["buffered"], state["snapshot_id"])
-                if first_bridge is not None:
-                    state["bridge_found"] = True
-                    recorder.record_bootstrap(state["snapshot_id"], first_bridge, state["buffered"])
-                    for idx in range(first_bridge, len(state["buffered"])):
-                        raw, ns, _stream = state["buffered"][idx]
-                        recorder.handle_message(raw, receive_ns=ns)
-                    state["buffered"].clear()
-                elif state["bridge_deadline"] is not None and time.monotonic() > state["bridge_deadline"]:
-                    recorder.record_bootstrap_failure(
-                        int(state["snapshot_id"]),
-                        "BRIDGE_TIMEOUT",
-                        "No depthUpdate satisfying U <= snapshot_id+1 <= u found within bootstrap window",
-                    )
-                    close_socket()
+        buffered_to_replay = None
+        with snapshot_lock:
+            if not state["bridge_found"]:
+                state["buffered"].append((message, receive_ns, stream))
+                if state["snapshot_fetched"] and state["snapshot_id"] is not None:
+                    first_bridge = find_bridging_index(state["buffered"], state["snapshot_id"])
+                    if first_bridge is not None:
+                        state["bridge_found"] = True
+                        buffered_to_replay = list(state["buffered"][first_bridge:])
+                        state["buffered"].clear()
+                        recorder.record_bootstrap(state["snapshot_id"], first_bridge, buffered_to_replay)
+                    elif state["bridge_deadline"] is not None and time.monotonic() > state["bridge_deadline"]:
+                        recorder.record_bootstrap_failure(
+                            int(state["snapshot_id"]),
+                            "BRIDGE_TIMEOUT",
+                            "No depthUpdate satisfying U <= snapshot_id+1 <= u found within bootstrap window",
+                        )
+                        close_socket()
+                        return
+                else:
+                    return
+
+        if buffered_to_replay is not None:
+            for raw, ns, _stream in buffered_to_replay:
+                recorder.handle_message(raw, receive_ns=ns)
             return
 
         recorder.handle_message(message, receive_ns=receive_ns)
