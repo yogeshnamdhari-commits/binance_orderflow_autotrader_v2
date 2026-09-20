@@ -110,7 +110,7 @@ def test_snapshot_retry_exhausts_cleanly(monkeypatch):
     monkeypatch.setattr("app.v10_capture.time.sleep", lambda _seconds: None)
 
     with pytest.raises(RuntimeError, match="persistent websocket failure"):
-        fetch_ws_snapshot_with_retries("BTCUSDT", attempts=3, retry_delay_seconds=0.0)
+        fetch_rest_snapshot_with_retries("BTCUSDT", attempts=3, retry_delay_seconds=0.0)
 
     assert calls["count"] == 3
 
