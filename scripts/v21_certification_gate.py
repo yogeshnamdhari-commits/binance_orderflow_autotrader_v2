@@ -77,6 +77,9 @@ def evaluate(
     return {
         "status": "CERTIFIED" if certified else "NOT_CERTIFIED",
         "github_sha": os.getenv("RESEARCH_COMMIT_SHA", os.getenv("GITHUB_SHA", "")),
+        "certification_run_id": os.getenv("GITHUB_RUN_ID", ""),
+        "execution_scope": "RESEARCH_ONLY",
+        "live_order_submission": False,
         "protocol": "nested walk-forward economic gate",
         "outer_folds": outer,
         "aggregate": {

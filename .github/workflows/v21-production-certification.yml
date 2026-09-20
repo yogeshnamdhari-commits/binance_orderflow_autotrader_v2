@@ -25,6 +25,7 @@ permissions:
 env:
   PYTHONPATH: .
   BINANCE_ORDER_BASE_URL: https://testnet.binancefuture.com
+  RESEARCH_RUN_ID: ${{ inputs.research_run_id }}
 
 jobs:
   certify:
@@ -76,6 +77,11 @@ jobs:
 
           if econ.get("status") != "CERTIFIED":
               raise SystemExit(f"ECONOMIC_CERTIFICATION_NOT_CERTIFIED: {econ.get('status')}")
+          if econ.get("certification_run_id") != os.environ["RESEARCH_RUN_ID"]:
+              raise SystemExit(
+                  "RESEARCH_RUN_ID_MISMATCH:"
+                  f"{econ.get('certification_run_id')}!={os.environ['RESEARCH_RUN_ID']}"
+              )
           if provenance.get("github_sha") != os.environ["GITHUB_SHA"]:
               raise SystemExit(
                   "RESEARCH_PROVENANCE_COMMIT_MISMATCH:"
@@ -223,6 +229,7 @@ jobs:
               --testnet-evidence evidence/testnet_validation.json \
               --tests-evidence evidence/tests.json \
               --expected-git-commit "$GITHUB_SHA" \
+              --expected-research-run-id "${{ inputs.research_run_id }}" \
               --explicit-authorization \
               --output evidence/v21_deployment_gate.json
           else
@@ -233,6 +240,7 @@ jobs:
               --testnet-evidence evidence/testnet_validation.json \
               --tests-evidence evidence/tests.json \
               --expected-git-commit "$GITHUB_SHA" \
+              --expected-research-run-id "${{ inputs.research_run_id }}" \
               --output evidence/v21_deployment_gate.json
           fi
 
