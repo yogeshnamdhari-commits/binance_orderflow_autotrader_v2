@@ -35,7 +35,8 @@ jobs:
     runs-on: ubuntu-latest
     # Stagger the four authentic capture windows so A/B/C/D are temporally
     # independent while retaining parallel GitHub runners.
-    timeout-minutes: 190
+    # Allow the 105-minute stagger + 60-minute capture + replay headroom.
+    timeout-minutes: 300
     steps:
       - uses: actions/checkout@v4
 
