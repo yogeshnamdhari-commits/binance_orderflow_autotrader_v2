@@ -247,7 +247,7 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
                 first_bridge = find_bridging_index(state["buffered"], snapshot_id)
                 if first_bridge is not None:
                     state["bridge_found"] = True
-                    buffered_to_replay = list(state["buffered"][first_bridge:])
+                    buffered_to_replay = list(state["buffered"])
                     state["buffered"].clear()
                     recorder.record_bootstrap(snapshot_id, first_bridge, buffered_to_replay, snapshot_source=str(state["snapshot_source"]))
                 else:
@@ -277,7 +277,7 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
                     first_bridge = find_bridging_index(state["buffered"], state["snapshot_id"])
                     if first_bridge is not None:
                         state["bridge_found"] = True
-                        buffered_to_replay = list(state["buffered"][first_bridge:])
+                        buffered_to_replay = list(state["buffered"])
                         state["buffered"].clear()
                         recorder.record_bootstrap(state["snapshot_id"], first_bridge, buffered_to_replay)
                     elif state["bridge_deadline"] is not None and time.monotonic() > state["bridge_deadline"]:
