@@ -92,24 +92,24 @@ def _select_candidate(records: list[dict[str, Any]], min_train_fills: int = MIN_
 
 def _candidate_grid(base: V20Config) -> list[V20Config]:
     candidates: list[V20Config] = []
-    # Keep the 108-configuration search budget while allocating one axis
-    # to the corrected, notional-normalized inventory controller.
-    for half_spread in (0.75, 1.25, 1.75, 2.25):
+    # Keep the 108-configuration research budget, but cover the passive
+    # spread range that actually occurs in BTCUSDT instead of excluding
+    # tighter quotes before passive-geometry enforcement.  The candidate is
+    # still selected only on the chronological training half, and any
+    # configuration that ever crosses the observed BBO is rejected.
+    for half_spread in (0.50, 0.75, 1.00, 1.25, 1.50, 2.00):
         for imbalance in (0.55, 0.65, 0.75):
-            for flow in (0.55, 0.65, 0.75):
-                for inventory_penalty in (5.0, 10.0, 20.0):
-                    if 1.5 + 0.1 >= half_spread:
-                        continue
+            for flow in (0.55, 0.65):
+                for microprice_skew in (0.25, 0.50, 1.00):
                     candidates.append(
                         replace(
                             base,
                             base_half_spread_bps=half_spread,
                             max_half_spread_bps=max(half_spread + 1.0, base.max_half_spread_bps),
-                            inventory_penalty_bps=inventory_penalty,
                             toxicity_filter_enabled=True,
                             toxicity_imbalance_threshold=imbalance,
                             toxicity_flow_threshold=flow,
-                            microprice_skew_bps=1.5,
+                            microprice_skew_bps=microprice_skew,
                             live_order_submission=False,
                         )
                     )
