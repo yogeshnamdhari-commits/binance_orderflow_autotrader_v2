@@ -27,7 +27,7 @@ def _write(tmp_path: Path, name: str, payload: dict) -> Path:
 def _common(tmp_path: Path):
     commit = "abc123"
     return {
-        "economic_certification": _write(tmp_path, "econ.json", {"status": "CERTIFIED", "github_sha": commit}),
+        "economic_certification": _write(tmp_path, "econ.json", {"status": "CERTIFIED", "github_sha": commit, "certification_run_id": "research-123", "execution_scope": "RESEARCH_ONLY", "live_order_submission": False}),
         "model_bundle": _bundle(tmp_path),
         "paper_evidence": _write(tmp_path, "paper.json", {"status": "PASS", "github_sha": commit}),
         "testnet_evidence": _write(
@@ -78,7 +78,7 @@ def test_deployment_gate_requires_authenticated_demo_lifecycle(tmp_path):
 def test_deployment_gate_authorizes_only_when_all_checks_pass(tmp_path):
     args = _common(tmp_path)
     report = evaluate(**args, explicit_authorization=True)
-    assert report["status"] == "DEPLOYMENT_AUTHORIZED"
+    assert report["status"] == "DEPLOYMENT_CERTIFIED_NON_LIVE"
     assert report["checks"]["economic_certified"] is True
     assert report["checks"]["model_bundle_hash_valid"] is True
     assert report["checks"]["authenticated_testnet_passed"] is True
@@ -103,3 +103,31 @@ def test_deployment_gate_rejects_mixed_commit_evidence(tmp_path):
     report = evaluate(**args, explicit_authorization=True, expected_git_commit="abc123")
     assert report["status"] == "LOCKED"
     assert report["checks"]["evidence_commit_provenance_valid"] is False
+
+
+def test_deployment_gate_rejects_mismatched_research_run(tmp_path):
+    args = _common(tmp_path)
+    report = evaluate(
+        **args,
+        explicit_authorization=True,
+        expected_git_commit="abc123",
+        expected_research_run_id="research-999",
+    )
+    assert report["status"] == "LOCKED"
+    assert report["checks"]["research_run_provenance_valid"] is False
+    assert any("research_run_id_mismatch" in r for r in report["provenance_reasons"])
+
+
+def test_deployment_gate_emits_non_live_authorization_header(tmp_path):
+    args = _common(tmp_path)
+    report = evaluate(
+        **args,
+        explicit_authorization=True,
+        expected_git_commit="abc123",
+        expected_research_run_id="research-123",
+    )
+    assert report["status"] == "DEPLOYMENT_CERTIFIED_NON_LIVE"
+    assert report["deployment_scope"] == "NON_LIVE"
+    assert report["execution_authorized"] is False
+    assert report["live_order_submission"] is False
+    assert report["authorization_header"].startswith("App-Public-Action-Certification-V21: orderflow:")
