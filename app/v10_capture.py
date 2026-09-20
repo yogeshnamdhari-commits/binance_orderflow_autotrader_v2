@@ -249,17 +249,21 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
                     state["bridge_found"] = True
                     buffered_to_replay = list(state["buffered"])
                     state["buffered"].clear()
-                    recorder.record_bootstrap(snapshot_id, first_bridge, buffered_to_replay, snapshot_source=str(state["snapshot_source"]))
+                    recorder.record_bootstrap(
+                        snapshot_id,
+                        first_bridge,
+                        buffered_to_replay,
+                        snapshot_source=str(state["snapshot_source"]),
+                    )
+                    for raw, ns, _stream in buffered_to_replay[first_bridge:]:
+                        recorder.handle_message(raw, receive_ns=ns)
+                    buffered_to_replay = None
                 else:
                     state["bridge_deadline"] = time.monotonic() + 5.0
             except Exception as exc:
                 recorder.record_bootstrap_failure(-1, "SNAPSHOT_FETCH_FAILED", str(exc))
                 close_socket()
                 return
-
-        if buffered_to_replay is not None:
-            for raw, ns, _stream in buffered_to_replay:
-                recorder.handle_message(raw, receive_ns=ns)
 
     def on_message(_ws, message) -> None:
         receive_ns = time.time_ns()
@@ -279,7 +283,14 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
                         state["bridge_found"] = True
                         buffered_to_replay = list(state["buffered"])
                         state["buffered"].clear()
-                        recorder.record_bootstrap(state["snapshot_id"], first_bridge, buffered_to_replay)
+                        recorder.record_bootstrap(
+                            state["snapshot_id"],
+                            first_bridge,
+                            buffered_to_replay,
+                        )
+                        for raw, ns, _stream in buffered_to_replay[first_bridge:]:
+                            recorder.handle_message(raw, receive_ns=ns)
+                        return
                     elif state["bridge_deadline"] is not None and time.monotonic() > state["bridge_deadline"]:
                         recorder.record_bootstrap_failure(
                             int(state["snapshot_id"]),
@@ -290,11 +301,6 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
                         return
                 else:
                     return
-
-        if buffered_to_replay is not None:
-            for raw, ns, _stream in buffered_to_replay:
-                recorder.handle_message(raw, receive_ns=ns)
-            return
 
         recorder.handle_message(message, receive_ns=receive_ns)
         if time.monotonic() >= deadline:
