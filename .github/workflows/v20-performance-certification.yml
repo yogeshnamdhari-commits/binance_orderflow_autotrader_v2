@@ -36,6 +36,7 @@ jobs:
     # Stagger the four authentic capture windows so A/B/C/D are temporally
     # independent while retaining parallel GitHub runners.
     # Allow the 105-minute stagger + 60-minute capture + replay headroom.
+    # Capture bridge replay is serialized to preserve exact event ordering.
     timeout-minutes: 300
     steps:
       - uses: actions/checkout@v4
