@@ -4,7 +4,7 @@ from app.mm.config import V20Config
 from scripts.v20_performance_certify import _candidate_grid, _select_candidate
 
 
-def test_candidate_grid_excludes_crossing_prone_configs():
+def test_candidate_grid_covers_tighter_passive_spreads_with_fixed_budget():
     base = V20Config(
         base_half_spread_bps=2.0,
         max_half_spread_bps=3.0,
@@ -16,11 +16,11 @@ def test_candidate_grid_excludes_crossing_prone_configs():
     spreads = {c.base_half_spread_bps for c in candidates}
     skews = {c.microprice_skew_bps for c in candidates}
 
-    for candidate in candidates:
-        assert candidate.microprice_skew_bps + 0.1 < candidate.base_half_spread_bps
-    assert 2.25 in spreads
-    assert 0.75 not in spreads
-    assert 1.25 not in spreads
+    # The research budget remains fixed at 6 spreads x 3 imbalance
+    # thresholds x 2 flow thresholds x 3 microprice skews.
+    assert len(candidates) == 108
+    assert spreads == {0.50, 0.75, 1.00, 1.25, 1.50, 2.00}
+    assert skews == {0.25, 0.50, 1.00}
 
 
 def test_candidate_selection_rejects_sparse_training_candidates():
