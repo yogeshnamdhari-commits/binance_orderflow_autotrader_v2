@@ -22,6 +22,7 @@ class BinanceExecutionConfig:
     recv_window_ms: int = 5000
     timeout_s: float = 5.0
     server_time_refresh_s: float = 30.0
+    exchange_info_refresh_s: float = 300.0
 
     @classmethod
     def from_env(cls) -> "BinanceExecutionConfig":
@@ -51,6 +52,7 @@ class BinanceUSDMExecutionAdapter:
         self._exchange_info_loaded = False
         self._server_time_offset_ms = 0
         self._server_time_synced_monotonic = 0.0
+        self._exchange_info_synced_monotonic = 0.0
 
     def _sync_server_time(self) -> None:
         """Calibrate local wall-clock against Binance server time."""
@@ -106,10 +108,14 @@ class BinanceUSDMExecutionAdapter:
             if str(info.get("status", "TRADING")) == "TRADING"
         }
         self._exchange_info_loaded = True
+        self._exchange_info_synced_monotonic = time.monotonic()
 
     def _constraints_for(self, symbol: str) -> SymbolConstraints:
         key = symbol.upper()
-        if not self._exchange_info_loaded:
+        if (
+            not self._exchange_info_loaded
+            or time.monotonic() - self._exchange_info_synced_monotonic >= self.config.exchange_info_refresh_s
+        ):
             self.refresh_exchange_info()
         constraint = self._constraints.get(key)
         if constraint is None:
@@ -132,12 +138,16 @@ class BinanceUSDMExecutionAdapter:
         constraints = self._constraints_for(submission.symbol)
         valid, reasons = constraints.validate(submission.price, submission.qty)
         if not valid:
-            return ExecutionResult(
-                "REJECTED_LOCAL_FILTER",
-                None,
-                ";".join(reasons),
-                submission.client_id,
-            )
+            self.refresh_exchange_info()
+            constraints = self._constraints_for(submission.symbol)
+            valid, reasons = constraints.validate(submission.price, submission.qty)
+            if not valid:
+                return ExecutionResult(
+                    "REJECTED_LOCAL_FILTER",
+                    None,
+                    ";".join(reasons),
+                    submission.client_id,
+                )
         response = self._signed_request(
             "POST",
             "/fapi/v1/order",
