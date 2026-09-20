@@ -3,7 +3,7 @@ from app.mm.live_risk import LiveRiskGate, RiskLimits
 from app.mm.execution import OrderStateManager
 from app.mm.execution_gateway import ExecutionGateway
 from app.mm.live_runtime import V20LiveRuntime
-from app.mm.user_stream import UserStreamGuard
+from app.mm.user_stream import OrderUpdate, UserStreamGuard
 from app.mm.binance_user_stream import BinanceUSDMUserStream
 
 
@@ -15,6 +15,19 @@ class Adapter:
     def cancel(self, order_id):
         from app.mm.execution import ExecutionResult
         return ExecutionResult("CANCELED", order_id, "cancelled")
+
+
+def healthy_test_risk():
+    risk = LiveRiskGate(RiskLimits())
+    risk.update_market_health(10, True)
+    risk.update_user_stream_health(10, True)
+    risk.update_reconciliation(True)
+    risk.update_quote_age(10)
+    risk.update_position(0.0, 100000.0)
+    risk.update_orders(0)
+    risk.update_pnl(0.0)
+    risk.update_api_errors(0)
+    return risk
 
 
 class FakeWS:
@@ -66,9 +79,83 @@ def test_expired_stream_clears_key_and_closes_socket():
     assert statuses[-1]["status"] == "LISTEN_KEY_EXPIRED"
 
 
+def test_runtime_binds_exchange_order_after_restart_lookup():
+    from app.mm.execution import OrderStateManager
+    from app.mm.execution_gateway import Submission
+
+    manager = OrderStateManager()
+    seed = manager.create("BTCUSDT", "BUY", 0.001, 100000.0, "cid-restart")
+    assert seed is not None
+
+    gateway = ExecutionGateway(Adapter(), healthy_test_risk(), manager, live_enabled=False)
+    runtime = V20LiveRuntime(gateway, gateway.risk_gate)
+    result = runtime.apply_order_update(
+        OrderUpdate(
+            symbol="BTCUSDT",
+            client_id="cid-restart",
+            order_id="EX-RESTART",
+            side="BUY",
+            status="NEW",
+            execution_type="NEW",
+            qty=0.001,
+            filled_qty=0.0,
+            avg_price=0.0,
+            last_fill_qty=0.0,
+            last_fill_price=0.0,
+            trade_id="",
+            commission=0.0,
+            commission_asset="USDT",
+            event_ts_ms=1000,
+        ),
+        100000.0,
+    )
+    assert result is None
+    assert gateway.local_order_id("EX-RESTART") == seed.order_id
+
+
 def test_runtime_user_failure_latches_risk():
     risk = LiveRiskGate(RiskLimits())
     gateway = ExecutionGateway(Adapter(), risk, OrderStateManager(), live_enabled=False)
     runtime = V20LiveRuntime(gateway, risk)
     runtime.handle_user_stream_failure("MARGIN_CALL")
     assert risk.state.emergency_latched
+
+
+def test_user_stream_selects_testnet_endpoints_from_order_base_url(monkeypatch):
+    monkeypatch.setenv("BINANCE_ORDER_BASE_URL", "https://testnet.binancefuture.com")
+    stream = BinanceUSDMUserStream(api_key="test-key")
+    assert stream.control_url == "wss://testnet.binancefuture.com/ws-fapi/v1"
+    assert stream.private_stream_base == "wss://stream.binancefuture.com/private/ws"
+
+
+def test_user_stream_selects_mainnet_endpoints_by_default(monkeypatch):
+    monkeypatch.delenv("BINANCE_ORDER_BASE_URL", raising=False)
+    stream = BinanceUSDMUserStream(api_key="test-key")
+    assert stream.control_url == "wss://ws-fapi.binance.com/ws-fapi/v1"
+    assert stream.private_stream_base == "wss://fstream.binance.com/private/ws"
+
+
+def test_user_stream_rejects_testnet_to_mainnet_endpoint_mismatch(monkeypatch):
+    monkeypatch.setenv("BINANCE_ORDER_BASE_URL", "https://testnet.binancefuture.com")
+    try:
+        BinanceUSDMUserStream(
+            api_key="test-key",
+            private_stream_base="wss://fstream.binance.com/private/ws",
+        )
+    except RuntimeError as exc:
+        assert str(exc) == "testnet_endpoint_environment_mismatch"
+    else:
+        raise AssertionError("mainnet private stream was accepted for testnet")
+
+
+def test_user_stream_rejects_mainnet_to_testnet_endpoint_mismatch(monkeypatch):
+    monkeypatch.delenv("BINANCE_ORDER_BASE_URL", raising=False)
+    try:
+        BinanceUSDMUserStream(
+            api_key="test-key",
+            control_url="wss://testnet.binancefuture.com/ws-fapi/v1",
+        )
+    except RuntimeError as exc:
+        assert str(exc) == "mainnet_endpoint_environment_mismatch"
+    else:
+        raise AssertionError("testnet control endpoint was accepted for mainnet")

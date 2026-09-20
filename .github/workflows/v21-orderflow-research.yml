@@ -1,0 +1,293 @@
+name: V21 Order-Flow Research
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: "Exact V20 capture workflow run ID"
+        required: false
+        type: string
+      source_sha:
+        description: "Feature branch SHA that produced the V20 capture run"
+        required: false
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+env:
+  PYTHONPATH: .
+  RESEARCH_COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  RESEARCH_RUN_ID: ${{ github.run_id }}
+
+jobs:
+  v21-research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+
+      - name: Compile V21 production/research
+        run: |
+          set -euo pipefail
+          python -m py_compile \
+            app/research/v21_orderflow_core.py \
+            app/research/v21_decision_engine.py \
+            app/research/v21_production_model.py \
+            app/mm/v21_live_controller.py \
+            scripts/v21_orderflow_dataset.py \
+            scripts/v21_orderflow_models.py \
+            scripts/v21_toxicity_model.py \
+            scripts/v21_ablation_research.py \
+            scripts/v21_move_regression.py \
+            scripts/v21_learned_market_maker.py \
+            scripts/v21_economic_spread_sweep.py \
+            scripts/v21_economic_risk_sweep.py \
+            scripts/v21_certification_gate.py \
+            scripts/v21_model_bundle.py \
+            scripts/v21_deployment_gate.py \
+            tests/test_v21_orderflow_core.py \
+            tests/test_v21_orderflow_research.py \
+            tests/test_v21_decision_engine.py \
+            tests/test_v21_production_model.py \
+            tests/test_v21_live_controller.py \
+            tests/test_binance_execution.py \
+            tests/test_binance_execution_time_sync.py \
+            tests/test_binance_user_stream_path.py
+
+      - name: Test V21 production/research
+        run: |
+          set -euo pipefail
+          python -m pytest -q \
+            tests/test_v21_orderflow_core.py \
+            tests/test_v21_orderflow_research.py \
+            tests/test_v21_decision_engine.py \
+            tests/test_v21_production_model.py \
+            tests/test_v21_live_controller.py \
+            tests/test_binance_execution.py \
+            tests/test_binance_execution_time_sync.py \
+            tests/test_binance_user_stream_path.py
+
+      - name: Resolve exact V20 capture run
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_RUN_ID: ${{ inputs.source_run_id }}
+          INPUT_SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          set -euo pipefail
+          if [ -n "$INPUT_RUN_ID" ]; then
+            run_id="$INPUT_RUN_ID"
+            run_json="$(gh api "repos/${{ github.repository }}/actions/runs/$run_id")"
+            source_sha="$(printf '%s' "$run_json" | python -c 'import json,sys; print(json.load(sys.stdin).get("head_sha",""))')"
+            test -n "$source_sha"
+            test -n "$INPUT_SOURCE_SHA"
+            test "$source_sha" = "$INPUT_SOURCE_SHA"
+            echo "Using exact dispatched V20 run $run_id from feature commit $source_sha; matrix artifacts will be validated below"
+            jobs_json="$(gh api "repos/${{ github.repository }}/actions/runs/$run_id/jobs?per_page=100")"
+            python -c 'import json,sys; rows=[j for j in json.load(sys.stdin).get("jobs",[]) if j.get("name","").startswith("performance-certification (")]; assert len(rows)==4, rows; assert all(j.get("conclusion")=="success" for j in rows), [(j.get("name"),j.get("conclusion")) for j in rows]' <<< "$jobs_json"
+            echo "All four V20 certification session jobs succeeded"
+          else
+            base_sha="$(gh api repos/${{ github.repository }}/git/ref/heads/feature/v20-market-making --jq '.object.sha')"
+            json="$(gh run list --workflow=v20-performance-certification.yml --branch feature/v20-market-making --status success --limit 20 --json databaseId,headSha)"
+            run_id="$(printf '%s' "$json" | python -c 'import json,sys; base=sys.argv[1]; rows=[r for r in json.load(sys.stdin) if r.get("headSha")==base]; print(rows[0]["databaseId"] if rows else "")' "$base_sha")"
+            source_sha="$(printf '%s' "$json" | python -c 'import json,sys; base=sys.argv[1]; rows=[r for r in json.load(sys.stdin) if r.get("headSha")==base]; print(rows[0]["headSha"] if rows else "")' "$base_sha")"
+            test -n "$run_id"
+            test -n "$source_sha"
+            test "$source_sha" = "$base_sha"
+            echo "Using latest successful V20 run $run_id from feature commit $source_sha"
+          fi
+          echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+          echo "source_sha=$source_sha" >> "$GITHUB_OUTPUT"
+      - name: Download capture A
+        uses: actions/download-artifact@v4
+        with:
+          name: v20-authentic-capture-A
+          path: captures/A
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.source.outputs.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download capture B
+        uses: actions/download-artifact@v4
+        with:
+          name: v20-authentic-capture-B
+          path: captures/B
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.source.outputs.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download capture C
+        uses: actions/download-artifact@v4
+        with:
+          name: v20-authentic-capture-C
+          path: captures/C
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.source.outputs.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download capture D
+        uses: actions/download-artifact@v4
+        with:
+          name: v20-authentic-capture-D
+          path: captures/D
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.source.outputs.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify captures
+        run: |
+          set -euo pipefail
+          for s in A B C D; do
+            test -f captures/$s/manifest.json
+            test -f captures/$s/snapshot.json
+            test -f captures/$s/events.jsonl
+          done
+
+      - name: Build current V21 research datasets from authentic captures
+        run: |
+          set -euo pipefail
+          mkdir -p research_reports
+          python scripts/v21_orderflow_dataset.py \
+            --captures-root captures \
+            --output research_reports/v21_orderflow.parquet
+          python - <<'PY'
+          from pathlib import Path
+          import pandas as pd
+          from scripts.v21_toxicity_model import extract_toxicity_session
+
+          frames = [
+              extract_toxicity_session(Path("captures") / s, s)
+              for s in ("A", "B", "C", "D")
+          ]
+          df = pd.concat(frames, ignore_index=True)
+          df.to_parquet("research_reports/v21_toxicity.parquet", index=False)
+
+          orderflow = pd.read_parquet("research_reports/v21_orderflow.parquet")
+          required = {
+              "timestamp_ms", "session", "half", "split_start_ms", "mid",
+              "future_mid_100ms", "future_mid_250ms", "future_mid_500ms",
+              "future_mid_1000ms", "move_100ms", "move_250ms",
+              "move_500ms", "move_1000ms", "direction_100ms",
+              "direction_250ms", "direction_500ms", "direction_1000ms",
+              "depth_5_imbalance",
+          }
+          missing = sorted(required - set(orderflow.columns))
+          if missing:
+              raise SystemExit(f"V21_DATASET_SCHEMA_MISSING: {missing}")
+          if orderflow.empty or df.empty:
+              raise SystemExit("V21_DATASET_EMPTY")
+          print({
+              "orderflow_rows": len(orderflow),
+              "toxicity_rows": len(df),
+              "orderflow_sha256": __import__("hashlib").sha256(
+                  Path("research_reports/v21_orderflow.parquet").read_bytes()
+              ).hexdigest(),
+              "toxicity_sha256": __import__("hashlib").sha256(
+                  Path("research_reports/v21_toxicity.parquet").read_bytes()
+              ).hexdigest(),
+          })
+          PY
+
+      - name: Record dataset provenance
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import pandas as pd
+
+          def sha(path):
+              return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+          orderflow = pd.read_parquet("research_reports/v21_orderflow.parquet")
+          toxicity = pd.read_parquet("research_reports/v21_toxicity.parquet")
+          provenance = {
+              "schema_version": 1,
+              "source_run_id": int("${{ steps.source.outputs.run_id }}"),
+              "research_run_id": int(os.environ["RESEARCH_RUN_ID"]),
+              "github_sha": os.environ.get("RESEARCH_COMMIT_SHA", os.environ.get("GITHUB_SHA", "")),
+              "source_commit": "${{ steps.source.outputs.source_sha }}",
+              "captures": ["A", "B", "C", "D"],
+              "orderflow_sha256": sha("research_reports/v21_orderflow.parquet"),
+              "toxicity_sha256": sha("research_reports/v21_toxicity.parquet"),
+              "orderflow_rows": int(len(orderflow)),
+              "toxicity_rows": int(len(toxicity)),
+              "required_future_mid_250ms": "future_mid_250ms" in orderflow.columns,
+          }
+          Path("research_reports/v21_dataset_provenance.json").write_text(
+              json.dumps(provenance, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+      - name: Replay learned V21 market maker
+        run: |
+          python scripts/v21_learned_market_maker.py \
+            --captures-root captures \
+            --dataset research_reports/v21_orderflow.parquet \
+            --toxicity research_reports/v21_toxicity.parquet \
+            --output research_reports/v21_learned_mm_report.json
+
+      - name: Run optional nested economic spread sweep (non-gating)
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          python scripts/v21_economic_spread_sweep.py \
+            --captures-root captures \
+            --dataset research_reports/v21_orderflow.parquet \
+            --toxicity research_reports/v21_toxicity.parquet \
+            --output research_reports/v21_economic_spread_sweep.json
+
+      - name: Run nested economic risk sweep
+        run: |
+          python scripts/v21_economic_risk_sweep.py \
+            --captures-root captures \
+            --dataset research_reports/v21_orderflow.parquet \
+            --toxicity research_reports/v21_toxicity.parquet \
+            --output research_reports/v21_economic_risk_sweep.json
+
+      - name: Evaluate toxicity model
+        run: |
+          python scripts/v21_toxicity_model.py \
+            --input research_reports/v21_toxicity.parquet \
+            --output research_reports/v21_toxicity_report.json
+
+      - name: Run fail-closed V21 economic certification gate
+        run: |
+          python scripts/v21_certification_gate.py \
+            --learned research_reports/v21_learned_mm_report.json \
+            --risk-sweep research_reports/v21_economic_risk_sweep.json \
+            --output research_reports/v21_certification_report.json
+
+      - name: Freeze candidate production model bundle
+        if: success()
+        run: |
+          set -euo pipefail
+          python scripts/v21_model_bundle.py \
+            --dataset research_reports/v21_orderflow.parquet \
+            --toxicity research_reports/v21_toxicity.parquet \
+            --sessions "$(python -c 'import pandas as pd; print(",".join(sorted(pd.read_parquet("research_reports/v21_orderflow.parquet")["session"].unique().tolist())))')" \
+            --output research_reports/v21_production_model_bundle.json
+
+      - name: Publish V21 research artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v21-orderflow-research
+          path: research_reports
+          if-no-files-found: warn
+          retention-days: 30

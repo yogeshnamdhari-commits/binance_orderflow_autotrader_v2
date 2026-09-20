@@ -48,8 +48,10 @@ class V20LiveRuntime:
     def apply_order_update(self, update: OrderUpdate, mark_price: float) -> PnLSnapshot | None:
         local_id = self.gateway.local_order_id(update.order_id)
         if local_id is None and update.client_id:
-            local = self.gateway.manager.get(update.client_id)
+            local = self.gateway.manager.get_by_client_id(update.client_id)
             local_id = local.order_id if local else None
+            if local_id is not None and update.order_id:
+                self.gateway.bind_exchange_order(update.order_id, local_id)
 
         order = self.gateway.manager.get(local_id) if local_id else None
         if order is not None:
