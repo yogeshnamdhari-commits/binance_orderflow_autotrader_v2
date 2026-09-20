@@ -30,7 +30,7 @@ def inspect_capture(capture_dir: str | Path) -> dict[str, object]:
             event_count += 1
             try:
                 row = json.loads(line)
-            except json.JSONDecodeError as exc:
+            except json.JSONDecodeError:
                 parse_errors += 1
                 continue
             event_type = str(row.get("event_type") or "UNKNOWN")
@@ -50,29 +50,42 @@ def inspect_capture(capture_dir: str | Path) -> dict[str, object]:
     if depth_events <= 0:
         raise RuntimeError("CERTIFICATION_CAPTURE_INVALID: no depthUpdate events")
     if parse_errors > 0:
-        raise RuntimeError(f"CERTIFICATION_CAPTURE_INVALID: {parse_errors} malformed JSON event rows")
+        raise RuntimeError(
+            f"CERTIFICATION_CAPTURE_INVALID: {parse_errors} malformed JSON event rows"
+        )
     if manifest.get("symbol") != "BTCUSDT":
-        raise RuntimeError(f"CERTIFICATION_CAPTURE_INVALID: expected BTCUSDT, got {manifest.get('symbol')!r}")
+        raise RuntimeError(
+            f"CERTIFICATION_CAPTURE_INVALID: expected BTCUSDT, got {manifest.get('symbol')!r}"
+        )
     start_ns = manifest.get("start_ns")
     end_ns = manifest.get("end_ns")
     if not isinstance(start_ns, int) or not isinstance(end_ns, int) or end_ns <= start_ns:
         raise RuntimeError("CERTIFICATION_CAPTURE_INVALID: missing or invalid capture duration")
     if end_ns - start_ns < MIN_CAPTURE_DURATION_NS:
-        raise RuntimeError(
-            "CERTIFICATION_CAPTURE_INVALID: capture duration below 55 minutes"
-        )
+        raise RuntimeError("CERTIFICATION_CAPTURE_INVALID: capture duration below 55 minutes")
+
     bootstrap = manifest.get("bootstrap") or {}
     if bootstrap.get("status") != "BRIDGED":
-        raise RuntimeError(f"CERTIFICATION_CAPTURE_INVALID: bootstrap status={bootstrap.get('status')!r}")
+        raise RuntimeError(
+            f"CERTIFICATION_CAPTURE_INVALID: bootstrap status={bootstrap.get('status')!r}"
+        )
     if bootstrap.get("snapshot_source") not in {"REST", "WS_API"}:
-        raise RuntimeError("CERTIFICATION_CAPTURE_INVALID: snapshot source is not an approved Binance USD-M snapshot API")
+        raise RuntimeError(
+            "CERTIFICATION_CAPTURE_INVALID: snapshot source is not an approved Binance USD-M snapshot API"
+        )
+
     snapshot_id = bootstrap.get("snapshot_last_update_id")
     first_U = bootstrap.get("first_U")
     first_u = bootstrap.get("first_u")
     if not all(isinstance(x, int) for x in (snapshot_id, first_U, first_u)):
         raise RuntimeError("CERTIFICATION_CAPTURE_INVALID: incomplete bootstrap sequence metadata")
-    if not (first_U <= snapshot_id <= first_u):
-        raise RuntimeError("CERTIFICATION_CAPTURE_INVALID: first depth event does not bracket snapshot lastUpdateId")
+
+    expected = snapshot_id + 1
+    if not (first_U <= expected <= first_u):
+        raise RuntimeError(
+            "CERTIFICATION_CAPTURE_INVALID: first depth event does not bracket "
+            f"snapshot_last_update_id+1 ({expected}); got U={first_U}, u={first_u}"
+        )
 
     return {
         "capture_dir": str(root),
