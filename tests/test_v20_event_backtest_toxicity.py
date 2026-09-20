@@ -21,6 +21,7 @@ def test_pre_quote_trade_cannot_fill_new_quote():
         last_update_id=0,
         bids=[(99.99, 10.0)],
         asks=[(100.01, 10.0)],
+        bridge_complete=True,
     )
     depth = [L2Update(1_000, 1, 1, 0, [], [])]
     trades = [
@@ -39,6 +40,7 @@ def test_toxicity_filter_suppresses_toxic_side():
         last_update_id=0,
         bids=[(99.99, 100.0)],
         asks=[(100.01, 1.0)],
+        bridge_complete=True,
     )
     depth = [
         L2Update(1_000, 1, 1, 0, [], []),
