@@ -10,6 +10,7 @@ def test_event_backtest_uses_observed_trades_and_fees():
         last_update_id=0,
         bids=[(99.99, 10.0)],
         asks=[(100.01, 10.0)],
+        bridge_complete=True,
     )
     depth = [
         L2Update(1_000, 1, 1, 0, [], []),
@@ -48,6 +49,7 @@ def test_crossing_quotes_are_suppressed_not_clamped():
         last_update_id=0,
         bids=[(99.99, 10.0)],
         asks=[(100.01, 10.0)],
+        bridge_complete=True,
     )
     depth = [L2Update(1_000, 1, 1, 0, [], [])]
     trades = [
