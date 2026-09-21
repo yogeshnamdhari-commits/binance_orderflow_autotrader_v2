@@ -21,6 +21,7 @@ DEFAULT_STREAMS = ["btcusdt@depth@100ms", "btcusdt@trade", "btcusdt@bookTicker"]
 DEPTH_REST_URL = "https://fapi.binance.com/fapi/v1/depth"
 
 DEPTH_API_WS = "wss://ws-fapi.binance.com/ws-fapi/v1"
+BRIDGE_TIMEOUT_SECONDS = 20.0
 
 
 def build_ws_url(base_url: str, streams: list[str]) -> str:
@@ -259,7 +260,7 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
                         recorder.handle_message(raw, receive_ns=ns)
                     buffered_to_replay = None
                 else:
-                    state["bridge_deadline"] = time.monotonic() + 5.0
+                    state["bridge_deadline"] = time.monotonic() + BRIDGE_TIMEOUT_SECONDS
             except Exception as exc:
                 recorder.record_bootstrap_failure(-1, "SNAPSHOT_FETCH_FAILED", str(exc))
                 close_socket()
@@ -295,7 +296,7 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
                         recorder.record_bootstrap_failure(
                             int(state["snapshot_id"]),
                             "BRIDGE_TIMEOUT",
-                            "No depthUpdate satisfying U <= snapshot_id+1 <= u found within bootstrap window",
+                            "No depthUpdate satisfying U <= snapshot_id <= u found within bootstrap window",
                         )
                         close_socket()
                         return
@@ -324,9 +325,23 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
             )
         recorder.close()
 
+    snapshot_thread: threading.Thread | None = None
+
+    def on_open(_ws) -> None:
+        nonlocal snapshot_thread
+        # Start snapshot acquisition only after the market-data socket is
+        # actually open. The websocket is already buffering events, so the
+        # snapshot can be taken immediately rather than waiting a fixed 5s.
+        if snapshot_thread is None or not snapshot_thread.is_alive():
+            snapshot_thread = threading.Thread(
+                target=fetch_snapshot_and_find_bridge,
+                daemon=True,
+            )
+            snapshot_thread.start()
+
     socket = websocket.WebSocketApp(
         ws_url,
-        on_open=lambda _ws: None,
+        on_open=on_open,
         on_message=on_message,
         on_error=on_error,
         on_close=on_close,
@@ -339,16 +354,7 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
 
     deadline_thread = threading.Thread(target=force_close_at_deadline, daemon=True)
     deadline_thread.start()
-
-    snapshot_thread = threading.Thread(
-        target=lambda: (
-            time.sleep(5.0),
-            fetch_snapshot_and_find_bridge(),
-        ),
-        daemon=True,
-    )
-    snapshot_thread.start()
-
+    
     try:
         socket.run_forever()
     finally:
