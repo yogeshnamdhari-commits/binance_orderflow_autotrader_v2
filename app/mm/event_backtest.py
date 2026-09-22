@@ -39,6 +39,8 @@ class EventBacktestResult:
     quote_crossings_suppressed: int = 0
     inventory_trajectory: tuple[tuple[int, float], ...] = field(default_factory=tuple)
     avg_fill_holding_time_ns: float = 0.0
+    inventory_max: float = 0.0
+    inventory_limit_breaches: int = 0
 
 
 def _future_mid_by_time(
@@ -135,6 +137,7 @@ def run_event_backtest(
     inventory_trajectory: list[tuple[int, float]] = []
     fill_holding_times: list[float] = []
     buy_queue: deque[tuple[int, float]] = deque()
+    inventory_max = 0.0
 
     last_quote: QuoteIntent | None = None
     quote_counter = 0
@@ -142,11 +145,13 @@ def run_event_backtest(
     toxicity_suppressed = 0
     toxic_flow_values: list[float] = []
     current_mid = 0.0
+    inventory_max = 0.0
+    inventory_limit_breaches = 0
 
     def process_trade(trade: TradeEvent) -> None:
         nonlocal inventory, cash, fees_usd, buy_fills, sell_fills
         nonlocal buy_filled_qty, sell_filled_qty, gross_spread_capture_usd
-        nonlocal fill_records, inventory_trajectory, current_mid
+        nonlocal fill_records, inventory_trajectory, current_mid, inventory_max
         for fill in replay.on_trade(trade):
             notional = fill.price * fill.qty
             fee = notional * (config.maker_fee_bps - config.maker_rebate_bps) / 10_000.0
@@ -187,6 +192,8 @@ def run_event_backtest(
                 "mid": current_mid,
             })
             inventory_trajectory.append((fill.timestamp_ns, inventory))
+            if current_mid > 0:
+                inventory_max = max(inventory_max, abs(inventory * current_mid))
 
     for timestamp_ns, kind, event in events:
         if kind == 1:
@@ -227,6 +234,18 @@ def run_event_backtest(
         book_imbalance = _book_imbalance(book)
         center = _quote_center(mid, book_imbalance, config)
         bid, ask, bid_qty, ask_qty = generate_quotes(center, spread_bps, inventory, config)
+
+        # Enforce inventory risk limit: suppress the side that would increase
+        # exposure beyond max_position_notional_usd.  This is a hard stop —
+        # the strategy must not accumulate inventory beyond the configured cap.
+        current_exposure = abs(inventory) * mid
+        if current_exposure >= config.max_position_notional_usd and mid > 0:
+            if inventory > 0:
+                bid_qty = 0.0
+                inventory_limit_breaches += 1
+            elif inventory < 0:
+                ask_qty = 0.0
+                inventory_limit_breaches += 1
 
         best_bid = max(book.bids.keys()) if book.bids else 0.0
         best_ask = min(book.asks.keys()) if book.asks else float("inf")
@@ -356,4 +375,6 @@ def run_event_backtest(
         quote_crossings_suppressed=quote_crossings_suppressed,
         inventory_trajectory=tuple(inventory_trajectory),
         avg_fill_holding_time_ns=avg_holding_time_ns,
+        inventory_max=inventory_max,
+        inventory_limit_breaches=inventory_limit_breaches,
     )

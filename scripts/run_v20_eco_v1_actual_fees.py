@@ -47,6 +47,8 @@ def _result_summary(r) -> dict:
         "avg_adverse_selection_bps": clean(r.avg_adverse_selection_bps),
         "as_by_horizon": {str(k): clean(v) for k, v in r.as_by_horizon.items()},
         "final_inventory": clean(r.final_inventory),
+        "inventory_max": clean(r.inventory_max),
+        "inventory_limit_breaches": r.inventory_limit_breaches,
         "toxicity_suppressed_quotes": r.toxicity_suppressed_quotes,
         "toxic_flow_imbalance_mean": clean(r.toxic_flow_imbalance_mean),
         "gross_spread_capture_usd": clean(r.gross_spread_capture_usd),
@@ -94,14 +96,18 @@ def main() -> int:
         total_net += result.net_pnl_usd
         if result.net_pnl_usd <= 0:
             all_positive = False
-        if result.net_pnl_usd <= 0:
+        if result.realized_pnl_usd <= 0:
+            all_gate_pass = False
+        if result.inventory_limit_breaches > 0 or result.inventory_max > config.max_position_notional_usd:
             all_gate_pass = False
 
         out[capture_dir.name] = _result_summary(result)
         print(
             f"  {cid}: fills={result.fills} buy={result.buy_fills} sell={result.sell_fills}  "
-            f"net=${result.net_pnl_usd:.2f}  gross=${result.gross_spread_capture_usd:.2f}  "
-            f"fees=${result.fees_usd:.2f}  inv_mtm=${result.inventory_mtm_usd:.2f}  "
+            f"net=${result.net_pnl_usd:.2f}  realized=${result.realized_pnl_usd:.2f}  "
+            f"inv_mtm=${result.inventory_mtm_usd:.2f}  gross=${result.gross_spread_capture_usd:.2f}  "
+            f"fees=${result.fees_usd:.2f}  inv_max=${result.inventory_max:.2f}  "
+            f"inv_limit_breaches={result.inventory_limit_breaches}  "
             f"as={result.avg_adverse_selection_bps:.4f} bps  "
             f"tox_suppressed={result.toxicity_suppressed_quotes}",
             flush=True,

@@ -171,9 +171,13 @@ def summarize(result: EventBacktestResult) -> dict[str, Any]:
         "fills": result.fills,
         "filled_qty": result.filled_qty,
         "net_pnl_usd": result.net_pnl_usd,
+        "realized_pnl_usd": result.realized_pnl_usd,
+        "inventory_mtm_usd": result.inventory_mtm_usd,
         "avg_adverse_selection_bps": result.avg_adverse_selection_bps,
         "as_by_horizon_bps": result.as_by_horizon,
         "final_inventory": result.final_inventory,
+        "inventory_max": result.inventory_max,
+        "inventory_limit_breaches": result.inventory_limit_breaches,
         "replacements": result.replacements,
         "cancels": result.cancels,
         "toxicity_suppressed_quotes": result.toxicity_suppressed_quotes,
@@ -250,19 +254,27 @@ def main() -> int:
     bucket_delta = [c.net_pnl_usd - b.net_pnl_usd for c, b in zip(candidate_buckets, baseline_buckets)]
 
     improvement = valid_candidate.net_pnl_usd - valid_baseline.net_pnl_usd
-    pnl_positive = valid_candidate.net_pnl_usd > 0
     improvement_positive = improvement > 0
     as_improved = valid_candidate.avg_adverse_selection_bps <= valid_baseline.avg_adverse_selection_bps
-    # The candidate is the strategy under certification and therefore needs a
-    # statistically useful validation sample.  The baseline is only a sparse
-    # reference strategy; requiring the same fill count would make the gate
-    # structurally impossible for the deliberately wider frozen baseline.
     sufficient_fills = (
         valid_candidate.fills >= MIN_CANDIDATE_VALIDATION_FILLS
         and valid_baseline.fills >= MIN_BASELINE_VALIDATION_FILLS
     )
     robust_buckets = len(bucket_delta) >= 4 and sum(x > 0 for x in bucket_delta) >= 3
-    certified = all([pnl_positive, improvement_positive, as_improved, sufficient_fills, robust_buckets])
+    realized_pnl_positive = valid_candidate.realized_pnl_usd > 0
+    inventory_within_limit = (
+        valid_candidate.inventory_max <= config.max_position_notional_usd + 1e-6
+    )
+    no_inventory_breaches = valid_candidate.inventory_limit_breaches == 0
+    certified = all([
+        realized_pnl_positive,
+        improvement_positive,
+        as_improved,
+        sufficient_fills,
+        robust_buckets,
+        inventory_within_limit,
+        no_inventory_breaches,
+    ])
 
     report = {
         "session": args.session,
@@ -281,6 +293,9 @@ def main() -> int:
                 "candidate_adverse_selection_not_worse": as_improved,
                 "minimum_validation_fills": sufficient_fills,
                 "at_least_3_of_4_validation_buckets_improve": robust_buckets,
+                "validation_candidate_realized_pnl_usd_gt_0": realized_pnl_positive,
+                "inventory_within_max_position_notional": inventory_within_limit,
+                "no_inventory_limit_breaches": no_inventory_breaches,
             },
         },
         "capture": {
