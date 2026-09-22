@@ -426,11 +426,11 @@ def run_mm_backtest(
 
             fill_notional = fill_result.fill_price * fill_result.fill_qty
             gross_spread_capture_usd += spread_capture_bps / 10_000.0 * fill_notional
-            fee_bps = config.maker_fee_bps
-            total_fees_usd += fee_bps / 10_000.0 * fill_notional
+            net_maker_fee_bps = config.maker_fee_bps - config.maker_rebate_bps
+            total_fees_usd += net_maker_fee_bps / 10_000.0 * fill_notional
             total_adverse_selection_usd += adverse_selection_bps / 10_000.0 * fill_notional
             if crossed:
-                total_execution_effects_usd += (config.taker_fee_bps - config.maker_fee_bps) / 10_000.0 * fill_notional
+                total_execution_effects_usd += (config.taker_fee_bps - net_maker_fee_bps) / 10_000.0 * fill_notional
 
             position_change = fill_result.fill_qty if side == "BUY" else -fill_result.fill_qty
             position += position_change
