@@ -46,9 +46,9 @@ def main() -> int:
         }
     envelope = {
         "run_id": "V20-ECO-V1-ACTUAL-FEES",
-        "git_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=Path(__file__).resolve().parents[2]).decode().strip(),
+        "git_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=Path(__file__).resolve().parents[1]).decode().strip(),
         "config_path": CONFIG, "config_sha256": config_sha,
-        "config_label": "ACTUAL FEES: maker 1.0 bps, taker 2.0 bps (from EXECUTION_ECONOMIC_AUDIT.md)",
+        "config_label": "ACTUAL FEES: maker 1.0 bps, taker 2.0 bps, maker rebate 3.5 bps (from EXECUTION_ECONOMIC_AUDIT.md)",
         "seed": SEED, "command": COMMAND,
         "live_order_submission": False,
         "results": out,
