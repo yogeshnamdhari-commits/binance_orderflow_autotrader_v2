@@ -2,6 +2,9 @@
 from __future__ import annotations
 import json, math, subprocess, sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
 from app.mm.config import V20Config
 from app.mm.backtest import run_all_mm_backtests
 
@@ -15,7 +18,7 @@ def clean(x):
         return None
     return x
 
-def main() -> None:
+def main() -> int:
     config, config_sha = V20Config.load_authoritative(CONFIG)
     assert config.live_order_submission is False
     print(f"config={CONFIG} sha256={config_sha}", flush=True)
@@ -43,7 +46,7 @@ def main() -> None:
         }
     envelope = {
         "run_id": "V20-ECO-V1-ACTUAL-FEES",
-        "git_commit": subprocess.check_output(["git","rev-parse","HEAD"]).decode().strip(),
+        "git_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=Path(__file__).resolve().parents[2]).decode().strip(),
         "config_path": CONFIG, "config_sha256": config_sha,
         "config_label": "ACTUAL FEES: maker 1.0 bps, taker 2.0 bps (from EXECUTION_ECONOMIC_AUDIT.md)",
         "seed": SEED, "command": COMMAND,
@@ -52,6 +55,10 @@ def main() -> None:
     }
     OUT.write_text(json.dumps(envelope, indent=2, allow_nan=False) + "\n")
     print(f"Saved V20-ECO-V1-ACTUAL-FEES results -> {OUT}", flush=True)
+    for capture_id, r in out.items():
+        print(f"  {capture_id[:12]}: PnL={r['pnl_bps']:.2f} bps, "
+              f"fills={r['fills']}, gate={'PASS' if r['gate_pass'] else 'FAIL'}", flush=True)
+    return 0
 
 if __name__ == "__main__":
     sys.exit(main())

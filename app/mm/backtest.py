@@ -173,6 +173,7 @@ def _compute_empirical_adverse_selection(
     Signed adverse selection: mid-price drift AFTER fill relative to mid at fill time.
     Positive = adverse (mid moved against position), negative = favorable.
     Baseline is mid at fill time, NOT fill_price (which already embeds spread).
+    For BUY: mid drop is adverse. For SELL: mid rise is adverse.
     """
     if mid_at_fill_time <= 0 or event_idx + 1 >= len(all_mid_prices):
         return 0.0
@@ -186,7 +187,9 @@ def _compute_empirical_adverse_selection(
 
     future_mid = float(np.mean(future_mids))
     drift_bps = (future_mid - mid_at_fill_time) * 10_000.0 / mid_at_fill_time
-    return drift_bps
+    # BUY is adverse when mid drops (negative drift => positive AS)
+    # SELL is adverse when mid rises (positive drift => positive AS)
+    return -drift_bps if side == "BUY" else drift_bps
 
 
 def run_mm_backtest(
@@ -342,7 +345,7 @@ def run_mm_backtest(
                 quote_price=bid_price,
                 quote_qty=bid_qty,
                 side="BUY",
-                available_depth=ask_depth,
+                available_depth=bid_depth,
                 mid_price_at_fill_time=mid_price,
                 volatility_regime=volatility_regime,
                 latency_ms=latency_model.sample_latency(),
@@ -356,7 +359,7 @@ def run_mm_backtest(
                 quote_price=ask_price,
                 quote_qty=ask_qty,
                 side="SELL",
-                available_depth=bid_depth,
+                available_depth=ask_depth,
                 mid_price_at_fill_time=mid_price,
                 volatility_regime=volatility_regime,
                 latency_ms=latency_model.sample_latency(),
@@ -380,6 +383,8 @@ def run_mm_backtest(
 
         for side, fill_result in fills_this_event:
             _mid_at_fill = mid_price
+            _is_buy = side == "BUY"
+
             def _as_for(lookahead: int) -> float:
                 future_start = event_idx + 1
                 if future_start >= n_mid:
@@ -390,7 +395,8 @@ def run_mm_backtest(
                 if not future_mids:
                     return 0.0
                 future_mid = float(np.mean(future_mids))
-                return (future_mid - _mid_at_fill) * 10_000.0 / _mid_at_fill
+                drift_bps = (future_mid - _mid_at_fill) * 10_000.0 / _mid_at_fill
+                return -drift_bps if _is_buy else drift_bps
 
             adverse_selection_bps = _as_for(10)
 
@@ -545,21 +551,39 @@ def build_run_provenance(
     config_path: str | None = None,
     seed: int | None = None,
     command: str | None = None,
+    fail_on_dirty: bool = True,
 ) -> dict:
     """Provenance envelope identifying the exact code+config+data for a run.
 
     Records Git commit, config SHA-256 (single source of truth:
     app/mm/config.json), seed and command so results are reproducible.
+    Fails closed when the working tree has uncommitted changes.
     """
     import subprocess
 
+    repo_dir = Path(__file__).resolve().parents[2]
     try:
         git_commit = subprocess.check_output(
-            ["git", "rev-parse", "HEAD"], cwd=Path(__file__).resolve().parents[2],
+            ["git", "rev-parse", "HEAD"], cwd=repo_dir,
             stderr=subprocess.DEVNULL,
         ).decode().strip()
     except Exception:
         git_commit = "unknown"
+
+    try:
+        git_status = subprocess.check_output(
+            ["git", "status", "--porcelain"], cwd=repo_dir,
+            stderr=subprocess.DEVNULL,
+        ).decode().strip()
+    except Exception:
+        git_status = ""
+
+    dirty = bool(git_status)
+    if dirty and fail_on_dirty:
+        raise RuntimeError(
+            f"working tree is dirty — commit changes before running:\n{git_status}"
+        )
+
     config_sha = None
     if config_path:
         try:
@@ -570,11 +594,65 @@ def build_run_provenance(
             config_sha = "unreadable"
     return {
         "git_commit": git_commit,
+        "git_dirty": dirty,
+        "git_status": git_status[:500] if git_status else "",
         "config_path": config_path,
         "config_sha256": config_sha,
         "seed": seed,
         "command": command,
     }
+
+
+def _compute_backtest_features(
+    depth_events: Sequence[L2Update],
+    snapshot: L2Snapshot,
+) -> list[dict]:
+    """Compute empirical spread-based features for the backtest.
+
+    Because ``run_mm_backtest`` classifies volatility regime internally from
+    spread history, this function returns lightweight per-event features
+    that capture the spread z-score relative to the rolling spread distribution.
+    """
+    book = OrderBook.from_snapshot(snapshot)
+    spreads: list[float] = []
+    mids: list[float] = []
+    features: list[dict] = []
+
+    for ev in depth_events:
+        try:
+            book.apply_update(ev)
+        except (ValueError, IndexError):
+            features.append({"spread_bps_zscore": 0.0, "volatility_regime": 1})
+            continue
+
+        mid = book.get_mid_price()
+        spread = book.get_spread_bps()
+        if mid <= 0 or spread <= 0:
+            mids.append(0.0)
+            spreads.append(0.0)
+            features.append({"spread_bps_zscore": 0.0, "volatility_regime": 1})
+            continue
+
+        mids.append(mid)
+        spreads.append(spread)
+
+        if len(spreads) >= 20:
+            arr = np.array(spreads[-200:], dtype=float)
+            mean = float(np.mean(arr))
+            std = float(np.std(arr))
+            zscore = (spread - mean) / std if std > 1e-12 else 0.0
+            zscore = max(-5.0, min(5.0, zscore))
+        else:
+            zscore = 0.0
+
+        regime = compute_volatility_regime(spread, spreads, window=100)
+
+        features.append({
+            "spread_bps_zscore": float(zscore),
+            "volatility_regime": int(regime),
+        })
+
+    return features
 
 
 def run_all_mm_backtests(
@@ -624,8 +702,6 @@ def run_all_mm_backtests(
 
         print(f"Processing {capture_dir.name}...", flush=True)
 
-        print(f"Processing {capture_dir.name}...")
-
         with open(snapshot_file) as f:
             snap_data = json.load(f)
             snapshot = L2Snapshot(
@@ -649,19 +725,13 @@ def run_all_mm_backtests(
                     timestamp_ns=int(event_data["event_time_ms"]) * 1_000_000,
                     first_update_id=int(data["U"]),
                     final_update_id=int(data["u"]),
-                    prev_final_update_id=int(data["pu"]),
-                    bids=data["b"],
-                    asks=data["a"],
+                    prev_final_update_id=int(data.get("pu", 0)),
+                    bids=[(float(p), float(q)) for p, q in data.get("b", [])],
+                    asks=[(float(p), float(q)) for p, q in data.get("a", [])],
                 )
                 depth_events.append(update)
 
-        features_list = [
-            {
-                "spread_bps_zscore": 0.0,
-                "volatility_regime": 1,
-            }
-            for _ in depth_events
-        ]
+        features_list = _compute_backtest_features(depth_events, snapshot)
 
         result = run_mm_backtest(snapshot, depth_events, features_list, config)
         results[capture_dir.name] = result

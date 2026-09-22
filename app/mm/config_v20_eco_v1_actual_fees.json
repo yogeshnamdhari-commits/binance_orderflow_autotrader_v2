@@ -6,10 +6,13 @@
   "inventory_target": 0.0,
   "inventory_penalty_bps": 2.0,
   "max_position_notional_usd": 5000,
+  "quote_size_usd": 100.0,
   "cancel_on_adverse_selection": true,
   "adverse_selection_threshold_bps": 0.75,
   "min_top_level_qty": 0.0,
-  "maker_fee_bps": 2.0,
-  "taker_fee_bps": 5.0,
+  "comment_fee_source": "Binance USD-M futures commissionRate endpoint; verify account-specific VIP tier before live use",
+  "maker_fee_bps": 1.0,
+  "taker_fee_bps": 2.0,
+  "comment_fee_tier": "Standard VIP0 tier per EXECUTION_ECONOMIC_AUDIT.md; authenticated /fapi/v1/commissionRate is the authoritative source",
   "live_order_submission": false
 }
