@@ -24,6 +24,7 @@ class V20Config:
     max_position_notional_usd: float = 5000.0
     quote_size_usd: float = 100.0
     maker_fee_bps: float = 2.0
+    maker_rebate_bps: float = 0.0
     taker_fee_bps: float = 4.0
     live_order_submission: bool = False
     cancel_on_adverse_selection: bool = True

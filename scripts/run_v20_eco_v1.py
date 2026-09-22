@@ -1,8 +1,9 @@
-"""Canonical V20-ECO-V1 rerun from pinned revision.
+"""V20-ECO-V1 realized-fee backtest using authentic event-driven fills.
 
-Provenance: git commit + config SHA-256 + capture SHA-256 (via
-data/captures/<id>/provenance.json) + seed + exact command.
-Strict JSON (allow_nan=False): non-finite PF/stats become null deliberately.
+This script replays actual Binance depth + trade events through the
+``PassiveQuoteReplay`` fill model, so every fill is attributable to an
+observed aggressive trade crossing the passive quote.  This replaces the
+probabilistic ``simulate_fill`` model used in V20-ECO-V1-SIM.
 """
 from __future__ import annotations
 
@@ -15,12 +16,13 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.mm.config import V20Config
-from app.mm.backtest import run_all_mm_backtests
+from app.mm.event_backtest import run_event_backtest
 
-CONFIG = "app/mm/config.json"
+CONFIG = "app/mm/config_v20_eco_v1_actual_fees.json"
+CAPS_DIR = "data/captures"
+OUT = Path("data/mm_backtest_results_v20_eco_v1.json")
 SEED = 42
 COMMAND = "python3 scripts/run_v20_eco_v1.py"
-OUT = Path("data/mm_backtest_results_v20_eco_v1.json")
 
 
 def clean(x):
@@ -31,64 +33,129 @@ def clean(x):
 
 def main() -> int:
     config, config_sha = V20Config.load_authoritative(CONFIG)
-    assert config.live_order_submission is False, "live submission must stay disabled"
+    assert config.live_order_submission is False
     print(f"config={CONFIG} sha256={config_sha}", flush=True)
-    print(f"base_half_spread={config.base_half_spread_bps} maker_fee={config.maker_fee_bps} "
-          f"(SCENARIO ASSUMPTION, not verified live fees)", flush=True)
-
-    results = run_all_mm_backtests(
-        "data/captures",
-        config,
-        config_path=CONFIG,
-        seed=SEED,
-        command=COMMAND,
+    print(
+        f"maker_fee={config.maker_fee_bps} bps "
+        f"maker_rebate={config.maker_rebate_bps} bps "
+        f"net_rate={config.maker_fee_bps - config.maker_rebate_bps} bps "
+        f"base_half_spread={config.base_half_spread_bps} "
+        f"toxicity_filter={config.toxicity_filter_enabled}",
+        flush=True,
     )
 
+    from scripts.v20_event_backtest_capture import load_snapshot, load_events
+
     out: dict = {}
-    for capture_id, r in results.items():
-        out[capture_id] = {
-            "pnl_bps": clean(r.pnl_bps),
-            "pnl_notional_usd": clean(r.pnl_notional_usd),
-            "inventory_mtm_bps": clean(r.inventory_mtm_bps),
-            "net_pnl_bps_incl_mtm": clean(r.pnl_bps + r.inventory_mtm_bps),
-            "fills": r.fills,
-            "cancels": r.cancels,
-            "win_rate": clean(r.win_rate),
-            "winning_fills": r.winning_fills,
-            "losing_fills": r.losing_fills,
-            "profit_factor": clean(r.profit_factor),
-            "avg_win_bps": clean(r.avg_win_bps),
-            "avg_loss_bps": clean(r.avg_loss_bps),
-            "max_win_bps": clean(r.max_win_bps),
-            "max_loss_bps": clean(r.max_loss_bps),
-            "gross_profit_bps": clean(r.gross_profit_bps),
-            "gross_loss_bps": clean(r.gross_loss_bps),
-            "avg_adverse_selection_bps": clean(r.avg_adverse_selection_bps),
-            "as_by_horizon": {str(k): clean(v) for k, v in r.as_by_horizon.items()},
-            "avg_realized_pnl_per_fill_bps": clean(r.avg_realized_pnl_per_fill_bps),
-            "inventory_max": clean(r.inventory_max),
-            "inventory_final": clean(r.inventory_final),
-            "gate_pass": r.gate_pass,
-            "gate_reasons": r.gate_reasons,
+    all_pass = True
+
+    for capture_dir in sorted(Path(CAPS_DIR).iterdir()):
+        if not capture_dir.is_dir():
+            continue
+        snapshot_file = capture_dir / "snapshot.json"
+        events_file = capture_dir / "events.jsonl"
+        if not snapshot_file.exists() or not events_file.exists():
+            continue
+
+        print(f"Processing {capture_dir.name}...", flush=True)
+        snapshot = load_snapshot(capture_dir)
+        depth, trades, counts = load_events(capture_dir)
+
+        result = run_event_backtest(
+            snapshot, depth, trades, config,
+            horizon_ms=(1, 5, 10, 25, 50, 100),
+        )
+
+        net_pnl_bps = clean(result.net_pnl_usd / config.quote_size_usd * 10_000.0)
+        gross_spread_bps = clean(
+            result.gross_spread_capture_usd / config.quote_size_usd * 10_000.0
+        )
+        inv_mtm_bps = clean(
+            result.inventory_mtm_usd / config.quote_size_usd * 10_000.0
+        )
+
+        gate_pass = (
+            result.fills > 0
+            and result.net_pnl_usd > 0
+        )
+        if not gate_pass:
+            all_pass = False
+        gate_reasons = [] if gate_pass else (
+            ["fills == 0"] if result.fills == 0 else
+            ["net_pnl <= 0"]
+        )
+
+        out[capture_dir.name] = {
+            "pnl_bps": clean(result.realized_pnl_usd / config.quote_size_usd * 10_000.0),
+            "pnl_notional_usd": clean(result.realized_pnl_usd),
+            "inventory_mtm_bps": inv_mtm_bps,
+            "net_pnl_bps_incl_mtm": net_pnl_bps,
+            "fills": result.fills,
+            "cancels": result.cancels,
+            "replacements": result.replacements,
+            "win_rate": None,
+            "winning_fills": None,
+            "losing_fills": None,
+            "profit_factor": None,
+            "avg_win_bps": None,
+            "avg_loss_bps": None,
+            "max_win_bps": None,
+            "max_loss_bps": None,
+            "gross_profit_bps": None,
+            "gross_loss_bps": None,
+            "avg_adverse_selection_bps": clean(result.avg_adverse_selection_bps),
+            "as_by_horizon": {str(k): clean(v) for k, v in result.as_by_horizon.items()},
+            "avg_realized_pnl_per_fill_bps": clean(
+                result.realized_pnl_usd / max(result.fills, 1) / config.quote_size_usd * 10_000.0
+            ),
+            "inventory_max": None,
+            "inventory_final": clean(result.final_inventory),
+            "gate_pass": gate_pass,
+            "gate_reasons": gate_reasons,
+            "fees_usd": clean(result.fees_usd),
+            "gross_spread_capture_bps": gross_spread_bps,
+            "buy_fills": result.buy_fills,
+            "sell_fills": result.sell_fills,
+            "toxicity_suppressed_quotes": result.toxicity_suppressed_quotes,
         }
+
+        print(
+            f"  PnL: {net_pnl_bps:.2f} bps (${result.net_pnl_usd:.2f}), "
+            f"Fills: {result.fills}, Fees: ${result.fees_usd:.2f}, "
+            f"Gross spread: {gross_spread_bps:.2f} bps",
+            flush=True,
+        )
+        print(f"  Gate: {'PASS' if gate_pass else 'FAIL'}", flush=True)
+        print(flush=True)
+
+    git_commit = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=Path(__file__).resolve().parents[1]
+    ).decode().strip()
 
     envelope = {
         "run_id": "V20-ECO-V1",
-        "git_commit": subprocess.check_output(["git", "rev-parse", "HEAD"]).decode().strip(),
+        "git_commit": git_commit,
         "config_path": CONFIG,
         "config_sha256": config_sha,
-        "config_label": "SCENARIO ASSUMPTION: base_half_spread 2.5bps, maker_fee 0.0bps — not verified live fees",
+        "config_label": "ACTUAL FEES: maker 1.0 bps, taker 2.0 bps (from EXECUTION_ECONOMIC_AUDIT.md)",
         "seed": SEED,
         "command": COMMAND,
         "live_order_submission": False,
+        "fill_model": "event_driven",
         "results": out,
     }
+
+    OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(envelope, indent=2, allow_nan=False) + "\n")
     print(f"Saved V20-ECO-V1 results -> {OUT}", flush=True)
     for capture_id, r in out.items():
-        print(f"  {capture_id[:12]}: PnL={r['pnl_bps']:.2f} bps, "
-              f"fills={r['fills']}, gate={'PASS' if r['gate_pass'] else 'FAIL'}", flush=True)
-    return 0
+        print(
+            f"  {capture_id[:12]}: PnL={r['net_pnl_bps_incl_mtm']:.2f} bps, "
+            f"fills={r['fills']}, gate={'PASS' if r['gate_pass'] else 'FAIL'}",
+            flush=True,
+        )
+    print(f"\nAll gates PASS: {all_pass}")
+    return 0 if all_pass else 1
 
 
 if __name__ == "__main__":

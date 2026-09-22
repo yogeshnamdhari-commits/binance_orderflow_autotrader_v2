@@ -63,26 +63,17 @@ def _adverse_selection(fill_price: float, side: Side, future_mid: float | None) 
 
 
 def _same_price_qty(book: OrderBook, side: str, price: float) -> float:
-    levels = book.get_depth(side, levels=20)
-    return sum(
-        qty
-        for level_price, qty in levels
-        if math.isclose(
-            level_price,
-            price,
-            rel_tol=0.0,
-            abs_tol=max(price * 1e-9, 1e-8),
-        )
-    )
+    book_side = book.bids if side == "bid" else book.asks
+    return book_side.get(price, 0.0)
 
 
 def _book_imbalance(book: OrderBook) -> float:
-    bids = book.get_depth("bid", levels=1)
-    asks = book.get_depth("ask", levels=1)
-    if not bids or not asks:
+    if not book.bids or not book.asks:
         return 0.0
-    bid_qty = max(0.0, bids[0][1])
-    ask_qty = max(0.0, asks[0][1])
+    best_bid = max(book.bids.keys())
+    best_ask = min(book.asks.keys())
+    bid_qty = max(0.0, book.bids[best_bid])
+    ask_qty = max(0.0, book.asks[best_ask])
     denom = bid_qty + ask_qty
     return (bid_qty - ask_qty) / denom if denom > 0 else 0.0
 
@@ -109,6 +100,8 @@ def run_event_backtest(
     """
 
     book = OrderBook.from_snapshot(snapshot)
+    quote_interval_ns = max(1, config.quote_interval_ms) * 1_000_000
+    last_quote_time_ns: int | None = None
     replay = PassiveQuoteReplay()
     sorted_depth = sorted(depth_events, key=lambda x: (x.timestamp_ns, x.final_update_id))
     sorted_trades = sorted(trade_events, key=lambda x: (x.timestamp_ns, x.event_seq))
@@ -156,7 +149,7 @@ def run_event_backtest(
         nonlocal fill_records, inventory_trajectory, current_mid
         for fill in replay.on_trade(trade):
             notional = fill.price * fill.qty
-            fee = notional * config.maker_fee_bps / 10_000.0
+            fee = notional * (config.maker_fee_bps - config.maker_rebate_bps) / 10_000.0
             fees_usd += fee
             if fill.side is Side.BUY:
                 inventory += fill.qty
@@ -215,12 +208,19 @@ def run_event_backtest(
         depth_event = event
         assert isinstance(depth_event, L2Update)
         book.apply_update(depth_event)
-        mid = book.get_mid_price()
-        spread_bps = book.get_spread_bps()
-        if mid <= 0 or spread_bps <= 0:
+        if not book.bids or not book.asks:
             continue
-
+        mid_keys_bid = max(book.bids.keys()) if book.bids else 0.0
+        mid_keys_ask = min(book.asks.keys()) if book.asks else float("inf")
+        if mid_keys_bid >= mid_keys_ask or mid_keys_bid <= 0 or mid_keys_ask <= 0:
+            continue
+        mid = (mid_keys_bid + mid_keys_ask) / 2.0
+        spread_bps = (mid_keys_ask - mid_keys_bid) * 10_000.0 / mid
         current_mid = mid
+        if last_quote_time_ns is not None and timestamp_ns - last_quote_time_ns < quote_interval_ns:
+            continue
+        last_quote_time_ns = timestamp_ns
+
         mids.append((depth_event.timestamp_ns, mid))
         flow_imbalance = signed_flow / total_flow if total_flow > 0 else 0.0
         flow_imbalance = max(-1.0, min(1.0, flow_imbalance))
@@ -243,6 +243,11 @@ def run_event_backtest(
                     quote_crossings_suppressed += 1
             bid = min(bid, best_bid)
             ask = max(ask, best_ask)
+            # Push quotes to the top of book when outside the market spread.
+            # A passive MM must quote at or inside best bid/ask to receive
+            # fills from observed trade events.
+            bid = max(bid, best_bid)
+            ask = min(ask, best_ask)
 
         if config.toxicity_filter_enabled:
             bull_toxic = (
@@ -303,6 +308,7 @@ def run_event_backtest(
                 visible_ask_qty_at_price=ask_queue,
             )
             last_quote = desired
+            last_quote_time_ns = timestamp_ns
 
     stats = replay.stats()
     final_mid = mids[-1][1] if mids else 0.0
