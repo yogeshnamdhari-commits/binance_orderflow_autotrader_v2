@@ -50,6 +50,8 @@ def _result_summary(r) -> dict:
         "final_inventory": clean(r.final_inventory),
         "inventory_max": clean(r.inventory_max),
         "inventory_limit_breaches": r.inventory_limit_breaches,
+        "inventory_carry_usd": clean(r.inventory_carry_usd),
+        "attribution_residual_usd": clean(r.attribution_residual_usd),
         "toxicity_suppressed_quotes": r.toxicity_suppressed_quotes,
         "toxic_flow_imbalance_mean": clean(r.toxic_flow_imbalance_mean),
         "gross_spread_capture_usd": clean(r.gross_spread_capture_usd),

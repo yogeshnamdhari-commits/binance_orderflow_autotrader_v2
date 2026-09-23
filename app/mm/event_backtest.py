@@ -41,6 +41,8 @@ class EventBacktestResult:
     avg_fill_holding_time_ns: float = 0.0
     inventory_max: float = 0.0
     inventory_limit_breaches: int = 0
+    inventory_carry_usd: float = 0.0
+    attribution_residual_usd: float = 0.0
 
 
 def _future_mid_by_time(
@@ -147,13 +149,28 @@ def run_event_backtest(
     current_mid = 0.0
     inventory_max = 0.0
     inventory_limit_breaches = 0
+    mid_price_movement_usd = 0.0
 
     def process_trade(trade: TradeEvent) -> None:
         nonlocal inventory, cash, fees_usd, buy_fills, sell_fills
         nonlocal buy_filled_qty, sell_filled_qty, gross_spread_capture_usd
         nonlocal fill_records, inventory_trajectory, current_mid, inventory_max
+        nonlocal mid_price_movement_usd, inventory_limit_breaches
         for fill in replay.on_trade(trade):
             notional = fill.price * fill.qty
+            fill_price_mid = current_mid
+
+            if fill.side is Side.BUY:
+                prospective_inventory = inventory + fill.qty
+            else:
+                prospective_inventory = inventory - fill.qty
+
+            if fill_price_mid > 0:
+                prospective_exposure = abs(prospective_inventory) * fill_price_mid
+                if prospective_exposure > config.max_position_notional_usd + 1e-6:
+                    inventory_limit_breaches += 1
+                    continue
+
             fee = notional * (config.maker_fee_bps - config.maker_rebate_bps) / 10_000.0
             fees_usd += fee
             if fill.side is Side.BUY:
@@ -182,6 +199,10 @@ def run_event_backtest(
                 if current_mid > 0:
                     gross_spread_capture_usd += (fill.price - current_mid) * fill.qty
             cash -= fee
+            if fill.side is Side.BUY:
+                mid_price_movement_usd -= fill_price_mid * fill.qty
+            else:
+                mid_price_movement_usd += fill_price_mid * fill.qty
             fills_for_as.append((fill.timestamp_ns, fill.side, fill.price))
             fill_records.append({
                 "timestamp_ns": fill.timestamp_ns,
@@ -350,6 +371,8 @@ def run_event_backtest(
     avg_holding_time_ns = (
         sum(fill_holding_times) / len(fill_holding_times) if fill_holding_times else 0.0
     )
+    attribution_sum = gross_spread_capture_usd + mid_price_movement_usd - fees_usd
+    attribution_residual_usd = realized_pnl_usd - attribution_sum
     return EventBacktestResult(
         fills=stats.fills,
         cancels=stats.cancels_seen,
@@ -377,4 +400,6 @@ def run_event_backtest(
         avg_fill_holding_time_ns=avg_holding_time_ns,
         inventory_max=inventory_max,
         inventory_limit_breaches=inventory_limit_breaches,
+        inventory_carry_usd=mid_price_movement_usd,
+        attribution_residual_usd=round(attribution_residual_usd, 8),
     )

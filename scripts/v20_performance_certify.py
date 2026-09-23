@@ -178,6 +178,8 @@ def summarize(result: EventBacktestResult) -> dict[str, Any]:
         "final_inventory": result.final_inventory,
         "inventory_max": result.inventory_max,
         "inventory_limit_breaches": result.inventory_limit_breaches,
+        "inventory_carry_usd": result.inventory_carry_usd,
+        "attribution_residual_usd": result.attribution_residual_usd,
         "replacements": result.replacements,
         "cancels": result.cancels,
         "toxicity_suppressed_quotes": result.toxicity_suppressed_quotes,

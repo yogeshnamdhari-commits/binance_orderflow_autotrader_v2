@@ -131,10 +131,12 @@ def main() -> int:
             "avg_realized_pnl_per_fill_bps": clean(
                 result.realized_pnl_usd / max(result.fills, 1) / config.quote_size_usd * 10_000.0
             ),
+            "inventory_final": clean(result.final_inventory),
             "inventory_max": clean(result.inventory_max),
             "inventory_max_bps": clean(result.inventory_max / config.quote_size_usd * 10_000.0),
-            "inventory_final": clean(result.final_inventory),
             "inventory_limit_breaches": result.inventory_limit_breaches,
+            "inventory_carry_usd": clean(result.inventory_carry_usd),
+            "attribution_residual_usd": clean(result.attribution_residual_usd),
             "gate_pass": gate_pass,
             "gate_reasons": gate_reasons if gate_reasons else ["pass"],
             "fees_usd": clean(result.fees_usd),
