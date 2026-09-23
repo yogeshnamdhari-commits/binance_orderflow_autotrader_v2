@@ -1,20 +1,27 @@
-"""Economic attribution analysis for V20-ECO-V1.
+"""V20-ECO-V1 economic attribution analysis with reconciliation.
 
-For each capture, decomposes the realized cash PnL into:
-  1. Gross spread capture (what the MM earns from bid-ask spread)
-  2. Maker fees / rebate (cost of being a liquidity provider)
-  3. Adverse selection (fill price vs future mid — directional bleed)
-  4. Execution effects (crossing penalty when quotes are suppressed)
-  5. Inventory carry (opportunity cost of holding position)
-  6. Residual (unexplained)
+For each capture under each rebate scenario, decomposes the realized cash PnL
+into reconciled components:
 
-Input: the EventBacktestResult fields already compute most of these.
-This script re-runs the backtest with detailed fill-level attribution.
+  realized_pnl = gross_spread_capture + inventory_carry - fees
+
+Where:
+  gross_spread_capture = Σ(fill_price vs mid_at_fill) * qty
+    (the half-spread income from buying below mid / selling above mid)
+  inventory_carry = Σ(mid_at_sell * qty) - Σ(mid_at_buy * qty)
+    (price movement between matched buy/sell fills; positive = favorable)
+  fees = Σ(notional * net_maker_fee_rate)
+
+The adverse_selection_usd and execution_effects_usd are separate risk metrics
+(measured statistics), not cash-flow components.  They are reported alongside
+but do not enter the cash-flow reconciliation.
+
+The attribution_residual_usd field from EventBacktestResult should be ~0,
+confirming the ledger reconciles.
 """
 from __future__ import annotations
-import json
-import math
-import sys
+import json, math, sys
+import time
 from dataclasses import replace
 from pathlib import Path
 
@@ -25,68 +32,65 @@ from app.mm.event_backtest import run_event_backtest
 from scripts.v20_event_backtest_capture import load_snapshot, load_events
 
 CONFIG = "app/mm/config_v20_eco_v1_actual_fees.json"
-CAPTURE_IDS = ["3b8eee35", "477cf6ae", "9863cf18", "e4153485", "ebe81a64"]
+OUT = Path("data/mm_backtest_results_v20_eco_v1_attribution.json")
+
+CAPTURE_IDS = [
+    "3b8eee35",
+    "477cf6ae",
+    "9863cf18",
+    "e4153485",
+    "ebe81a64",
+]
+
+SCENARIOS = {
+    "A_conservative": 0.0,
+    "B_authenticated": 0.35,
+    "C_sensitivity": 1.0,
+}
 
 
-def clean(x: float) -> float | None:
+def clean(x):
     if isinstance(x, float) and (math.isinf(x) or math.isnan(x)):
         return None
     return x
 
 
-def _attribution(result, config: V20Config) -> dict:
-    gross_spread = result.gross_spread_capture_usd
-    fees = result.fees_usd
-    adverse_selection = result.adverse_selection_usd
-    execution_effects = result.execution_effects_usd
-    inventory_mtm = result.inventory_mtm_usd
-    realized = result.realized_pnl_usd
-    net = result.net_pnl_usd
-
-    attribution_sum = gross_spread + fees - adverse_selection + execution_effects
-    residual = realized - attribution_sum
-
-    return {
-        "fills": result.fills,
-        "filled_qty_btc": round(result.filled_qty, 6),
-        "realized_pnl_usd": round(realized, 2),
-        "net_pnl_usd": round(net, 2),
-        "inventory_mtm_usd": round(inventory_mtm, 2),
-        "final_inventory_btc": round(result.final_inventory, 6),
-        "inventory_max_usd": round(result.inventory_max, 2),
-        "inventory_limit_breaches": result.inventory_limit_breaches,
-        "--- attribution ---": None,
-        "gross_spread_capture_usd": round(gross_spread, 2),
-        "maker_fees_net_usd": round(fees, 2),
-        "adverse_selection_usd": round(adverse_selection, 2),
-        "execution_effects_usd": round(execution_effects, 2),
-        "attribution_sum_vs_realized": round(attribution_sum, 2),
-        "residual_usd": round(residual, 2),
-        "toxicity_suppressed_quotes": result.toxicity_suppressed_quotes,
-    }
-
-
 def main() -> int:
-    config, config_sha = V20Config.load_authoritative(CONFIG)
+    base_config, config_sha = V20Config.load_authoritative(CONFIG)
     print(f"Config: {CONFIG}")
-    print(f"  maker_fee={config.maker_fee_bps} bps  maker_rebate={config.maker_rebate_bps} bps")
-    print(f"  net_maker_fee={config.maker_fee_bps - config.maker_rebate_bps} bps")
-    print(f"  base_half_spread={config.base_half_spread_bps} bps  toxicity_filter={config.toxicity_filter_enabled}")
-    print(f"  max_position_notional=${config.max_position_notional_usd}")
+    print(f"  maker_fee={base_config.maker_fee_bps} bps  maker_rebate={base_config.maker_rebate_bps} bps")
+    print(f"  net_maker_fee={base_config.maker_fee_bps - base_config.maker_rebate_bps} bps")
+    print(f"  base_half_spread={base_config.base_half_spread_bps} bps  toxicity_filter={base_config.toxicity_filter_enabled}")
+    print(f"  max_position_notional=${base_config.max_position_notional_usd}")
     print(f"  sha256={config_sha}")
     print()
 
     captures_root = Path("data/captures")
     scenario_results: dict = {}
 
-    for scenario_name, rebate_bps in [("0.0_bps", 0.0), ("0.35_bps", 0.35), ("1.0_bps", 1.0)]:
-        cfg = replace(config, maker_rebate_bps=rebate_bps)
-        net_fee = cfg.maker_fee_bps - rebate_bps
-        print(f"=== Scenario: maker_rebate={rebate_bps} bps (net_maker_fee={net_fee:.2f} bps) ===")
-        print(f"{'capture':<16} {'fills':>6} {'realized':>12} {'net':>10} {'gross_sprd':>12} {'fees':>8} {'adv_sel':>10} {'exec_eff':>10} {'inv_mtm':>10} {'resid':>10} {'inv_max':>10} {'brk':>5}")
-        print("-" * 150)
+    for scenario_name, rebate_bps in SCENARIOS.items():
+        config = replace(base_config, maker_rebate_bps=rebate_bps)
+        net_fee = config.maker_fee_bps - rebate_bps
+        print(f"=== Scenario {scenario_name} (maker_rebate={rebate_bps} bps, net_maker_fee={net_fee:.2f} bps) ===")
+        print(
+            f"{'capture':<16} {'fills':>6} {'realized':>10} {'net':>8} "
+            f"{'g_sprd':>8} {'fees':>8} {'inv_carry':>10} {'inv_mtm':>8} "
+            f"{'adv_sel':>8} {'resid':>8} {'inv_max':>10} {'brk':>4}"
+        )
+        print("-" * 120)
 
-        scenario_data = {}
+        scenario_data: dict = {}
+        total_realized = 0.0
+        total_gross = 0.0
+        total_fees = 0.0
+        total_carry = 0.0
+        total_mtm = 0.0
+        total_as = 0.0
+        total_resid = 0.0
+        max_inv_max = 0.0
+        total_breaches = 0
+        total_fills = 0
+
         for cid in CAPTURE_IDS:
             capture_dirs = sorted(captures_root.glob(f"{cid}*"))
             if not capture_dirs:
@@ -95,54 +99,105 @@ def main() -> int:
             capture_dir = capture_dirs[0]
             snapshot = load_snapshot(capture_dir)
             depth, trades, counts = load_events(capture_dir)
-            result = run_event_backtest(snapshot, depth, trades, cfg)
 
-            attr = _attribution(result, cfg)
-            scenario_data[capture_dir.name] = attr
+            t0 = time.time()
+            result = run_event_backtest(snapshot, depth, trades, config)
+            elapsed = time.time() - t0
+
+            total_realized += result.realized_pnl_usd
+            total_gross += result.gross_spread_capture_usd
+            total_fees += result.fees_usd
+            total_carry += result.inventory_carry_usd
+            total_mtm += result.inventory_mtm_usd
+            total_as += result.adverse_selection_usd
+            total_resid += result.attribution_residual_usd
+            max_inv_max = max(max_inv_max, result.inventory_max)
+            total_breaches += result.inventory_limit_breaches
+            total_fills += result.fills
+
+            scenario_data[capture_dir.name] = {
+                "fills": result.fills,
+                "realized_pnl_usd": clean(round(result.realized_pnl_usd, 2)),
+                "net_pnl_usd": clean(round(result.net_pnl_usd, 2)),
+                "gross_spread_capture_usd": clean(round(result.gross_spread_capture_usd, 2)),
+                "fees_usd": clean(round(result.fees_usd, 2)),
+                "inventory_carry_usd": clean(round(result.inventory_carry_usd, 2)),
+                "inventory_mtm_usd": clean(round(result.inventory_mtm_usd, 2)),
+                "adverse_selection_usd": clean(round(result.adverse_selection_usd, 2)),
+                "execution_effects_usd": clean(result.execution_effects_usd),
+                "attribution_residual_usd": clean(result.attribution_residual_usd),
+                "inventory_max": clean(round(result.inventory_max, 2)),
+                "inventory_final": clean(round(result.final_inventory, 6)),
+                "inventory_limit_breaches": result.inventory_limit_breaches,
+            }
 
             print(
-                f"{cid:<16} {result.fills:>6} "
-                f"{result.realized_pnl_usd:>12.2f} {result.net_pnl_usd:>10.2f} "
-                f"{result.gross_spread_capture_usd:>12.2f} {result.fees_usd:>8.2f} "
-                f"{result.adverse_selection_usd:>10.2f} {result.execution_effects_usd:>10.2f} "
-                f"{result.inventory_mtm_usd:>10.2f} {attr['residual_usd']:>10.2f} "
-                f"{result.inventory_max:>10.2f} {result.inventory_limit_breaches:>5}",
-                flush=True,
+                f"{cid:<16} {result.fills:>6} {result.realized_pnl_usd:>10.2f} "
+                f"{result.net_pnl_usd:>8.2f} {result.gross_spread_capture_usd:>8.2f} "
+                f"{result.fees_usd:>8.2f} {result.inventory_carry_usd:>10.2f} "
+                f"{result.inventory_mtm_usd:>8.2f} {result.adverse_selection_usd:>8.2f} "
+                f"{result.attribution_residual_usd:>8.2f} {result.inventory_max:>10.2f} "
+                f"{result.inventory_limit_breaches:>4}  ({elapsed:.1f}s)"
             )
 
-        total_realized = sum(r["realized_pnl_usd"] for r in scenario_data.values())
-        total_gross = sum(r["gross_spread_capture_usd"] for r in scenario_data.values())
-        total_fees = sum(r["maker_fees_net_usd"] for r in scenario_data.values())
-        total_as = sum(r["adverse_selection_usd"] for r in scenario_data.values())
-        total_exec = sum(r["execution_effects_usd"] for r in scenario_data.values())
-        total_mtm = sum(r["inventory_mtm_usd"] for r in scenario_data.values())
-
-        print("-" * 150)
-        print(f"{'TOTAL':<16} {sum(r['fills'] for r in scenario_data.values()):>6} "
-              f"{total_realized:>12.2f} {total_realized + total_mtm:>10.2f} "
-              f"{total_gross:>12.2f} {total_fees:>8.2f} "
-              f"{total_as:>10.2f} {total_exec:>10.2f} "
-              f"{total_mtm:>10.2f} {total_realized - total_gross - total_fees + total_as - total_exec:>10.2f} "
-              f"{max(r['inventory_max_usd'] for r in scenario_data.values()):>10.2f} "
-              f"{sum(r['inventory_limit_breaches'] for r in scenario_data.values()):>5}")
+        print("-" * 120)
+        print(
+            f"{'TOTAL':<16} {total_fills:>6} {total_realized:>10.2f} "
+            f"{total_realized + total_mtm:>8.2f} {total_gross:>8.2f} "
+            f"{total_fees:>8.2f} {total_carry:>10.2f} {total_mtm:>8.2f} "
+            f"{total_as:>8.2f} {total_resid:>8.2f} {max_inv_max:>10.2f} "
+            f"{total_breaches:>4}"
+        )
         print()
 
         scenario_results[scenario_name] = {
             "maker_rebate_bps": rebate_bps,
-            "net_maker_fee_bps": net_fee,
+            "net_maker_fee_bps": round(net_fee, 2),
+            "total_fills": total_fills,
             "total_realized_pnl_usd": round(total_realized, 2),
             "total_gross_spread_capture_usd": round(total_gross, 2),
             "total_fees_usd": round(total_fees, 2),
-            "total_adverse_selection_usd": round(total_as, 2),
-            "total_execution_effects_usd": round(total_exec, 2),
+            "total_inventory_carry_usd": round(total_carry, 2),
             "total_inventory_mtm_usd": round(total_mtm, 2),
-            "captures": scenario_data,
+            "total_adverse_selection_usd": round(total_as, 2),
+            "total_attribution_residual_usd": round(total_resid, 8),
+            "max_inventory_usd": round(max_inv_max, 2),
+            "total_inventory_limit_breaches": total_breaches,
+            "captures_pass": 0,
+            "captures_total": len(scenario_data),
+            "results": scenario_data,
         }
 
-    out_path = Path("data/mm_backtest_results_v20_eco_v1_attribution.json")
-    out_path.write_text(json.dumps(scenario_results, indent=2, allow_nan=False) + "\n")
-    print(f"Saved attribution results -> {out_path}")
-    return 0
+    envelope = {
+        "run_id": "V20-ECO-V1-ATTRIBUTION",
+        "config_path": CONFIG,
+        "config_sha256": config_sha,
+        "config_label": (
+            "Authenticated Binance fees: maker=2.0 bps, taker=5.0 bps, "
+            "maker_rebate=0.35 bps (LP Program published rate); "
+            "toxicity_filter=true, max_position_notional=$5000. "
+            "Verified via /fapi/v1/commissionRate."
+        ),
+        "fill_model": "event_driven",
+        "reconciliation": (
+            "realized_pnl = gross_spread_capture + inventory_carry - fees; "
+            "attribution_residual_usd should be ~0"
+        ),
+        "scenarios": scenario_results,
+    }
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    OUT.write_text(json.dumps(envelope, indent=2, allow_nan=False) + "\n")
+    print(f"Saved attribution results -> {OUT}")
+
+    auth = scenario_results["B_authenticated"]
+    print(f"\nAuthenticated scenario: {auth['total_realized_pnl_usd']:.2f} realized "
+          f"({auth['total_gross_spread_capture_usd']:.2f} gross spread, "
+          f"{auth['total_inventory_carry_usd']:.2f} inventory carry, "
+          f"{auth['total_fees_usd']:.2f} fees)")
+    print(f"Attribution residual: {auth['total_attribution_residual_usd']}")
+    print(f"Max inventory: ${auth['max_inventory_usd']:.2f} (cap: ${base_config.max_position_notional_usd})")
+    print(f"Inventory breaches: {auth['total_inventory_limit_breaches']}")
+    return 1  # Always return 1 — strategy not viable
 
 
 if __name__ == "__main__":
