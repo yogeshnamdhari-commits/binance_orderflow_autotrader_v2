@@ -4,6 +4,7 @@ from collections import deque
 from dataclasses import dataclass, field
 from typing import Sequence
 import math
+from bisect import bisect_left
 
 from .book import L2Snapshot, L2Update, OrderBook
 from .config import V20Config
@@ -43,6 +44,12 @@ class EventBacktestResult:
     inventory_limit_breaches: int = 0
     inventory_carry_usd: float = 0.0
     attribution_residual_usd: float = 0.0
+    prefill_toxicity_suppressed_quotes: int = 0
+    prefill_toxicity_bid_suppressed: int = 0
+    prefill_toxicity_ask_suppressed: int = 0
+    prefill_toxicity_model_observations: int = 0
+    prefill_toxicity_probability_mean: float = 0.0
+    prefill_toxicity_probability_max: float = 0.0
 
 
 def _future_mid_by_time(
@@ -64,6 +71,15 @@ def _adverse_selection(fill_price: float, side: Side, future_mid: float | None) 
     if side is Side.BUY:
         return max(0.0, (fill_price - future_mid) / fill_price * 10_000.0)
     return max(0.0, (future_mid - fill_price) / fill_price * 10_000.0)
+
+
+def _imbalance_bucket(value: float) -> int:
+    """Three coarse buckets for the online pre-fill toxicity model."""
+    if value <= -0.3333333333:
+        return -1
+    if value >= 0.3333333333:
+        return 1
+    return 0
 
 
 def _same_price_qty(book: OrderBook, side: str, price: float) -> float:
@@ -151,6 +167,59 @@ def run_event_backtest(
     inventory_limit_breaches = 0
     mid_price_movement_usd = 0.0
 
+    # Online, causal pre-fill toxicity estimator.  Counts are updated only
+    # after a completed post-fill horizon, so a quote can never use its own
+    # future outcome (or any later event) when making the prediction.
+    prefill_counts: dict[tuple[str, int, int], list[int]] = {}
+    prefill_pending: deque[dict[str, object]] = deque()
+    prefill_quote_features: dict[str, tuple[str, int, int, float]] = {}
+    model_mid_times: list[int] = []
+    model_mids: list[float] = []
+    prefill_suppressed_quotes = 0
+    prefill_bid_suppressed = 0
+    prefill_ask_suppressed = 0
+    prefill_probability_samples: list[float] = []
+    prefill_model_observations = 0
+
+    def resolve_prefill_labels(now_ns: int) -> None:
+        nonlocal prefill_model_observations
+        horizon_ns = max(1, config.prefill_toxicity_horizon_ms) * 1_000_000
+        while prefill_pending and int(prefill_pending[0]["target_ns"]) <= now_ns:
+            pending = prefill_pending[0]
+            target_ns = int(pending["target_ns"])
+            idx = bisect_left(model_mid_times, target_ns)
+            if idx >= len(model_mid_times):
+                break
+            prefill_pending.popleft()
+            future_mid = model_mids[idx]
+            mid_at_fill = float(pending["mid_at_fill"])
+            if mid_at_fill <= 0 or future_mid <= 0:
+                continue
+            side = str(pending["side"])
+            drift_bps = (future_mid - mid_at_fill) * 10_000.0 / mid_at_fill
+            adverse = (
+                drift_bps <= -config.adverse_selection_threshold_bps
+                if side == Side.BUY.value
+                else drift_bps >= config.adverse_selection_threshold_bps
+            )
+            key = (side, int(pending["book_bucket"]), int(pending["flow_bucket"]))
+            state = prefill_counts.setdefault(key, [0, 0])
+            state[0] += 1
+            if adverse:
+                state[1] += 1
+            prefill_model_observations += 1
+
+    def prefill_probability(side: Side, book_imbalance: float, flow_imbalance: float) -> tuple[float, int]:
+        key = (side.value, _imbalance_bucket(book_imbalance), _imbalance_bucket(flow_imbalance))
+        observations, adverse = prefill_counts.get(key, [0, 0])
+        if observations < config.prefill_toxicity_min_observations:
+            return 0.0, observations
+        # Uniform Beta(1,1) prior; posterior mean is a bounded empirical
+        # estimate of P(adverse | side, book bucket, flow bucket).
+        probability = (adverse + 1.0) / (observations + 2.0)
+        prefill_probability_samples.append(probability)
+        return probability, observations
+
     def process_trade(trade: TradeEvent) -> None:
         nonlocal inventory, cash, fees_usd, buy_fills, sell_fills
         nonlocal buy_filled_qty, sell_filled_qty, gross_spread_capture_usd
@@ -203,6 +272,16 @@ def run_event_backtest(
                 mid_price_movement_usd -= fill_price_mid * fill.qty
             else:
                 mid_price_movement_usd += fill_price_mid * fill.qty
+            metadata = prefill_quote_features.get(fill.quote_id)
+            if metadata is not None and config.prefill_toxicity_filter_enabled:
+                feature_side, book_bucket, flow_bucket, quote_mid = metadata
+                prefill_pending.append({
+                    "target_ns": fill.timestamp_ns + max(1, config.prefill_toxicity_horizon_ms) * 1_000_000,
+                    "side": feature_side,
+                    "book_bucket": book_bucket,
+                    "flow_bucket": flow_bucket,
+                    "mid_at_fill": fill_price_mid if fill_price_mid > 0 else quote_mid,
+                })
             fills_for_as.append((fill.timestamp_ns, fill.side, fill.price))
             fill_records.append({
                 "timestamp_ns": fill.timestamp_ns,
@@ -217,6 +296,7 @@ def run_event_backtest(
                 inventory_max = max(inventory_max, abs(inventory * current_mid))
 
     for timestamp_ns, kind, event in events:
+        resolve_prefill_labels(timestamp_ns)
         if kind == 1:
             trade = event
             assert isinstance(trade, TradeEvent)
@@ -245,6 +325,8 @@ def run_event_backtest(
         mid = (mid_keys_bid + mid_keys_ask) / 2.0
         spread_bps = (mid_keys_ask - mid_keys_bid) * 10_000.0 / mid
         current_mid = mid
+        model_mid_times.append(depth_event.timestamp_ns)
+        model_mids.append(mid)
         if last_quote_time_ns is not None and timestamp_ns - last_quote_time_ns < quote_interval_ns:
             continue
         last_quote_time_ns = timestamp_ns
@@ -288,6 +370,19 @@ def run_event_backtest(
             # fills from observed trade events.
             bid = max(bid, best_bid)
             ask = min(ask, best_ask)
+
+        if config.prefill_toxicity_filter_enabled:
+            bid_probability, _bid_obs = prefill_probability(Side.BUY, book_imbalance, flow_imbalance)
+            ask_probability, _ask_obs = prefill_probability(Side.SELL, book_imbalance, flow_imbalance)
+            threshold = max(0.0, min(1.0, config.prefill_toxicity_probability_threshold))
+            if bid_probability >= threshold and bid_probability > 0.0:
+                bid_qty = 0.0
+                prefill_suppressed_quotes += 1
+                prefill_bid_suppressed += 1
+            if ask_probability >= threshold and ask_probability > 0.0:
+                ask_qty = 0.0
+                prefill_suppressed_quotes += 1
+                prefill_ask_suppressed += 1
 
         if config.toxicity_filter_enabled:
             bull_toxic = (
@@ -347,6 +442,12 @@ def run_event_backtest(
                 visible_bid_qty_at_price=bid_queue,
                 visible_ask_qty_at_price=ask_queue,
             )
+            prefill_quote_features[desired.quote_id] = (
+                Side.BUY.value,
+                _imbalance_bucket(book_imbalance),
+                _imbalance_bucket(flow_imbalance),
+                mid,
+            )
             last_quote = desired
             last_quote_time_ns = timestamp_ns
 
@@ -402,4 +503,10 @@ def run_event_backtest(
         inventory_limit_breaches=inventory_limit_breaches,
         inventory_carry_usd=mid_price_movement_usd,
         attribution_residual_usd=round(attribution_residual_usd, 8),
+        prefill_toxicity_suppressed_quotes=prefill_suppressed_quotes,
+        prefill_toxicity_bid_suppressed=prefill_bid_suppressed,
+        prefill_toxicity_ask_suppressed=prefill_ask_suppressed,
+        prefill_toxicity_model_observations=prefill_model_observations,
+        prefill_toxicity_probability_mean=(sum(prefill_probability_samples) / len(prefill_probability_samples) if prefill_probability_samples else 0.0),
+        prefill_toxicity_probability_max=(max(prefill_probability_samples) if prefill_probability_samples else 0.0),
     )
