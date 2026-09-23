@@ -1,4 +1,5 @@
-"""Canonical V20-ECO-V1 rerun with actual maker fees (1.0 bps) and maker rebate (3.5 bps).
+"""Canonical V20-ECO-V1 rerun with actual maker fees (1.0 bps) and
+Binance LP rebate (0.35 bps, from published Liquidity Provider Program rates).
 
 Uses the deterministic event-backtest fill model (run_event_backtest) for
 execution realism — this is the same model used during certification, ensuring
@@ -121,8 +122,8 @@ def main() -> int:
         "config_path": CONFIG,
         "config_sha256": config_sha,
         "config_label": (
-            "ACTUAL FEES: maker 1.0 bps, taker 2.0 bps, maker rebate 3.5 bps "
-            "(from EXECUTION_ECONOMIC_AUDIT.md); toxicity_filter_enabled=true"
+            "ACTUAL FEES: maker 1.0 bps, taker 2.0 bps, maker rebate 0.35 bps "
+            "(Binance LP Program rate from EXECUTION_ECONOMIC_AUDIT.md); toxicity_filter_enabled=true"
         ),
         "seed": SEED,
         "command": COMMAND,

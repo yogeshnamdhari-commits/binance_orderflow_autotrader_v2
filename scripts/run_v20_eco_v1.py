@@ -73,20 +73,43 @@ def main() -> int:
         inv_mtm_bps = clean(
             result.inventory_mtm_usd / config.quote_size_usd * 10_000.0
         )
-
-        gate_pass = (
-            result.fills > 0
-            and result.net_pnl_usd > 0
+        realized_pnl_bps = clean(
+            result.realized_pnl_usd / config.quote_size_usd * 10_000.0
         )
+
+        inventory_within_limit = (
+            result.inventory_max <= config.max_position_notional_usd + 1e-6
+        )
+        no_inventory_breaches = result.inventory_limit_breaches == 0
+        realized_pnl_positive = result.realized_pnl_usd > 0
+        net_pnl_positive = result.net_pnl_usd > 0
+        sufficient_fills = result.fills > 0
+
+        gate_pass = all([
+            sufficient_fills,
+            realized_pnl_positive,
+            net_pnl_positive,
+            inventory_within_limit,
+            no_inventory_breaches,
+        ])
         if not gate_pass:
             all_pass = False
-        gate_reasons = [] if gate_pass else (
-            ["fills == 0"] if result.fills == 0 else
-            ["net_pnl <= 0"]
-        )
+        gate_reasons: list[str] = []
+        if not sufficient_fills:
+            gate_reasons.append("insufficient_fills")
+        if not realized_pnl_positive:
+            gate_reasons.append("realized_pnl_not_positive")
+        if not net_pnl_positive:
+            gate_reasons.append("net_pnl_not_positive")
+        if not inventory_within_limit:
+            gate_reasons.append(
+                f"inventory_exceeds_limit ({result.inventory_max:.2f} > {config.max_position_notional_usd})"
+            )
+        if not no_inventory_breaches:
+            gate_reasons.append(f"inventory_limit_breached ({result.inventory_limit_breaches}x)")
 
         out[capture_dir.name] = {
-            "pnl_bps": clean(result.realized_pnl_usd / config.quote_size_usd * 10_000.0),
+            "pnl_bps": realized_pnl_bps,
             "pnl_notional_usd": clean(result.realized_pnl_usd),
             "inventory_mtm_bps": inv_mtm_bps,
             "net_pnl_bps_incl_mtm": net_pnl_bps,
@@ -108,10 +131,12 @@ def main() -> int:
             "avg_realized_pnl_per_fill_bps": clean(
                 result.realized_pnl_usd / max(result.fills, 1) / config.quote_size_usd * 10_000.0
             ),
-            "inventory_max": None,
+            "inventory_max": clean(result.inventory_max),
+            "inventory_max_bps": clean(result.inventory_max / config.quote_size_usd * 10_000.0),
             "inventory_final": clean(result.final_inventory),
+            "inventory_limit_breaches": result.inventory_limit_breaches,
             "gate_pass": gate_pass,
-            "gate_reasons": gate_reasons,
+            "gate_reasons": gate_reasons if gate_reasons else ["pass"],
             "fees_usd": clean(result.fees_usd),
             "gross_spread_capture_bps": gross_spread_bps,
             "buy_fills": result.buy_fills,
@@ -121,11 +146,13 @@ def main() -> int:
 
         print(
             f"  PnL: {net_pnl_bps:.2f} bps (${result.net_pnl_usd:.2f}), "
+            f"realized: {realized_pnl_bps:.2f} bps (${result.realized_pnl_usd:.2f}), "
             f"Fills: {result.fills}, Fees: ${result.fees_usd:.2f}, "
-            f"Gross spread: {gross_spread_bps:.2f} bps",
+            f"Gross spread: {gross_spread_bps:.2f} bps, "
+            f"inv_max: ${result.inventory_max:.2f} ({result.inventory_limit_breaches} breaches)",
             flush=True,
         )
-        print(f"  Gate: {'PASS' if gate_pass else 'FAIL'}", flush=True)
+        print(f"  Gate: {'PASS' if gate_pass else 'FAIL'} {gate_reasons}", flush=True)
         print(flush=True)
 
     git_commit = subprocess.check_output(
@@ -137,7 +164,7 @@ def main() -> int:
         "git_commit": git_commit,
         "config_path": CONFIG,
         "config_sha256": config_sha,
-        "config_label": "ACTUAL FEES: maker 1.0 bps, taker 2.0 bps (from EXECUTION_ECONOMIC_AUDIT.md)",
+        "config_label": "ACTUAL FEES: maker 1.0 bps, taker 2.0 bps, maker rebate 0.35 bps (Binance LP Program rate from EXECUTION_ECONOMIC_AUDIT.md; verify via /fapi/v1/commissionRate)",
         "seed": SEED,
         "command": COMMAND,
         "live_order_submission": False,

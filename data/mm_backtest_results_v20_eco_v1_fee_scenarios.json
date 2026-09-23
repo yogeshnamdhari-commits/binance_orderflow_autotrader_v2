@@ -1,0 +1,55 @@
+{
+  "run_id": "V20-ECO-V1-FEE-SCENARIOS",
+  "config_path": "app/mm/config_v20_eco_v1_actual_fees.json",
+  "config_sha256": "8ad40e7ec78f318356278189d46c3809f61dfa04b2fc9ffd60e655244aa6ebd6",
+  "config_label": "maker_fee=1.0 bps, taker_fee=2.0 bps, base_half_spread=2.5 bps, toxicity_filter=true; rebate scenarios: A_conservative=0.0, B_authenticated=0.35, C_sensitivity=1.0",
+  "command": "python3 scripts/run_v20_eco_v1_fee_scenarios.py",
+  "fill_model": "event_driven",
+  "scenarios": {
+    "A_conservative": {
+      "maker_rebate_bps": 0.0,
+      "net_maker_fee_bps": 1.0,
+      "total_net_pnl_usd": -25.78,
+      "total_realized_pnl_usd": -8163.09,
+      "captures_pass": 0,
+      "captures_total": 5,
+      "results": {
+        "3b8eee35e6d14eb3b38d368c6caf310a": {"fills": 93, "realized_pnl_usd": -602.57, "inventory_mtm_usd": 601.28, "net_pnl_usd": -1.29, "fees_usd": 0.70, "inventory_max": 901.30, "inventory_final": -0.0134, "inventory_limit_breaches": 0, "gate_pass": false, "gate_reasons": ["realized_pnl_not_positive"]},
+        "477cf6ae81564e8aa729e79d9cfdc048": {"fills": 621, "realized_pnl_usd": -4115.25, "inventory_mtm_usd": 4109.51, "net_pnl_usd": -5.74, "fees_usd": 3.89, "inventory_max": 4208.96, "inventory_final": 0.0118, "inventory_limit_breaches": 0, "gate_pass": false, "gate_reasons": ["realized_pnl_not_positive"]},
+        "9863cf188e1841f3a5738733632f1977": {"fills": 163, "realized_pnl_usd": -226.46, "inventory_mtm_usd": 224.79, "net_pnl_usd": -1.67, "fees_usd": 1.00, "inventory_max": 700.21, "inventory_final": -0.0026, "inventory_limit_breaches": 0, "gate_pass": false, "gate_reasons": ["realized_pnl_not_positive"]},
+        "e4153485b12e4ac2b80b4ff81bc08870": {"fills": 671, "realized_pnl_usd": -3615.16, "inventory_mtm_usd": 3599.64, "net_pnl_usd": -15.52, "fees_usd": 4.07, "inventory_max": 5092.98, "inventory_final": 0.0006, "inventory_limit_breaches": 144, "gate_pass": false, "gate_reasons": ["realized_pnl_not_positive", "inventory_exceeds_limit", "inventory_breaches"]},
+        "ebe81a6484044c5399abd2439d251e3c": {"fills": 164, "realized_pnl_usd": 396.36, "inventory_mtm_usd": -397.92, "net_pnl_usd": -1.56, "fees_usd": 1.00, "inventory_max": 1001.11, "inventory_final": 0.0018, "inventory_limit_breaches": 0, "gate_pass": false, "gate_reasons": ["net_pnl_not_positive"]}
+      }
+    },
+    "B_authenticated": {
+      "maker_rebate_bps": 0.35,
+      "net_maker_fee_bps": 0.65,
+      "total_net_pnl_usd": -22.05,
+      "total_realized_pnl_usd": -8159.36,
+      "captures_pass": 0,
+      "captures_total": 5,
+      "results": {
+        "3b8eee35e6d14eb3b38d368c6caf310a": {"fills": 93, "realized_pnl_usd": -602.33, "inventory_mtm_usd": 601.28, "net_pnl_usd": -1.05, "fees_usd": 0.46, "inventory_max": 901.30, "inventory_final": -0.0134, "inventory_limit_breaches": 0, "gate_pass": false, "gate_reasons": ["realized_pnl_not_positive"]},
+        "477cf6ae81564e8aa729e79d9cfdc048": {"fills": 621, "realized_pnl_usd": -4113.89, "inventory_mtm_usd": 4109.51, "net_pnl_usd": -4.37, "fees_usd": 2.53, "inventory_max": 4208.96, "inventory_final": 0.0118, "inventory_limit_breaches": 0, "gate_pass": false, "gate_reasons": ["realized_pnl_not_positive"]},
+        "9863cf188e1841f3a5738733632f1977": {"fills": 163, "realized_pnl_usd": -226.11, "inventory_mtm_usd": 224.79, "net_pnl_usd": -1.32, "fees_usd": 0.65, "inventory_max": 700.21, "inventory_final": -0.0026, "inventory_limit_breaches": 0, "gate_pass": false, "gate_reasons": ["realized_pnl_not_positive"]},
+        "e4153485b12e4ac2b80b4ff81bc08870": {"fills": 671, "realized_pnl_usd": -3613.74, "inventory_mtm_usd": 3599.64, "net_pnl_usd": -14.10, "fees_usd": 2.65, "inventory_max": 5092.98, "inventory_final": 0.0006, "inventory_limit_breaches": 144, "gate_pass": false, "gate_reasons": ["realized_pnl_not_positive", "inventory_exceeds_limit", "inventory_breaches"]},
+        "ebe81a6484044c5399abd2439d251e3c": {"fills": 164, "realized_pnl_usd": 396.71, "inventory_mtm_usd": -397.92, "net_pnl_usd": -1.21, "fees_usd": 0.65, "inventory_max": 1001.11, "inventory_final": 0.0018, "inventory_limit_breaches": 0, "gate_pass": false, "gate_reasons": ["net_pnl_not_positive"]}
+      }
+    },
+    "C_sensitivity": {
+      "maker_rebate_bps": 1.0,
+      "net_maker_fee_bps": 0.0,
+      "total_net_pnl_usd": -15.77,
+      "total_realized_pnl_usd": -8152.25,
+      "captures_pass": 0,
+      "captures_total": 5,
+      "results": {
+        "3b8eee35e6d14eb3b38d368c6caf310a": {"fills": 93, "realized_pnl_usd": -601.87, "inventory_mtm_usd": 601.28, "net_pnl_usd": -0.59, "fees_usd": 0.00, "inventory_max": 901.30, "inventory_final": -0.0134, "inventory_limit_breaches": 0, "gate_pass": false, "gate_reasons": ["realized_pnl_not_positive"]},
+        "477cf6ae81564e8aa729e79d9cfdc048": {"fills": 621, "realized_pnl_usd": -4111.36, "inventory_mtm_usd": 4109.51, "net_pnl_usd": -1.85, "fees_usd": 0.00, "inventory_max": 4208.96, "inventory_final": 0.0118, "inventory_limit_breaches": 0, "gate_pass": false, "gate_reasons": ["realized_pnl_not_positive"]},
+        "9863cf188e1841f3a5738733632f1977": {"fills": 163, "realized_pnl_usd": -225.46, "inventory_mtm_usd": 224.79, "net_pnl_usd": -0.67, "fees_usd": 0.00, "inventory_max": 700.21, "inventory_final": -0.0026, "inventory_limit_breaches": 0, "gate_pass": false, "gate_reasons": ["realized_pnl_not_positive"]},
+        "e4153485b12e4ac2b80b4ff81bc08870": {"fills": 671, "realized_pnl_usd": -3611.09, "inventory_mtm_usd": 3599.64, "net_pnl_usd": -11.45, "fees_usd": 0.00, "inventory_max": 5092.98, "inventory_final": 0.0006, "inventory_limit_breaches": 144, "gate_pass": false, "gate_reasons": ["realized_pnl_not_positive", "inventory_exceeds_limit", "inventory_breaches"]},
+        "ebe81a6484044c5399abd2439d251e3c": {"fills": 164, "realized_pnl_usd": 396.55, "inventory_mtm_usd": -397.92, "net_pnl_usd": -0.86, "fees_usd": 0.00, "inventory_max": 1001.11, "inventory_final": 0.0018, "inventory_limit_breaches": 0, "gate_pass": false, "gate_reasons": ["net_pnl_not_positive"]}
+      }
+    }
+  }
+}
