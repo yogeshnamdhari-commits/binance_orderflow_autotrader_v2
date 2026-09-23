@@ -405,4 +405,67 @@ Potential directions:
 
 ---
 
+## ADDENDUM: V20-ECO-V1 EVENT-DRIVEN REPLAY ANALYSIS
+
+**Date:** 2026-09-23
+**Method:** Event-driven replay through `PassiveQuoteReplay` fill model on 5 BTCUSDT captures (1,712 fills) with strengthened certification gate
+
+### Updated Decision
+
+**DO NOT enable live trading.** The strategy does not have a demonstrated edge under realistic fee and risk assumptions.
+
+### What Changed
+
+The V20-ECO-V1 event-driven replay replaced the old probabilistic `simulate_fill()` model with deterministic fills tied to observed Binance aggressive trades. This was genuine structural improvement, but it also revealed:
+
+1. **Maker rebate correction**: The configuration had `maker_rebate_bps=3.5` which was a 10× unit conversion error. Binance's published LP Program rate is -0.0035% = 0.35 bps. Corrected to `maker_rebate_bps=0.35`.
+
+2. **Strengthened gate**: The PASS gate now requires:
+   - `realized_pnl_usd > 0` (cash PnL, not MTM)
+   - `net_pnl_usd > 0` (net of inventory MTM)
+   - `inventory_max <= max_position_notional_usd` ($5,000 cap)
+   - `inventory_limit_breaches == 0`
+
+3. **Three fee scenarios** (0.0, 0.35, 1.0 bps rebate) tested across all 5 captures:
+
+| Scenario | Rebate | Captures Pass | Total Net | Total Realized |
+|---|---|---|---|---|
+| Conservative | 0.0 bps | 0/5 | -$25.78 | -$8,163.09 |
+| Authenticated | 0.35 bps | 0/5 | -$22.06 | -$8,159.36 |
+| Sensitivity | 1.0 bps | 0/5 | -$15.77 | -$8,152.25 |
+
+### Economic Attribution
+
+The realized cash PnL decomposes as:
+
+- **Gross spread capture:** ~$0.09 total (1,712 fills at ~$0.00005 per fill)
+- **Maker fees/net rebate:** $0.00–$10.66 (negligible vs. losses)
+- **Adverse selection:** ~$1.69 total (negligible)
+- **Inventory carry (residual):** -$8,152 to -$8,172 (dominant loss)
+
+The dominant loss is **inventory carry** — the strategy accumulates BTC positions and the market moves against those positions between buy and sell fills. This is not a fee problem and not an adverse-selection problem.
+
+### Required Next Research
+
+1. **Verify authenticated account fees** via `scripts/v20_fee_audit.py` (requires `BINANCE_LIVE_API_KEY`/`BINANCE_LIVE_API_SECRET`)
+2. **Economic attribution**: decompose where realized losses originate (spread capture vs. carry)
+3. **Signal strength**: determine whether order-flow information can predict adverse selection strongly enough to justify quoting
+4. **OOS validation**: collect additional chronological captures for statistical significance
+
+### Revised Project Objective
+
+**Old objective:** "Make this algo profitable."
+
+**New objective:** "Find a fixed, reproducible order-flow rule that produces positive realized cash PnL after authentic trade replay, verified account fees, strict inventory limits, and chronological OOS validation."
+
+Until that condition is met, `V20_BASELINE_NO_LIVE_TRADE = True`.
+
+---
+
+**END OF APPENDIX**
+
+---
+
+**END OF APPENDIX**
+
 **END OF EXECUTION ECONOMIC AUDIT**
