@@ -122,8 +122,9 @@ def main() -> int:
         "config_path": CONFIG,
         "config_sha256": config_sha,
         "config_label": (
-            "ACTUAL FEES: maker 1.0 bps, taker 2.0 bps, maker rebate 0.35 bps "
-            "(Binance LP Program rate from EXECUTION_ECONOMIC_AUDIT.md); toxicity_filter_enabled=true"
+            "Authenticated Binance USDⓈ-M fees: maker=2.0 bps, taker=5.0 bps, "
+            "maker_rebate=0.35 bps (LP Program published rate); "
+            "toxicity_filter_enabled=true. Verified via /fapi/v1/commissionRate."
         ),
         "seed": SEED,
         "command": COMMAND,

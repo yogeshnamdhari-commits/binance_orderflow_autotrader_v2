@@ -1,16 +1,19 @@
 """V20-ECO-V1 three-scenario fee sensitivity runner.
 
 Runs the event-driven fill model on all 5 BTCUSDT captures across three
-rebate scenarios, applying the strengthened certification gate to each.
+fee scenarios, applying the strengthened certification gate to each.
+
+Base fees (authenticated via /fapi/v1/commissionRate):
+  maker_fee_bps = 2.0  (Binance USDⓈ-M account-specific rate)
+  taker_fee_bps = 5.0  (Binance USDⓈ-M account-specific rate)
 
 Scenarios:
   A — Conservative:   maker_rebate_bps = 0.0   (no rebate assumed)
   B — Authenticated:  maker_rebate_bps = 0.35 (Binance LP Program published rate)
   C — Sensitivity:    maker_rebate_bps = 1.0   (intermediate sensitivity point)
 
-The base config (maker_fee_bps=1.0, taker_fee_bps=2.0, base_half_spread_bps=2.5,
-toxicity_filter_enabled=true) is frozen across all scenarios.  Only the
-maker_rebate_bps varies, so differences are attributable to the rebate assumption.
+Only maker_rebate_bps varies, so differences are attributable to the rebate
+assumption.  No parameter changes between scenarios.
 
 Gate (applied per capture):
   - fills > 0
@@ -19,10 +22,9 @@ Gate (applied per capture):
   - inventory_max <= max_position_notional_usd
   - inventory_limit_breaches == 0
 
-A capture must PASS the gate under the Authenticated scenario for the
-strategy to be considered viable.  The Conservative scenario establishes
-whether the strategy survives with zero rebate (the cleanest test of signal
-quality).
+A capture must PASS under the Authenticated scenario for the strategy to be
+considered viable.  The Conservative scenario establishes whether the strategy
+survives with zero rebate.
 """
 from __future__ import annotations
 import json, math, subprocess, sys
@@ -162,8 +164,8 @@ def main() -> int:
         "config_path": CONFIG,
         "config_sha256": config_sha,
         "config_label": (
-            "maker_fee=1.0 bps, taker_fee=2.0 bps, base_half_spread=2.5 bps, "
-            "toxicity_filter=true from EXECUTION_ECONOMIC_AUDIT.md; "
+            "Authenticated Binance fees: maker=2.0 bps, taker=5.0 bps, "
+            "base_half_spread=2.5 bps, toxicity_filter=true; "
             f"rebate scenarios: {json.dumps(SCENARIOS)}"
         ),
         "command": COMMAND,

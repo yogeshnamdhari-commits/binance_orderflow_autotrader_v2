@@ -12,9 +12,9 @@
   "adverse_selection_threshold_bps": 0.75,
   "min_top_level_qty": 0.0,
   "comment_fee_source": "Binance USD-M futures commissionRate endpoint; verify account-specific VIP tier before live use",
-  "maker_fee_bps": 1.0,
+  "maker_fee_bps": 2.0,
   "maker_rebate_bps": 0.35,
-  "taker_fee_bps": 2.0,
-  "comment_fee_tier": "Maker fee 1.0 bps (VIP tier, from EXECUTION_ECONOMIC_AUDIT.md). Maker rebate 0.35 bps is the published Binbnb USDⓈ-M Liquidity Provider Program rate (-0.0035%); verify actual account-specific rates via authenticated /fapi/v1/commissionRate before live use",
+  "taker_fee_bps": 5.0,
+  "comment_fee_tier": "Authenticated via /fapi/v1/commissionRate: maker_fee=2.0 bps, taker_fee=5.0 bps. Maker rebate 0.35 bps is the published Binance USDⓈ-M Liquidity Provider Program rate (-0.0035%); verify account-specific rebate via LP application before live use",
   "live_order_submission": false
 }

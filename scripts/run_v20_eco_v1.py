@@ -164,7 +164,7 @@ def main() -> int:
         "git_commit": git_commit,
         "config_path": CONFIG,
         "config_sha256": config_sha,
-        "config_label": "ACTUAL FEES: maker 1.0 bps, taker 2.0 bps, maker rebate 0.35 bps (Binance LP Program rate from EXECUTION_ECONOMIC_AUDIT.md; verify via /fapi/v1/commissionRate)",
+        "config_label": "Authenticated Binance USDⓈ-M fees: maker=2.0 bps, taker=5.0 bps, maker_rebate=0.35 bps (LP Program published rate); toxicity_filter_enabled=true. Verified via /fapi/v1/commissionRate.",
         "seed": SEED,
         "command": COMMAND,
         "live_order_submission": False,
