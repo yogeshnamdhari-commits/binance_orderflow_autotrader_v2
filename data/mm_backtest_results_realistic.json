@@ -1,0 +1,117 @@
+{
+  "3b8eee35e6d14eb3b38d368c6caf310a": {
+    "pnl_bps": 8.87848337289228,
+    "fills": 34990,
+    "cancels": 0,
+    "win_rate": 22.437839382680767,
+    "winning_fills": 7851,
+    "losing_fills": 7834,
+    "profit_factor": 1.0765098957061956,
+    "avg_win_bps": 0.01591161363665013,
+    "avg_loss_bps": -0.014812815329135687,
+    "max_win_bps": 2.502259129653471,
+    "max_loss_bps": -2.658171719344061,
+    "gross_profit_bps": 124.9220786613402,
+    "gross_loss_bps": 116.04359528844898,
+    "inventory_max": 0.006858090191344052,
+    "inventory_final": 0.00028524397211096173,
+    "avg_adverse_selection_bps": 2.5007535598949358,
+    "avg_realized_pnl_per_fill_bps": 0.00025374345164024805,
+    "gate_pass": true,
+    "gate_reasons": [
+      "pass"
+    ]
+  },
+  "477cf6ae81564e8aa729e79d9cfdc048": {
+    "pnl_bps": -17.664798842109864,
+    "fills": 16882,
+    "cancels": 0,
+    "win_rate": 30.55325198436204,
+    "winning_fills": 5158,
+    "losing_fills": 5186,
+    "profit_factor": 0.9767709161192695,
+    "avg_win_bps": 0.14400845663975492,
+    "avg_loss_bps": -0.1466371805225542,
+    "max_win_bps": 2.502993921557703,
+    "max_loss_bps": -3.797654245150566,
+    "gross_profit_bps": 742.7956193478559,
+    "gross_loss_bps": 760.460418189966,
+    "inventory_max": 0.007341881268232283,
+    "inventory_final": -0.0006865507076664059,
+    "avg_adverse_selection_bps": 2.50217816407875,
+    "avg_realized_pnl_per_fill_bps": -0.0010463688450485643,
+    "gate_pass": false,
+    "gate_reasons": [
+      "total_pnl_non_positive"
+    ]
+  },
+  "9863cf188e1841f3a5738733632f1977": {
+    "pnl_bps": 8.524896231693873,
+    "fills": 17200,
+    "cancels": 0,
+    "win_rate": 20.813953488372093,
+    "winning_fills": 3580,
+    "losing_fills": 3604,
+    "profit_factor": 1.029465758480097,
+    "avg_win_bps": 0.08319559954406552,
+    "avg_loss_bps": -0.08027617928303571,
+    "max_win_bps": 2.4999723123539335,
+    "max_loss_bps": -2.329188648987367,
+    "gross_profit_bps": 297.84024636775456,
+    "gross_loss_bps": 289.3153501360607,
+    "inventory_max": 0.006115794710632447,
+    "inventory_final": -0.000364808021820091,
+    "avg_adverse_selection_bps": 2.500626488645994,
+    "avg_realized_pnl_per_fill_bps": 0.000495633501842667,
+    "gate_pass": true,
+    "gate_reasons": [
+      "pass"
+    ]
+  },
+  "e4153485b12e4ac2b80b4ff81bc08870": {
+    "pnl_bps": -45.31048300839521,
+    "fills": 32535,
+    "cancels": 0,
+    "win_rate": 24.08790533271861,
+    "winning_fills": 7837,
+    "losing_fills": 7838,
+    "profit_factor": 0.9576354115725052,
+    "avg_win_bps": 0.13069111118398943,
+    "avg_loss_bps": -0.13645531020124013,
+    "max_win_bps": 2.505674002598451,
+    "max_loss_bps": -5.7554197249050585,
+    "gross_profit_bps": 1024.226238348925,
+    "gross_loss_bps": 1069.5367213573202,
+    "inventory_max": 0.008242530017063113,
+    "inventory_final": -0.000442207617079546,
+    "avg_adverse_selection_bps": 2.5025055866163477,
+    "avg_realized_pnl_per_fill_bps": -0.0013926689106622163,
+    "gate_pass": false,
+    "gate_reasons": [
+      "total_pnl_non_positive"
+    ]
+  },
+  "ebe81a6484044c5399abd2439d251e3c": {
+    "pnl_bps": 8.139803918225002,
+    "fills": 34982,
+    "cancels": 0,
+    "win_rate": 19.101252072494425,
+    "winning_fills": 6682,
+    "losing_fills": 6677,
+    "profit_factor": 1.0345387463892133,
+    "avg_win_bps": 0.03648779861660772,
+    "avg_loss_bps": -0.035296041101984296,
+    "max_win_bps": 2.5025010066380275,
+    "max_loss_bps": -3.625202378191387,
+    "gross_profit_bps": 243.81147035617275,
+    "gross_loss_bps": 235.67166643794914,
+    "inventory_max": 0.007108065965290979,
+    "inventory_final": 0.0004481563643814917,
+    "avg_adverse_selection_bps": 2.500788424738595,
+    "avg_realized_pnl_per_fill_bps": 0.00023268549306000236,
+    "gate_pass": true,
+    "gate_reasons": [
+      "pass"
+    ]
+  }
+}

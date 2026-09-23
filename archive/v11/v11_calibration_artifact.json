@@ -1,0 +1,92 @@
+{
+  "version": "V11",
+  "timestamp": "2026-09-05T04:02:15.677299+00:00",
+  "status": "CALIBRATED",
+  "protocol": {
+    "horizon_ms": 500,
+    "taker_fee_bps": 5.0,
+    "maker_fee_bps": 2.0,
+    "slippage_bps": 0.5,
+    "adverse_selection_bps": 0.5,
+    "latency_bps": 0.1,
+    "min_observations_calibration": 100,
+    "min_observations_forward": 100,
+    "alpha": 0.05,
+    "min_effect_size": 0.3,
+    "model": "GradientBoostingClassifier",
+    "features": [
+      "ofi_l1",
+      "ofi_norm_l1",
+      "qi_l1",
+      "di_l5",
+      "di_l10",
+      "mpd_bps",
+      "spread_bps",
+      "bid_cancel_bps",
+      "ask_add_bps",
+      "cancel_pressure",
+      "tfi_500",
+      "liq_depletion",
+      "log_depth1",
+      "log_depth5",
+      "log_event_rate",
+      "depth_slope_bps",
+      "vol_500"
+    ]
+  },
+  "sessions": {
+    "3d893a19cad3424fa4636ae5d4ab7516": {
+      "checksum": "d83a5a81b70b84e0"
+    },
+    "4d5637e4b60345ab9826f4247650b88c": {
+      "checksum": "4598ca0aa0edbbb5"
+    },
+    "4ee485ccb64746f8960fcff99c18fac3": {
+      "checksum": "d7d3d0238300849a"
+    },
+    "7ca2e3b0b66843fb94b4acb289987f96": {
+      "checksum": "f02da3c5e48bf941"
+    },
+    "9067d8636a8648edb0dd4158ebbd7e69": {
+      "checksum": "314e28a81a72dc09"
+    },
+    "b433be572b794da0ad256890253b257f": {
+      "checksum": "a82d45bc731c13fb"
+    }
+  },
+  "n_sessions": 6,
+  "n_observations": 2298,
+  "metrics": {
+    "train_auc": 0.6669056903253221,
+    "val_auc": 0.6147883732789392,
+    "test_auc": 0.5974324183279407,
+    "n_train": 1610,
+    "n_val": 344,
+    "n_test": 344,
+    "n_positive": 1018,
+    "n_negative": 1280,
+    "brier": 0.23660350824904708,
+    "return_calibration_bins": 10
+  },
+  "model_path": "archive/v11/v11_frozen_model.joblib",
+  "model_checksum": "52ac9a4a2b4ccda8",
+  "feature_names": [
+    "ofi_l1",
+    "ofi_norm_l1",
+    "qi_l1",
+    "di_l5",
+    "di_l10",
+    "mpd_bps",
+    "spread_bps",
+    "bid_cancel_bps",
+    "ask_add_bps",
+    "cancel_pressure",
+    "tfi_500",
+    "liq_depletion",
+    "log_depth1",
+    "log_depth5",
+    "log_event_rate",
+    "depth_slope_bps",
+    "vol_500"
+  ]
+}

@@ -1,0 +1,126 @@
+{
+  "config_hash": "a0d3f6eb38cb04b1cf45f9dd908cd57488c28dfd54ea3ca35b707b02cc728395",
+  "n_captures": 3,
+  "results": [
+    {
+      "bootstrap_status": "BRIDGED",
+      "capture_dir": "477cf6ae81564e8aa729e79d9cfdc048",
+      "ci_high_bps": -1.7493818421415122,
+      "ci_low_bps": -1.7694809047862148,
+      "cost_stress": {
+        "1.0": -1.759518418474326,
+        "1.25": -2.2043042551038496,
+        "1.5": -2.6490900917333735,
+        "2.0": -3.5386617649924204
+      },
+      "end_ns": 1789126439423326000,
+      "event_count": 583823,
+      "gate_pass": false,
+      "gate_reasons": [
+        "V19 does not improve net EV over frozen V16",
+        "V19 versus V16 confidence interval does not exclude zero",
+        "net EV is not above the required economic threshold",
+        "V19 95% confidence interval does not exclude zero",
+        "at least one chronological regime is non-positive",
+        "cost stress removes the economic edge"
+      ],
+      "incremental_ci_high_bps": -1.7605529607082722,
+      "incremental_ci_low_bps": -1.771260584525967,
+      "incremental_mean_bps": -1.7657560851449237,
+      "incremental_p_value": 0.0,
+      "live_order_submission": false,
+      "n_folds": 3,
+      "n_test_events": 3000,
+      "net_ev_bps": -1.759518418474326,
+      "p_value": 0.0,
+      "realized_net_ev_bps": -1.3931644352221502,
+      "regime_means": [
+        -1.796222638334081,
+        -1.7472293408489916,
+        -1.735103276239906
+      ],
+      "start_ns": 1789124638997259000
+    },
+    {
+      "bootstrap_status": "BRIDGED",
+      "capture_dir": "9863cf188e1841f3a5738733632f1977",
+      "ci_high_bps": -1.576496257902867,
+      "ci_low_bps": -1.5911394330310935,
+      "cost_stress": {
+        "1.0": -1.5837594792076481,
+        "1.25": -1.9813173299871274,
+        "1.5": -2.3788751807666073,
+        "2.0": -3.1739908823255663
+      },
+      "end_ns": 1789073379993604000,
+      "event_count": 313355,
+      "gate_pass": false,
+      "gate_reasons": [
+        "V19 does not improve net EV over frozen V16",
+        "V19 versus V16 confidence interval does not exclude zero",
+        "net EV is not above the required economic threshold",
+        "V19 95% confidence interval does not exclude zero",
+        "at least one chronological regime is non-positive",
+        "cost stress removes the economic edge"
+      ],
+      "incremental_ci_high_bps": -1.5986684903241184,
+      "incremental_ci_low_bps": -1.6139496690169697,
+      "incremental_mean_bps": -1.6058151187418575,
+      "incremental_p_value": 0.0,
+      "live_order_submission": false,
+      "n_folds": 3,
+      "n_test_events": 3000,
+      "net_ev_bps": -1.5837594792076481,
+      "p_value": 0.0,
+      "realized_net_ev_bps": -1.206292535835825,
+      "regime_means": [
+        -1.5658325594970508,
+        -1.6067120684526348,
+        -1.578733809673258
+      ],
+      "start_ns": 1789071579727304000
+    },
+    {
+      "bootstrap_status": "BRIDGED",
+      "capture_dir": "e4153485b12e4ac2b80b4ff81bc08870",
+      "ci_high_bps": -1.5714736398912041,
+      "ci_low_bps": -1.6140144332385071,
+      "cost_stress": {
+        "1.0": -1.5934221224397818,
+        "1.25": -1.9935900397858877,
+        "1.5": -2.3937579571319936,
+        "2.0": -3.1940937918242054
+      },
+      "end_ns": 1789165065353192000,
+      "event_count": 928497,
+      "gate_pass": false,
+      "gate_reasons": [
+        "V19 does not improve net EV over frozen V16",
+        "V19 versus V16 confidence interval does not exclude zero",
+        "net EV is not above the required economic threshold",
+        "V19 95% confidence interval does not exclude zero",
+        "at least one chronological regime is non-positive",
+        "cost stress removes the economic edge"
+      ],
+      "incremental_ci_high_bps": -1.6397058307762895,
+      "incremental_ci_low_bps": -1.6644947257621878,
+      "incremental_mean_bps": -1.6519306246089964,
+      "incremental_p_value": 0.0,
+      "live_order_submission": false,
+      "n_folds": 6,
+      "n_test_events": 6000,
+      "net_ev_bps": -1.5934221224397818,
+      "p_value": 0.0,
+      "realized_net_ev_bps": -1.2651443924220742,
+      "regime_means": [
+        -1.588082421995056,
+        -1.5339493664626274,
+        -1.4555038658571904,
+        -1.5789735807762804,
+        -1.7220161298867296,
+        -1.6820073696608067
+      ],
+      "start_ns": 1789161465353192000
+    }
+  ]
+}

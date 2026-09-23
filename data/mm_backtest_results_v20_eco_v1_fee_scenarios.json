@@ -1,0 +1,299 @@
+{
+  "run_id": "V20-ECO-V1-FEE-SCENARIOS",
+  "git_commit": "ad1dd0d3eefbe3e8be2f432fd7c3976b8b932389",
+  "config_path": "app/mm/config_v20_eco_v1_actual_fees.json",
+  "config_sha256": "d87f8af8fe5ea86fbd26219f827a41927db2e705eb480b48788b96e51c8de114",
+  "config_label": "Authenticated Binance fees: maker=2.0 bps, taker=5.0 bps, base_half_spread=2.5 bps, toxicity_filter=true; rebate scenarios: {\"A_conservative\": 0.0, \"B_authenticated\": 0.35, \"C_sensitivity\": 1.0}",
+  "command": "python3 scripts/run_v20_eco_v1_fee_scenarios.py",
+  "fill_model": "event_driven",
+  "scenarios": {
+    "A_conservative": {
+      "maker_rebate_bps": 0.0,
+      "net_maker_fee_bps": 2.0,
+      "total_net_pnl_usd": -36.44,
+      "total_realized_pnl_usd": -8173.75,
+      "captures_pass": 0,
+      "captures_total": 5,
+      "results": {
+        "3b8eee35e6d14eb3b38d368c6caf310a": {
+          "fills": 93,
+          "realized_pnl_usd": -603.2730120283891,
+          "inventory_mtm_usd": 601.2781518984539,
+          "net_pnl_usd": -1.994860129935205,
+          "fees_usd": 1.4000691096187536,
+          "gross_spread_capture_usd": 0.005111515434902751,
+          "inventory_max": 901.2981490909176,
+          "inventory_final": 0.007784357209187168,
+          "inventory_limit_breaches": 0,
+          "avg_as_bps": 0.10969336043892906,
+          "gate_pass": false,
+          "gate_reasons": [
+            "realized_pnl_not_positive",
+            "net_pnl_not_positive"
+          ]
+        },
+        "477cf6ae81564e8aa729e79d9cfdc048": {
+          "fills": 621,
+          "realized_pnl_usd": -4119.138363043217,
+          "inventory_mtm_usd": 4109.51173374673,
+          "net_pnl_usd": -9.626629296487408,
+          "fees_usd": 7.780979099702568,
+          "gross_spread_capture_usd": 0.025398589210312943,
+          "inventory_max": 4208.958888068585,
+          "inventory_final": 0.05350331094320528,
+          "inventory_limit_breaches": 0,
+          "avg_as_bps": 0.1378555488569561,
+          "gate_pass": false,
+          "gate_reasons": [
+            "realized_pnl_not_positive",
+            "net_pnl_not_positive"
+          ]
+        },
+        "9863cf188e1841f3a5738733632f1977": {
+          "fills": 163,
+          "realized_pnl_usd": -227.4592235703586,
+          "inventory_mtm_usd": 224.7912496915562,
+          "net_pnl_usd": -2.6679738788023997,
+          "fees_usd": 1.9954692590225864,
+          "gross_spread_capture_usd": 0.006458766754008159,
+          "inventory_max": 700.2070812976818,
+          "inventory_final": 0.002911805638365779,
+          "inventory_limit_breaches": 0,
+          "avg_as_bps": 0.12650104233369897,
+          "gate_pass": false,
+          "gate_reasons": [
+            "realized_pnl_not_positive",
+            "net_pnl_not_positive"
+          ]
+        },
+        "e4153485b12e4ac2b80b4ff81bc08870": {
+          "fills": 671,
+          "realized_pnl_usd": -3619.2360265673083,
+          "inventory_mtm_usd": 3599.642802011414,
+          "net_pnl_usd": -19.593224555894267,
+          "fees_usd": 8.143019533777801,
+          "gross_spread_capture_usd": 0.02910565655458315,
+          "inventory_max": 5092.979462572484,
+          "inventory_final": 0.04665835117667077,
+          "inventory_limit_breaches": 144,
+          "avg_as_bps": 0.1724714878389819,
+          "gate_pass": false,
+          "gate_reasons": [
+            "realized_pnl_not_positive",
+            "net_pnl_not_positive",
+            "inventory_exceeds_limit (5092.98 > 5000)",
+            "inventory_limit_breached (144x)"
+          ]
+        },
+        "ebe81a6484044c5399abd2439d251e3c": {
+          "fills": 164,
+          "realized_pnl_usd": 395.3590439234579,
+          "inventory_mtm_usd": -397.91658360705514,
+          "net_pnl_usd": -2.5575396835972697,
+          "fees_usd": 1.9999826630548092,
+          "gross_spread_capture_usd": 0.0064756761521987385,
+          "inventory_max": 1001.1059940674056,
+          "inventory_final": -0.005148021556452258,
+          "inventory_limit_breaches": 0,
+          "avg_as_bps": 0.24240160027793764,
+          "gate_pass": false,
+          "gate_reasons": [
+            "net_pnl_not_positive"
+          ]
+        }
+      }
+    },
+    "B_authenticated": {
+      "maker_rebate_bps": 0.35,
+      "net_maker_fee_bps": 1.65,
+      "total_net_pnl_usd": -32.71,
+      "total_realized_pnl_usd": -8170.02,
+      "captures_pass": 0,
+      "captures_total": 5,
+      "results": {
+        "3b8eee35e6d14eb3b38d368c6caf310a": {
+          "fills": 93,
+          "realized_pnl_usd": -603.0279999342057,
+          "inventory_mtm_usd": 601.2781518984539,
+          "net_pnl_usd": -1.7498480357518247,
+          "fees_usd": 1.1550570154354716,
+          "gross_spread_capture_usd": 0.005111515434902751,
+          "inventory_max": 901.2981490909176,
+          "inventory_final": 0.007784357209187168,
+          "inventory_limit_breaches": 0,
+          "avg_as_bps": 0.10969336043892906,
+          "gate_pass": false,
+          "gate_reasons": [
+            "realized_pnl_not_positive",
+            "net_pnl_not_positive"
+          ]
+        },
+        "477cf6ae81564e8aa729e79d9cfdc048": {
+          "fills": 621,
+          "realized_pnl_usd": -4117.776691700779,
+          "inventory_mtm_usd": 4109.51173374673,
+          "net_pnl_usd": -8.26495795404935,
+          "fees_usd": 6.419307757254621,
+          "gross_spread_capture_usd": 0.025398589210312943,
+          "inventory_max": 4208.958888068585,
+          "inventory_final": 0.05350331094320528,
+          "inventory_limit_breaches": 0,
+          "avg_as_bps": 0.1378555488569561,
+          "gate_pass": false,
+          "gate_reasons": [
+            "realized_pnl_not_positive",
+            "net_pnl_not_positive"
+          ]
+        },
+        "9863cf188e1841f3a5738733632f1977": {
+          "fills": 163,
+          "realized_pnl_usd": -227.11001645002926,
+          "inventory_mtm_usd": 224.7912496915562,
+          "net_pnl_usd": -2.3187667584730605,
+          "fees_usd": 1.646262138693633,
+          "gross_spread_capture_usd": 0.006458766754008159,
+          "inventory_max": 700.2070812976818,
+          "inventory_final": 0.002911805638365779,
+          "inventory_limit_breaches": 0,
+          "avg_as_bps": 0.12650104233369897,
+          "gate_pass": false,
+          "gate_reasons": [
+            "realized_pnl_not_positive",
+            "net_pnl_not_positive"
+          ]
+        },
+        "e4153485b12e4ac2b80b4ff81bc08870": {
+          "fills": 671,
+          "realized_pnl_usd": -3617.810998148897,
+          "inventory_mtm_usd": 3599.642802011414,
+          "net_pnl_usd": -18.168196137482937,
+          "fees_usd": 6.717991115366688,
+          "gross_spread_capture_usd": 0.02910565655458315,
+          "inventory_max": 5092.979462572484,
+          "inventory_final": 0.04665835117667077,
+          "inventory_limit_breaches": 144,
+          "avg_as_bps": 0.1724714878389819,
+          "gate_pass": false,
+          "gate_reasons": [
+            "realized_pnl_not_positive",
+            "net_pnl_not_positive",
+            "inventory_exceeds_limit (5092.98 > 5000)",
+            "inventory_limit_breached (144x)"
+          ]
+        },
+        "ebe81a6484044c5399abd2439d251e3c": {
+          "fills": 164,
+          "realized_pnl_usd": 395.70904088949266,
+          "inventory_mtm_usd": -397.91658360705514,
+          "net_pnl_usd": -2.2075427175624895,
+          "fees_usd": 1.6499856970202165,
+          "gross_spread_capture_usd": 0.0064756761521987385,
+          "inventory_max": 1001.1059940674056,
+          "inventory_final": -0.005148021556452258,
+          "inventory_limit_breaches": 0,
+          "avg_as_bps": 0.24240160027793764,
+          "gate_pass": false,
+          "gate_reasons": [
+            "net_pnl_not_positive"
+          ]
+        }
+      }
+    },
+    "C_sensitivity": {
+      "maker_rebate_bps": 1.0,
+      "net_maker_fee_bps": 1.0,
+      "total_net_pnl_usd": -25.78,
+      "total_realized_pnl_usd": -8163.09,
+      "captures_pass": 0,
+      "captures_total": 5,
+      "results": {
+        "3b8eee35e6d14eb3b38d368c6caf310a": {
+          "fills": 93,
+          "realized_pnl_usd": -602.5729774735797,
+          "inventory_mtm_usd": 601.2781518984539,
+          "net_pnl_usd": -1.2948255751258557,
+          "fees_usd": 0.7000345548093768,
+          "gross_spread_capture_usd": 0.005111515434902751,
+          "inventory_max": 901.2981490909176,
+          "inventory_final": 0.007784357209187168,
+          "inventory_limit_breaches": 0,
+          "avg_as_bps": 0.10969336043892906,
+          "gate_pass": false,
+          "gate_reasons": [
+            "realized_pnl_not_positive",
+            "net_pnl_not_positive"
+          ]
+        },
+        "477cf6ae81564e8aa729e79d9cfdc048": {
+          "fills": 621,
+          "realized_pnl_usd": -4115.247873493374,
+          "inventory_mtm_usd": 4109.51173374673,
+          "net_pnl_usd": -5.7361397466438575,
+          "fees_usd": 3.890489549851284,
+          "gross_spread_capture_usd": 0.025398589210312943,
+          "inventory_max": 4208.958888068585,
+          "inventory_final": 0.05350331094320528,
+          "inventory_limit_breaches": 0,
+          "avg_as_bps": 0.1378555488569561,
+          "gate_pass": false,
+          "gate_reasons": [
+            "realized_pnl_not_positive",
+            "net_pnl_not_positive"
+          ]
+        },
+        "9863cf188e1841f3a5738733632f1977": {
+          "fills": 163,
+          "realized_pnl_usd": -226.46148894084712,
+          "inventory_mtm_usd": 224.7912496915562,
+          "net_pnl_usd": -1.6702392492909155,
+          "fees_usd": 0.9977346295112932,
+          "gross_spread_capture_usd": 0.006458766754008159,
+          "inventory_max": 700.2070812976818,
+          "inventory_final": 0.002911805638365779,
+          "inventory_limit_breaches": 0,
+          "avg_as_bps": 0.12650104233369897,
+          "gate_pass": false,
+          "gate_reasons": [
+            "realized_pnl_not_positive",
+            "net_pnl_not_positive"
+          ]
+        },
+        "e4153485b12e4ac2b80b4ff81bc08870": {
+          "fills": 671,
+          "realized_pnl_usd": -3615.1645168004225,
+          "inventory_mtm_usd": 3599.642802011414,
+          "net_pnl_usd": -15.521714789008456,
+          "fees_usd": 4.071509766888901,
+          "gross_spread_capture_usd": 0.02910565655458315,
+          "inventory_max": 5092.979462572484,
+          "inventory_final": 0.04665835117667077,
+          "inventory_limit_breaches": 144,
+          "avg_as_bps": 0.1724714878389819,
+          "gate_pass": false,
+          "gate_reasons": [
+            "realized_pnl_not_positive",
+            "net_pnl_not_positive",
+            "inventory_exceeds_limit (5092.98 > 5000)",
+            "inventory_limit_breached (144x)"
+          ]
+        },
+        "ebe81a6484044c5399abd2439d251e3c": {
+          "fills": 164,
+          "realized_pnl_usd": 396.3590352549864,
+          "inventory_mtm_usd": -397.91658360705514,
+          "net_pnl_usd": -1.5575483520687499,
+          "fees_usd": 0.9999913315274046,
+          "gross_spread_capture_usd": 0.0064756761521987385,
+          "inventory_max": 1001.1059940674056,
+          "inventory_final": -0.005148021556452258,
+          "inventory_limit_breaches": 0,
+          "avg_as_bps": 0.24240160027793764,
+          "gate_pass": false,
+          "gate_reasons": [
+            "net_pnl_not_positive"
+          ]
+        }
+      }
+    }
+  }
+}

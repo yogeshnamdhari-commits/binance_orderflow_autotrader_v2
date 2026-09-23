@@ -11,7 +11,9 @@ V5_BASELINE_NO_LIVE_TRADE = True
 @dataclass(frozen=True)
 class Config:
     rest:str=os.getenv('BINANCE_REST','https://fapi.binance.com')
-    ws:str=os.getenv('BINANCE_WS','wss://fstream.binance.com/stream')
+    # Current USD-M split WebSocket architecture: high-frequency book data on
+    # /public and regular market streams (aggTrade/markPrice/etc.) on /market.
+    ws:str=os.getenv('BINANCE_WS','wss://fstream.binance.com/public')
     ws_public:str=os.getenv('BINANCE_WS_PUBLIC','wss://fstream.binance.com/public')
     ws_market:str=os.getenv('BINANCE_WS_MARKET','wss://fstream.binance.com/market')
     api_key:str=os.getenv('BINANCE_API_KEY','')

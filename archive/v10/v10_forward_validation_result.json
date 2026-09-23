@@ -1,0 +1,40 @@
+{
+  "status": "PASS",
+  "n_orders": 28,
+  "n_filled": 19,
+  "fill_rate": 0.6785714285714286,
+  "mean_predicted_fill_probability": 0.6184435811855196,
+  "mean_actual_fill_fraction": 0.325,
+  "fill_prediction_error": -0.29344358118551955,
+  "mean_predicted_ev_bps": 1.1774685124085331,
+  "mean_realized_ev_bps": 0.5968570794599077,
+  "ev_prediction_error": -0.5806114329486254,
+  "mean_spread_bps": 0.0,
+  "mean_slippage_bps": null,
+  "mean_fees_bps": null,
+  "mean_adverse_selection_bps": 0.0,
+  "calibration_drift_fill": 0.06251726996407847,
+  "calibration_drift_ev": 0.4114570794599077,
+  "forward_gate": true,
+  "gate_conditions": {
+    "positive_realized_ev": true,
+    "positive_fill_rate": true,
+    "fill_drift_within_tolerance": true,
+    "ev_drift_within_tolerance": true,
+    "edge_survives_execution": true
+  },
+  "regime_results": {
+    "unknown": {
+      "n_orders": 28,
+      "n_filled": 19,
+      "fill_rate": 0.6785714285714286,
+      "mean_predicted_ev": 1.1774685124085331,
+      "mean_realized_ev": 0.5968570794599077,
+      "mean_adverse": 0.0,
+      "mean_spread": 0.0
+    }
+  },
+  "oos_fill_rate_used": 0.6160541586073501,
+  "oos_ev_bps_used": 0.1854,
+  "temporal_note": "Calibration sessions temporally after forward session - documented limitation"
+}

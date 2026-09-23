@@ -1,0 +1,58 @@
+{
+  "experiment": "V14",
+  "timestamp": "2026-09-07T16:08:14.715966+00:00",
+  "status": "COMPLETE",
+  "forward_data_dir": "data/v14/forward_extended",
+  "n_events": 2026,
+  "n_signals": 19,
+  "n_trades": 19,
+  "auc": 0.45148157823904744,
+  "gross_ev_bps": 0.015424409243537586,
+  "fees_bps": 0.046890424481737414,
+  "maker_rebate_bps": -0.014067127344521224,
+  "spread_cost_bps": 0.8413193540373699,
+  "slippage_cost_bps": 0.2,
+  "adverse_selection_bps": 0.6,
+  "latency_cost_bps": 0.2,
+  "total_cost_bps": 3.25,
+  "net_ev_bps": -0.015054366669591732,
+  "ci_lower_bps": -2.7093479921041155,
+  "ci_upper_bps": -1.0754950559948064,
+  "p_value": 0.8835582208895553,
+  "tstat": -16.632734097297032,
+  "n_traded": 19,
+  "regime_breakdown": {
+    "high_vol": {
+      "mean_ret_bps": -1.9324453275923423,
+      "n": 12,
+      "positive": false
+    },
+    "low_vol": {
+      "mean_ret_bps": -1.0444004202121064,
+      "n": 7,
+      "positive": false
+    },
+    "high_spread": {
+      "mean_ret_bps": -1.6052708880312028,
+      "n": 19,
+      "positive": false
+    },
+    "high_intensity": {
+      "mean_ret_bps": 1.9246557425345276,
+      "n": 1,
+      "positive": true
+    },
+    "low_intensity": {
+      "mean_ret_bps": -1.8013779230626321,
+      "n": 18,
+      "positive": false
+    }
+  },
+  "positive_regimes": 1,
+  "total_regimes": 6,
+  "elapsed_s": 1.22,
+  "breakeven_cost_bps": 3.25,
+  "forward_pass": false,
+  "forward_session": "faa90fa70ed44497b1a7118c62c4486c",
+  "note": "Extended forward capture (900s) on frozen V14 model \u2014 3x more data than original 360s test"
+}

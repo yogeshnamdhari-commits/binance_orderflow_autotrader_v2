@@ -1,0 +1,19 @@
+{
+  "experiment": "V14",
+  "paper_trading_enabled": false,
+  "reason": "BLOCKED — forward_validation gate failed. Paper trading requires all scientific gates to pass.",
+  "paper_runtime_implementation": "app/v14/paper_runtime.py",
+  "paper_runtime_features": [
+    "live data consumption (WebSocket)",
+    "frozen artifact signal generation",
+    "maker/taker execution simulation",
+    "decision logging",
+    "rejected-trade logging",
+    "expected vs simulated fill recording",
+    "risk limit enforcement",
+    "kill switch enforcement",
+    "live_order_submitted = always False"
+  ],
+  "status": "NOT_STARTED",
+  "live_order_submitted": false
+}

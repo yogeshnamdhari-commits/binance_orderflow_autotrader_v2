@@ -1,0 +1,11 @@
+{
+  "status": "MODELED",
+  "economic_decomposition": {
+    "signal_edge_bps": -0.13886714226792518,
+    "funding_income_bps": -0.016396197736898967,
+    "gross_ev_bps": -0.15526334000482414,
+    "total_cost_bps": 14.520911027090374,
+    "net_ev_bps": -5.918885939399179
+  },
+  "total_cost_bps": 14.520911027090374
+}

@@ -1,0 +1,21 @@
+{
+  "experiment": "V15",
+  "timestamp": "2026-09-07T19:54:41.163512+00:00",
+  "status": "COMPLETE",
+  "forward_data_dir": "data/v15/forward/236aab13fa14441b9235a7beb81df682",
+  "n_events": 5871,
+  "n_regime_filter_pass": 927,
+  "n_signals": 265,
+  "n_trades": 265,
+  "auc": 0.0,
+  "gross_ev_bps": 1.3675,
+  "total_cost_bps": 1.6057,
+  "net_ev_bps": -1.6869,
+  "ci_lower_bps": -2.1134,
+  "ci_upper_bps": -1.0181,
+  "p_value": 0.991,
+  "tstat": -98.8366,
+  "positive_regimes": 0,
+  "total_regimes": 6,
+  "forward_pass": false
+}

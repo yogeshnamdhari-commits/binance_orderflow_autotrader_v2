@@ -1,0 +1,24 @@
+{
+  "status": "FAIL",
+  "timestamp": "2026-09-07T10:54:37.296465+00:00",
+  "n_orders": 576,
+  "n_filled": 547,
+  "mean_net_ev_bps": -4.490432608370327,
+  "ci_95": [
+    -4.808173254479827,
+    -4.183850911819468
+  ],
+  "p_value": 1.0,
+  "perm_pvalue": 1.0,
+  "cohens_d": -1.1817032759179786,
+  "gate_conditions": {
+    "sufficient_observations": true,
+    "net_ev_positive": false,
+    "statistically_significant": false,
+    "ci_excludes_zero": false,
+    "effect_size_sufficient": true,
+    "permutation_significant": false
+  },
+  "funding_rate_real": true,
+  "funding_income_bps": 0.01509332746582031
+}

@@ -1,0 +1,34 @@
+{
+  "as_by_horizon": {
+    "1": 0.0007388725094541612,
+    "10": 0.003926565681190646,
+    "100": 0.03438854904323239,
+    "25": 0.009061183293592776,
+    "5": 0.0021741297478241753,
+    "50": 0.017553174818648588
+  },
+  "avg_adverse_selection_bps": 0.003926565681190646,
+  "avg_loss_bps": -0.19071762530909736,
+  "avg_realized_pnl_per_fill_bps": 2.4872082083225613,
+  "avg_win_bps": 2.488051215052685,
+  "cancels": 0,
+  "fills": 34954,
+  "gate_pass": true,
+  "gate_reasons": [
+    "pass"
+  ],
+  "gross_loss_bps": 2.097893878400071,
+  "gross_profit_bps": 86939.97360758597,
+  "inventory_final": -1.4303166544433533e-05,
+  "inventory_max": 0.008184959237687157,
+  "inventory_mtm_bps": 0.1427899012297844,
+  "losing_fills": 11,
+  "max_loss_bps": -0.3535224528769967,
+  "max_win_bps": 6.1326379145851275,
+  "net_pnl_bps_incl_mtm": 86938.01850360804,
+  "pnl_bps": 86937.8757137068,
+  "pnl_notional_usd": 651.9292697271885,
+  "profit_factor": 41441.54978605949,
+  "win_rate": 99.96853006808949,
+  "winning_fills": 34943
+}

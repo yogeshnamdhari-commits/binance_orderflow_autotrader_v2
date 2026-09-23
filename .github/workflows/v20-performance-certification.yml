@@ -1,0 +1,170 @@
+name: V20 Performance Certification
+
+on:
+  push:
+    branches: [feature/v20-market-making]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+env:
+  PYTHONPATH: .
+
+concurrency:
+  group: v20-performance-certification-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  performance-certification:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - session: A
+            delay_minutes: 0
+          - session: B
+            delay_minutes: 35
+          - session: C
+            delay_minutes: 70
+          - session: D
+            delay_minutes: 105
+    runs-on: ubuntu-latest
+    # Stagger the four authentic capture windows so A/B/C/D are temporally
+    # independent while retaining parallel GitHub runners.
+    # Allow the 105-minute stagger + 60-minute capture + replay headroom.
+    # Capture bridge replay is serialized to preserve exact event ordering.
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+
+      - name: Compile and tests
+        run: |
+          python -m compileall app tests scripts
+          python -m pytest -q \
+            tests/test_v20_event_backtest.py \
+            tests/test_v20_backtest_inventory.py \
+            tests/test_v20_event_backtest_toxicity.py \
+            tests/test_v20_execution_replay.py \
+            tests/test_v20_event_backtest_capture.py \
+            tests/test_v20_performance_certify.py \
+            tests/test_v20_certification_aggregate.py \
+            tests/research/test_v10_capture_runner.py \
+            tests/test_binance_execution_time_sync.py \
+            tests/test_binance_user_stream_path.py
+
+      - name: Wait for independent session window
+        if: matrix.delay_minutes > 0
+        env:
+          DELAY_MINUTES: ${{ matrix.delay_minutes }}
+        run: sleep $((DELAY_MINUTES * 60))
+
+      - name: Capture authentic Binance BTCUSDT market data
+        run: |
+          python - <<'PY'
+          from app.v10_capture import run_capture
+          run_capture(
+              symbol='BTCUSDT',
+              output_dir='data/cert_capture',
+              duration_seconds=3600,
+          )
+          PY
+
+      - name: Locate capture
+        id: locate
+        shell: bash
+        run: |
+          set -euo pipefail
+          dirs=(data/cert_capture/*)
+          if [ "${#dirs[@]}" -ne 1 ] || [ ! -f "${dirs[0]}/events.jsonl" ]; then
+            echo 'No valid single raw capture directory produced.' >&2
+            find data/cert_capture -maxdepth 2 -type f -print || true
+            exit 1
+          fi
+          echo "capture_dir=${dirs[0]}" >> "$GITHUB_OUTPUT"
+
+      - name: Validate raw capture quality
+        run: python scripts/v20_capture_quality_gate.py "${{ steps.locate.outputs.capture_dir }}"
+
+      - name: Archive raw capture evidence
+        if: always() && steps.locate.outputs.capture_dir != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: v20-authentic-capture-${{ matrix.session }}
+          path: "${{ steps.locate.outputs.capture_dir }}"
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Performance certification replay
+        run: |
+          mkdir -p data/cert_reports/${{ matrix.session }}
+          python scripts/v20_performance_certify.py \
+            --capture-dir "${{ steps.locate.outputs.capture_dir }}" \
+            --session "${{ matrix.session }}" \
+            --baseline-config app/mm/config_v20_eco_v1_actual_fees.json \
+            --candidate-config app/mm/config_backtest_toxicity_v1.json \
+            --maker-fee-bps 2.0 \
+            --output data/cert_reports/${{ matrix.session }}/v20_performance_certification.json
+
+      - name: Publish session certification report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v20-performance-certification-${{ matrix.session }}
+          path: data/cert_reports/${{ matrix.session }}/v20_performance_certification.json
+          if-no-files-found: warn
+
+  aggregate:
+    needs: performance-certification
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Download session reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: v20-performance-certification-*
+          path: cert_reports
+          merge-multiple: false
+
+      - name: Aggregate certification
+        run: python scripts/v20_certification_aggregate.py cert_reports
+
+  handoff-v21:
+    needs: performance-certification
+    # Never hand off to V21 research unless all four authentic V20
+    # certification jobs completed successfully.
+    if: needs.performance-certification.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Launch V21 research from exact capture run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh workflow run v21-orderflow-research.yml \
+            --repo "${{ github.repository }}" \
+            --ref research/v21-orderflow-latest \
+            -f source_run_id="${{ github.run_id }}" \
+            -f source_sha="${{ github.event.pull_request.head.sha || github.sha }}"
+          echo "Dispatched V21 research using V20 run ${{ github.run_id }} at ${{ github.sha }}"

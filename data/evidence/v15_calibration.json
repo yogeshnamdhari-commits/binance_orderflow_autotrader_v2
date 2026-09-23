@@ -1,0 +1,19 @@
+{
+  "experiment": "V15",
+  "timestamp": "2026-09-07T19:54:41.163512+00:00",
+  "status": "FROZEN",
+  "config_hash": "aa505ca8abe09376",
+  "data_dir": "data/v15/calibration/5483f2fb6c664d549bb0de8415df194d",
+  "n_observations": 5866,
+  "model": "GradientBoostingRegressor(n=200, depth=4)",
+  "model_checksum": "c48e95d537822367",
+  "train_mae": 0.9414,
+  "val_mae": 1.8371,
+  "test_mae": 2.4764,
+  "train_r2": 0.8167,
+  "val_r2": -0.3721,
+  "test_r2": -0.0359,
+  "gross_ev_bps": 1.4567,
+  "net_ev_bps": 1.9192,
+  "n_trades_calibration": 110
+}

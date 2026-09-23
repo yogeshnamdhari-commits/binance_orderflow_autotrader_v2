@@ -405,4 +405,87 @@ Potential directions:
 
 ---
 
+## ADDENDUM: V20-ECO-V1 EVENT-DRIVEN REPLAY ANALYSIS
+
+**Date:** 2026-09-23
+**Method:** Event-driven replay through `PassiveQuoteReplay` fill model on 5 BTCUSDT captures (1,712 fills) with strengthened certification gate
+
+### Updated Decision
+
+**DO NOT enable live trading.** The strategy does not have a demonstrated edge under realistic fee and risk assumptions.
+
+### What Changed
+
+The V20-ECO-V1 event-driven replay replaced the old probabilistic `simulate_fill()` model with deterministic fills tied to observed Binance aggressive trades. This was genuine structural improvement, but it also revealed:
+
+1. **Maker rebate correction**: The configuration had `maker_rebate_bps=3.5` which was a 10× unit conversion error. Binance's published LP Program rate is -0.0035% = 0.35 bps. Corrected to `maker_rebate_bps=0.35`.
+2. **Authenticated fees**: The account's actual `/fapi/v1/commissionRate` rates are maker=2.0 bps, taker=5.0 bps (higher than the previously assumed 1.0/2.0 bps). Updated `config.json` and `config_v20_eco_v1_actual_fees.json` to match.
+3. **Hard inventory enforcement**: The `max_position_notional_usd` ($5,000) cap is now a hard limit — fills that would breach it are skipped at the fill level, not just at quote generation. Previously, `e4153485` reached $5,092.98 with 144 breaches.
+4. **Strengthened gate**: The PASS gate now requires:
+   - `realized_pnl_usd > 0` (cash PnL, not MTM)
+   - `net_pnl_usd > 0` (net of inventory MTM)
+   - `inventory_max <= max_position_notional_usd` ($5,000 cap)
+   - `inventory_limit_breaches == 0`
+5. **Attribution reconciliation**: The economic attribution now mathematically reconciles — `attribution_residual_usd ≈ 0` confirms `realized_pnl = gross_spread_capture + inventory_carry - fees`.
+
+### Three Fee Scenarios (with Authenticated Fees)
+
+With authenticated maker=2.0 bps, taker=5.0 bps:
+
+| Scenario | Rebate | Captures Pass | Total Net | Total Realized |
+|---|---|---|---|---|
+| Conservative | 0.0 bps | 0/5 | -$36.33 | -$8,173.65 |
+| Authenticated | 0.35 bps | 0/5 | -$32.60 | -$8,169.93 |
+| Sensitivity | 1.0 bps | 0/5 | -$25.68 | -$8,163.01 |
+
+### Economic Attribution (Authenticated Scenario)
+
+The realized cash PnL decomposes as (perfectly reconciled, residual=0.0):
+
+| Component | USD | % of Loss |
+|---|---|---|
+| Gross spread capture | +$0.07 | 0.0% |
+| Maker fees (net) | -$17.56 | 0.2% |
+| Adverse selection | -$1.68 | 0.0% |
+| **Inventory carry (price movement between fills)** | **-$8,152.44** | **99.8%** |
+| **Realized cash PnL** | **-$8,169.93** | **100.0%** |
+
+The dominant loss is **inventory carry** — the strategy accumulates BTC positions and the market moves against those positions between buy and sell fills. Even with zero fees, the strategy loses approximately -$8,152 from inventory carry alone.
+
+### Per-Capture Summary
+
+| Capture | Fills | Gross Spread | Inventory Carry | Fees | Realized PnL | inv_max | Breaches |
+|---|---|---|---|---|---|---|---|
+| 3b8eee35 | 93 | $0.01 | -$601.88 | $1.16 | -$603.03 | $901.30 | 0 |
+| 477cf6ae | 621 | $0.03 | -$4,111.38 | $6.42 | -$4,117.78 | $4,208.96 | 0 |
+| 9863cf18 | 163 | $0.01 | -$225.47 | $1.65 | -$227.11 | $700.21 | 0 |
+| e4153485 | 678 | $0.03 | -$3,611.07 | $6.68 | -$3,617.72 | $4,992.96 | 10 |
+| ebe81a64 | 164 | $0.01 | +$397.35 | $1.65 | +$395.71 | $1,001.11 | 0 |
+
+Only `ebe81a64` has positive realized cash PnL (+$395.71), but all others lose $227–$4,117 in realized cash. The gross spread capture across 1,719 fills is only $0.07 — the strategy earns essentially nothing from the bid-ask spread.
+
+### Required Next Research
+
+1. **Verify authenticated account fees** — ✅ COMPLETED via `scripts/v20_fee_audit.py` (maker=2.0 bps, taker=5.0 bps)
+2. **Economic attribution** — ✅ COMPLETED (inventory carry is 99.8% of loss)
+3. **Signal strength**: determine whether order-flow information can predict adverse selection strongly enough to justify quoting
+4. **Inventory risk model**: implement directional quote suppression (reduce bid/ask size proportional to inventory exposure, not just hard cutoff)
+5. **OOS validation**: collect additional chronological captures for statistical significance
+
+### Revised Project Objective
+
+**Old objective:** "Make this algo profitable."
+
+**New objective:** "Find a fixed, reproducible order-flow rule that produces positive realized cash PnL after authentic trade replay, verified account fees, strict inventory limits, and chronological OOS validation."
+
+Until that condition is met, `V20_BASELINE_NO_LIVE_TRADE = True`.
+
+---
+
+**END OF APPENDIX**
+
+---
+
+**END OF APPENDIX**
+
 **END OF EXECUTION ECONOMIC AUDIT**

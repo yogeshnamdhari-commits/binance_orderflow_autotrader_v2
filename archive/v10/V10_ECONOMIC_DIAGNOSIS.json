@@ -1,0 +1,31 @@
+{
+  "timestamp": "2026-09-05T00:14:53.436599+00:00",
+  "version": "V10",
+  "status": "FAILED_FOR_PRODUCTION",
+  "root_cause": "Economic assumptions fundamentally misaligned with BTCUSDT market reality",
+  "assumption_errors": {
+    "spread_capture_bps": {
+      "configured": 2.0,
+      "actual": 0.01257174537855291,
+      "ratio": "159.1x",
+      "impact": "-2.0000 bps (not achievable by passive strategy)"
+    },
+    "fee_rebate_bps": {
+      "configured": 0.5,
+      "actual": -0.02,
+      "ratio": "25.0x",
+      "impact": "-0.5200 bps (overestimated by 25x)"
+    }
+  },
+  "economic_decomposition": {
+    "config_net_ev_bps": 1.307142857142857,
+    "realistic_net_ev_bps": -0.40285714285714286,
+    "difference": 1.7099999999999997,
+    "breakeven_spread_capture_bps": 0.5700000000000001
+  },
+  "viability_options": [
+    "Aggressive/taker strategy with strong signal",
+    "Different venue with achievable spread capture",
+    "Market-making strategy with proper spread capture mechanism"
+  ]
+}

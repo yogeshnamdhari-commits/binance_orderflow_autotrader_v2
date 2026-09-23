@@ -3,17 +3,11 @@ from .models import DepthEvent, TradeEvent
 
 
 class BinanceMarketFeed:
-    """USDⓈ-M Futures market data feed (depth + trade + bookTicker).
+    """USDⓈ-M Futures market data feed using current split WebSocket endpoints.
 
-    Synchronization follows Binance futures @depth@100ms semantics:
-      - REST snapshot -> lastUpdateId
-      - drop buffered depth events with u <= lastUpdateId (already covered)
-      - first kept event must satisfy  U <= lastUpdateId+1 <= u
-      - replay kept events, then stream live updates.
-
-    Reconnect uses exponential backoff. bookTicker (top-of-book) is recorded for
-    diagnostics and used as a spread/mid fallback only when the L2 book is not yet
-    synchronized (never as a substitute for L2 reconstruction).
+    High-frequency depth/bookTicker use the /public endpoint; aggregate trades
+    use the /market endpoint. The local order book is synchronized from the REST
+    snapshot and diff-depth update IDs before data is marked ready.
     """
 
     def __init__(self, cfg, symbol, book, flow, status_cb=print):
@@ -40,7 +34,6 @@ class BinanceMarketFeed:
         snap = self.snapshot()
         sid = int(snap['lastUpdateId'])
         with self.lock:
-            # Drop events already covered by the snapshot (u <= sid), keep the rest.
             pending = [x for x in self.buffer if x.final_update_id > sid]
             if not pending:
                 return False
@@ -52,7 +45,7 @@ class BinanceMarketFeed:
                 if self.book.apply(e) == 'GAP':
                     self.book.state.synchronized = False
                     return False
-            self.buffer = []  # consumed
+            self.buffer = []
             self.ready = self.book.state.synchronized
             return self.ready
 
@@ -101,26 +94,44 @@ class BinanceMarketFeed:
             self.status_cb({'status': 'PARSE_ERROR', 'error': repr(e)})
 
     def on_error(self, ws, err):
+        self.ready = False
         self.status_cb({'status': 'WS_ERROR', 'error': repr(err)})
 
     def on_close(self, ws, *args):
         self.ready = False
         self.status_cb({'status': 'CLOSED'})
 
-    def run(self):
-        streams = f'{self.symbol}@depth@100ms/{self.symbol}@trade/{self.symbol}@bookTicker'
-        url = self.cfg.ws + '?streams=' + streams
+    def _run_connection(self, base_url: str, streams: str, channel: str):
+        url = base_url.rstrip('/') + '/stream?streams=' + streams
+        backoff = 1.0
         while not self.stop_flag:
             try:
-                app = websocket.WebSocketApp(url, on_open=self.on_open,
-                                             on_message=self.on_message,
-                                             on_error=self.on_error,
-                                             on_close=self.on_close)
+                app = websocket.WebSocketApp(
+                    url,
+                    on_open=self.on_open,
+                    on_message=self.on_message,
+                    on_error=self.on_error,
+                    on_close=self.on_close,
+                )
                 app.run_forever(ping_interval=20, ping_timeout=10)
             except Exception as e:
-                self.status_cb({'status': 'RUN_ERROR', 'error': repr(e)})
+                self.status_cb({'status': 'RUN_ERROR', 'channel': channel, 'error': repr(e)})
             if self.stop_flag:
                 break
-            # Exponential backoff before reconnect.
-            time.sleep(self._backoff)
-            self._backoff = min(self._backoff * 2, self._max_backoff)
+            time.sleep(backoff)
+            backoff = min(backoff * 2, self._max_backoff)
+
+    def run(self):
+        public_streams = f'{self.symbol}@depth@100ms/{self.symbol}@bookTicker'
+        market_streams = f'{self.symbol}@aggTrade'
+        public_url = getattr(self.cfg, 'ws_public', 'wss://fstream.binance.com/public')
+        market_url = getattr(self.cfg, 'ws_market', 'wss://fstream.binance.com/market')
+
+        threads = [
+            threading.Thread(target=self._run_connection, args=(public_url, public_streams, 'public'), daemon=True),
+            threading.Thread(target=self._run_connection, args=(market_url, market_streams, 'market'), daemon=True),
+        ]
+        for thread in threads:
+            thread.start()
+        while not self.stop_flag:
+            time.sleep(0.5)

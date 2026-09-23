@@ -1,0 +1,98 @@
+{
+  "timestamp": "2026-08-31T23:37:27.030146",
+  "symbols": {
+    "ETHUSDT": {
+      "files": 92,
+      "rows": 109006567,
+      "duplicates": 0,
+      "header_contamination": 0,
+      "schema_ok": true,
+      "date_range": "31 to 30",
+      "size_mb": 2128.9
+    },
+    "SOLUSDT": {
+      "files": 92,
+      "rows": 23130076,
+      "duplicates": 0,
+      "header_contamination": 0,
+      "schema_ok": true,
+      "date_range": "31 to 30",
+      "size_mb": 561.5
+    },
+    "BNBUSDT": {
+      "files": 92,
+      "rows": 24324249,
+      "duplicates": 0,
+      "header_contamination": 0,
+      "schema_ok": true,
+      "date_range": "31 to 30",
+      "size_mb": 550.3
+    },
+    "XRPUSDT": {
+      "files": 92,
+      "rows": 19889901,
+      "duplicates": 0,
+      "header_contamination": 0,
+      "schema_ok": true,
+      "date_range": "31 to 30",
+      "size_mb": 507.3
+    },
+    "ADAUSDT": {
+      "files": 92,
+      "rows": 8486979,
+      "duplicates": 0,
+      "header_contamination": 0,
+      "schema_ok": true,
+      "date_range": "31 to 30",
+      "size_mb": 237.6
+    },
+    "AVAXUSDT": {
+      "files": 92,
+      "rows": 9463159,
+      "duplicates": 0,
+      "header_contamination": 0,
+      "schema_ok": true,
+      "date_range": "31 to 30",
+      "size_mb": 252.9
+    },
+    "DOTUSDT": {
+      "files": 92,
+      "rows": 5425894,
+      "duplicates": 0,
+      "header_contamination": 0,
+      "schema_ok": true,
+      "date_range": "31 to 30",
+      "size_mb": 152.4
+    },
+    "LINKUSDT": {
+      "files": 92,
+      "rows": 7894403,
+      "duplicates": 0,
+      "header_contamination": 0,
+      "schema_ok": true,
+      "date_range": "31 to 30",
+      "size_mb": 221.5
+    },
+    "POLUSDT": {
+      "files": 92,
+      "rows": 5729298,
+      "duplicates": 0,
+      "header_contamination": 0,
+      "schema_ok": true,
+      "date_range": "31 to 30",
+      "size_mb": 146.7
+    },
+    "DOGEUSDT": {
+      "files": 92,
+      "rows": 13215098,
+      "duplicates": 0,
+      "header_contamination": 0,
+      "schema_ok": true,
+      "date_range": "31 to 30",
+      "size_mb": 364.4
+    }
+  },
+  "total_rows": 226565624,
+  "total_size_gb": 5.12,
+  "matic_note": "MATICUSDT renamed to POLUSDT by Binance; POLUSDT data used instead"
+}
