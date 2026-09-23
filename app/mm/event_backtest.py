@@ -43,6 +43,11 @@ class EventBacktestResult:
     inventory_limit_breaches: int = 0
     inventory_carry_usd: float = 0.0
     attribution_residual_usd: float = 0.0
+    inventory_suppression_events: int = 0
+    inventory_suppressed_bid_qty: float = 0.0
+    inventory_suppressed_ask_qty: float = 0.0
+    inventory_ratio_abs_mean: float = 0.0
+    inventory_ratio_abs_max: float = 0.0
 
 
 def _future_mid_by_time(
@@ -150,6 +155,10 @@ def run_event_backtest(
     inventory_max = 0.0
     inventory_limit_breaches = 0
     mid_price_movement_usd = 0.0
+    inventory_suppression_events = 0
+    inventory_suppressed_bid_qty = 0.0
+    inventory_suppressed_ask_qty = 0.0
+    inventory_ratio_abs_samples: list[float] = []
 
     def process_trade(trade: TradeEvent) -> None:
         nonlocal inventory, cash, fees_usd, buy_fills, sell_fills
@@ -256,6 +265,32 @@ def run_event_backtest(
         center = _quote_center(mid, book_imbalance, config)
         bid, ask, bid_qty, ask_qty = generate_quotes(center, spread_bps, inventory, config)
 
+        # Isolated inventory-suppression experiment.  The frozen V20 baseline
+        # leaves quote sizes unchanged.  The candidate continuously reduces
+        # only the side that would increase the existing inventory.  The scale
+        # is deterministic, bounded in [0, 1], and uses only state available
+        # before the quote is activated.
+        inventory_ratio = 0.0
+        if config.inventory_suppression_enabled and mid > 0:
+            inventory_drift = inventory - config.inventory_target
+            inventory_ratio = max(-1.0, min(1.0, inventory_drift * mid / max(config.max_position_notional_usd, 1e-9)))
+            inventory_ratio_abs_samples.append(abs(inventory_ratio))
+            suppression_power = max(config.inventory_suppression_power, 1e-9)
+            suppression_strength = min(1.0, abs(inventory_ratio) ** suppression_power)
+            side_scale = max(0.0, 1.0 - suppression_strength)
+            if inventory_ratio > 0.0:
+                previous = bid_qty
+                bid_qty *= side_scale
+                inventory_suppressed_bid_qty += max(0.0, previous - bid_qty)
+                if previous > 0 and bid_qty < previous:
+                    inventory_suppression_events += 1
+            elif inventory_ratio < 0.0:
+                previous = ask_qty
+                ask_qty *= side_scale
+                inventory_suppressed_ask_qty += max(0.0, previous - ask_qty)
+                if previous > 0 and ask_qty < previous:
+                    inventory_suppression_events += 1
+
         # Enforce inventory risk limit: suppress the side that would increase
         # exposure beyond max_position_notional_usd.  This is a hard stop —
         # the strategy must not accumulate inventory beyond the configured cap.
@@ -320,11 +355,20 @@ def run_event_backtest(
             if a is None:
                 return True
             price_eps = max(mid * 1e-10, 1e-8)
+            qty_eps = max(config.quote_size_usd / max(mid, 1e-9) * 0.001, 1e-12)
+            qty_changed = (
+                config.inventory_suppression_enabled
+                and (
+                    abs(a.bid_qty - b.bid_qty) > qty_eps
+                    or abs(a.ask_qty - b.ask_qty) > qty_eps
+                )
+            )
             return (
                 abs(a.bid_price - b.bid_price) > price_eps
                 or abs(a.ask_price - b.ask_price) > price_eps
                 or (a.bid_qty <= 0) != (b.bid_qty <= 0)
                 or (a.ask_qty <= 0) != (b.ask_qty <= 0)
+                or qty_changed
                 or replay.active_quote is None
             )
 
@@ -402,4 +446,9 @@ def run_event_backtest(
         inventory_limit_breaches=inventory_limit_breaches,
         inventory_carry_usd=mid_price_movement_usd,
         attribution_residual_usd=round(attribution_residual_usd, 8),
+        inventory_suppression_events=inventory_suppression_events,
+        inventory_suppressed_bid_qty=inventory_suppressed_bid_qty,
+        inventory_suppressed_ask_qty=inventory_suppressed_ask_qty,
+        inventory_ratio_abs_mean=(sum(inventory_ratio_abs_samples) / len(inventory_ratio_abs_samples) if inventory_ratio_abs_samples else 0.0),
+        inventory_ratio_abs_max=(max(inventory_ratio_abs_samples) if inventory_ratio_abs_samples else 0.0),
     )
