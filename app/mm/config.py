@@ -39,6 +39,14 @@ class V20Config:
     microprice_skew_bps: float = 1.0
     flow_window_ms: int = 1000
 
+    # Isolated candidate experiment: online Bayesian estimate of
+    # P(adverse | side, book-imbalance bucket, flow-imbalance bucket).
+    # The estimator uses only completed prior fills before each quote.
+    prefill_toxicity_filter_enabled: bool = False
+    prefill_toxicity_probability_threshold: float = 0.50
+    prefill_toxicity_horizon_ms: int = 100
+    prefill_toxicity_min_observations: int = 10
+
     @classmethod
     def from_json(cls, filepath: str) -> V20Config:
         return cls.load_authoritative(filepath)[0]
