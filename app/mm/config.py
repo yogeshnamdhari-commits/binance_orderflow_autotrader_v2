@@ -39,6 +39,12 @@ class V20Config:
     microprice_skew_bps: float = 1.0
     flow_window_ms: int = 1000
 
+    # Isolated candidate experiment: continuously suppress the
+    # inventory-increasing quote side as signed inventory approaches the
+    # hard notional limit. Disabled in the frozen V20 baseline.
+    inventory_suppression_enabled: bool = False
+    inventory_suppression_power: float = 1.0
+
     @classmethod
     def from_json(cls, filepath: str) -> V20Config:
         return cls.load_authoritative(filepath)[0]
