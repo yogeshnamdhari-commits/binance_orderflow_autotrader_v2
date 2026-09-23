@@ -274,10 +274,10 @@ def run_event_backtest(
                 mid_price_movement_usd += fill_price_mid * fill.qty
             metadata = prefill_quote_features.get(fill.quote_id)
             if metadata is not None and config.prefill_toxicity_filter_enabled:
-                feature_side, book_bucket, flow_bucket, quote_mid = metadata
+                book_bucket, flow_bucket, quote_mid = metadata
                 prefill_pending.append({
                     "target_ns": fill.timestamp_ns + max(1, config.prefill_toxicity_horizon_ms) * 1_000_000,
-                    "side": feature_side,
+                    "side": fill.side.value,
                     "book_bucket": book_bucket,
                     "flow_bucket": flow_bucket,
                     "mid_at_fill": fill_price_mid if fill_price_mid > 0 else quote_mid,
@@ -443,7 +443,6 @@ def run_event_backtest(
                 visible_ask_qty_at_price=ask_queue,
             )
             prefill_quote_features[desired.quote_id] = (
-                Side.BUY.value,
                 _imbalance_bucket(book_imbalance),
                 _imbalance_bucket(flow_imbalance),
                 mid,
