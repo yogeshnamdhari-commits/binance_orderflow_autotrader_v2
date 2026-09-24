@@ -53,6 +53,10 @@ class EventBacktestResult:
     directional_flow_ask_suppressed: int = 0
     directional_flow_bid_scaled_qty: float = 0.0
     directional_flow_ask_scaled_qty: float = 0.0
+    directional_flow_spread_bid_widened: int = 0
+    directional_flow_spread_ask_widened: int = 0
+    directional_flow_spread_bid_bps_sum: float = 0.0
+    directional_flow_spread_ask_bps_sum: float = 0.0
     directional_flow_imbalance_mean: float = 0.0
 
 
@@ -166,6 +170,10 @@ def run_event_backtest(
     directional_flow_ask_suppressed = 0
     directional_flow_bid_scaled_qty = 0.0
     directional_flow_ask_scaled_qty = 0.0
+    directional_flow_spread_bid_widened = 0
+    directional_flow_spread_ask_widened = 0
+    directional_flow_spread_bid_bps_sum = 0.0
+    directional_flow_spread_ask_bps_sum = 0.0
     directional_flow_values: list[float] = []
     inventory_suppression_events = 0
     inventory_suppressed_bid_qty = 0.0
@@ -334,15 +342,19 @@ def run_event_backtest(
         # flow dominates, suppress the ask (don't sell into weakness).
         # Uses flow_imbalance alone — a single-sided signal that does not
         # require the book-imbalance agreement the toxicity filter demands.
+        directional_bid_suppressed_this_quote = False
+        directional_ask_suppressed_this_quote = False
         if config.directional_flow_enabled:
             if flow_imbalance >= config.directional_flow_threshold:
                 bid_qty = 0.0
                 directional_flow_suppressed += 1
                 directional_flow_bid_suppressed += 1
+                directional_bid_suppressed_this_quote = True
             elif flow_imbalance <= -config.directional_flow_threshold:
                 ask_qty = 0.0
                 directional_flow_suppressed += 1
                 directional_flow_ask_suppressed += 1
+                directional_ask_suppressed_this_quote = True
 
             # Flow-weighted quote sizing: scale the remaining (non-suppressed)
             # side by flow magnitude.  Stronger flow → smaller remaining quote.
@@ -356,6 +368,27 @@ def run_event_backtest(
                 if ask_qty > 0.0:
                     directional_flow_ask_scaled_qty += max(0.0, ask_qty * (1.0 - remaining_scale))
                     ask_qty *= remaining_scale
+
+            # Flow-adjusted spread: widen the remaining (non-suppressed) side
+            # by flow magnitude.  This targets gross capture on the side that
+            # is actually trading, without reducing participation on the
+            # suppressed side (already zero).  Continuous with flow, not binary.
+            if config.directional_flow_spread_bps > 0.0 and mid > 0:
+                spread_add_fraction = (
+                    abs(flow_imbalance) * config.directional_flow_spread_bps / 10_000.0
+                )
+                if directional_bid_suppressed_this_quote and ask_qty > 0.0:
+                    directional_flow_spread_ask_widened += 1
+                    directional_flow_spread_ask_bps_sum += (
+                        abs(flow_imbalance) * config.directional_flow_spread_bps
+                    )
+                    ask = ask * (1.0 + spread_add_fraction)
+                elif directional_ask_suppressed_this_quote and bid_qty > 0.0:
+                    directional_flow_spread_bid_widened += 1
+                    directional_flow_spread_bid_bps_sum += (
+                        abs(flow_imbalance) * config.directional_flow_spread_bps
+                    )
+                    bid = bid * (1.0 - spread_add_fraction)
 
         desired = QuoteIntent(
             quote_id=f"v2q-{quote_counter}",
@@ -468,6 +501,10 @@ def run_event_backtest(
         directional_flow_ask_suppressed=directional_flow_ask_suppressed,
         directional_flow_bid_scaled_qty=directional_flow_bid_scaled_qty,
         directional_flow_ask_scaled_qty=directional_flow_ask_scaled_qty,
+        directional_flow_spread_bid_widened=directional_flow_spread_bid_widened,
+        directional_flow_spread_ask_widened=directional_flow_spread_ask_widened,
+        directional_flow_spread_bid_bps_sum=directional_flow_spread_bid_bps_sum,
+        directional_flow_spread_ask_bps_sum=directional_flow_spread_ask_bps_sum,
         directional_flow_imbalance_mean=(
             sum(directional_flow_values) / len(directional_flow_values)
             if directional_flow_values

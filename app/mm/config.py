@@ -45,6 +45,7 @@ class V20Config:
     directional_flow_enabled: bool = False
     directional_flow_threshold: float = 0.3
     directional_flow_weight: float = 0.0
+    directional_flow_spread_bps: float = 0.0
 
     @classmethod
     def from_json(cls, filepath: str) -> V20Config:
