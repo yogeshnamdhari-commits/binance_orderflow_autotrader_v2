@@ -229,8 +229,8 @@ def main() -> int:
         raise RuntimeError("baseline must have directional_flow_enabled=false")
     if abs(candidate.directional_flow_threshold - 0.3) > 1e-12:
         raise RuntimeError("candidate directional_flow_threshold must be the frozen 0.3")
-    if abs(candidate.directional_flow_weight - 1.0) > 1e-12:
-        raise RuntimeError("candidate directional_flow_weight must be the frozen 1.0")
+    if abs(candidate.directional_flow_weight - 0.5) > 1e-12:
+        raise RuntimeError("candidate directional_flow_weight must be the frozen 0.5")
 
     captures_root = Path("data/captures")
     baseline_results = run_arm("baseline", baseline, captures_root)

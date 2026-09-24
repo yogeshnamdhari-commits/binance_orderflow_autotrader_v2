@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import subprocess
 import sys
 import time
@@ -29,8 +30,9 @@ from app.mm.event_backtest import run_event_backtest
 from scripts.v20_event_backtest_capture import load_snapshot, load_events
 
 BASELINE_CONFIG = "app/mm/config_v20_eco_v1_actual_fees.json"
-CANDIDATE_CONFIG = "app/mm/config_v20_flow_spread_v1.json"
-OUT = Path("data/mm_flow_spread_v1_comparison.json")
+OUT = Path("data/mm_flow_spread_comparison.json")
+
+FLOW_SPREAD_BPS = float(os.environ.get("FLOW_SPREAD_BPS", "1.0"))
 
 CAPTURE_IDS = [
     "3b8eee35",
@@ -211,7 +213,16 @@ def aggregate(results: dict) -> dict:
 
 def main() -> int:
     baseline, baseline_sha = V20Config.load_authoritative(BASELINE_CONFIG)
-    candidate, candidate_sha = V20Config.load_authoritative(CANDIDATE_CONFIG)
+
+    candidate = replace(
+        baseline,
+        inventory_suppression_enabled=True,
+        directional_flow_enabled=True,
+        directional_flow_threshold=0.3,
+        directional_flow_weight=0.0,
+        directional_flow_spread_bps=FLOW_SPREAD_BPS,
+    )
+    candidate_sha = f"in-memory:{FLOW_SPREAD_BPS:g}bps"
 
     if baseline.live_order_submission or candidate.live_order_submission:
         raise RuntimeError("live_order_submission must remain false")
@@ -255,8 +266,10 @@ def main() -> int:
         raise RuntimeError("candidate directional_flow_threshold must be the frozen 0.3")
     if abs(candidate.directional_flow_weight - 0.0) > 1e-12:
         raise RuntimeError("candidate directional_flow_weight must be the frozen 0.0")
-    if abs(candidate.directional_flow_spread_bps - 1.0) > 1e-12:
-        raise RuntimeError("candidate directional_flow_spread_bps must be the frozen 1.0")
+    if abs(candidate.directional_flow_spread_bps - FLOW_SPREAD_BPS) > 1e-12:
+        raise RuntimeError(
+            f"candidate directional_flow_spread_bps must be the frozen {FLOW_SPREAD_BPS}"
+        )
 
     captures_root = Path("data/captures")
     baseline_results = run_arm("baseline", baseline, captures_root)
@@ -295,17 +308,17 @@ def main() -> int:
         ).decode().strip(),
         "baseline_config": BASELINE_CONFIG,
         "baseline_config_sha256": baseline_sha,
-        "candidate_config": CANDIDATE_CONFIG,
+        "candidate_config": f"in-memory:inventory_suppression+directional_flow(0.3)+spread({FLOW_SPREAD_BPS:g}bps)",
         "candidate_config_sha256": candidate_sha,
         "same_captures": CAPTURE_IDS,
         "live_order_submission": False,
         "fill_model": "event_driven",
         "hypothesis": (
             "V20 baseline + inventory suppression + directional flow (threshold 0.3) "
-            "+ flow-adjusted spread (1.0 bps per unit flow). After the binary "
+            f"+ flow-adjusted spread ({FLOW_SPREAD_BPS:g} bps per unit flow). After the binary "
             "threshold suppresses the inventory-increasing side, the remaining "
-            "side is widened by flow magnitude: spread_add = |flow_imbalance| * 1.0 bps. "
-            "Same captures, fees, hard inventory cap, and existing toxicity filter."
+            "side is widened by flow magnitude: spread_add = |flow_imbalance| * "
+            f"{FLOW_SPREAD_BPS:g} bps. Same captures, fees, hard inventory cap, and existing toxicity filter."
         ),
         "baseline": aggregate(baseline_results),
         "candidate": aggregate(candidate_results),
