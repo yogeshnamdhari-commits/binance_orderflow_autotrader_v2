@@ -51,6 +51,8 @@ class EventBacktestResult:
     directional_flow_suppressed_quotes: int = 0
     directional_flow_bid_suppressed: int = 0
     directional_flow_ask_suppressed: int = 0
+    directional_flow_bid_scaled_qty: float = 0.0
+    directional_flow_ask_scaled_qty: float = 0.0
     directional_flow_imbalance_mean: float = 0.0
 
 
@@ -162,6 +164,8 @@ def run_event_backtest(
     directional_flow_suppressed = 0
     directional_flow_bid_suppressed = 0
     directional_flow_ask_suppressed = 0
+    directional_flow_bid_scaled_qty = 0.0
+    directional_flow_ask_scaled_qty = 0.0
     directional_flow_values: list[float] = []
     inventory_suppression_events = 0
     inventory_suppressed_bid_qty = 0.0
@@ -340,6 +344,19 @@ def run_event_backtest(
                 directional_flow_suppressed += 1
                 directional_flow_ask_suppressed += 1
 
+            # Flow-weighted quote sizing: scale the remaining (non-suppressed)
+            # side by flow magnitude.  Stronger flow → smaller remaining quote.
+            # This is continuous, not binary, and uses only pre-quote state.
+            if config.directional_flow_weight > 0.0:
+                flow_weight = min(1.0, abs(flow_imbalance) * config.directional_flow_weight)
+                remaining_scale = max(0.0, 1.0 - flow_weight)
+                if bid_qty > 0.0:
+                    directional_flow_bid_scaled_qty += max(0.0, bid_qty * (1.0 - remaining_scale))
+                    bid_qty *= remaining_scale
+                if ask_qty > 0.0:
+                    directional_flow_ask_scaled_qty += max(0.0, ask_qty * (1.0 - remaining_scale))
+                    ask_qty *= remaining_scale
+
         desired = QuoteIntent(
             quote_id=f"v2q-{quote_counter}",
             timestamp_ns=depth_event.timestamp_ns,
@@ -449,6 +466,8 @@ def run_event_backtest(
         directional_flow_suppressed_quotes=directional_flow_suppressed,
         directional_flow_bid_suppressed=directional_flow_bid_suppressed,
         directional_flow_ask_suppressed=directional_flow_ask_suppressed,
+        directional_flow_bid_scaled_qty=directional_flow_bid_scaled_qty,
+        directional_flow_ask_scaled_qty=directional_flow_ask_scaled_qty,
         directional_flow_imbalance_mean=(
             sum(directional_flow_values) / len(directional_flow_values)
             if directional_flow_values
