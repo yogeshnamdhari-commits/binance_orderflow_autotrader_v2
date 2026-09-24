@@ -15,7 +15,7 @@
   "inventory_suppression_power": 1.0,
   "directional_flow_enabled": true,
   "directional_flow_threshold": 0.3,
-  "directional_flow_weight": 0.3,
+  "directional_flow_weight": 0.5,
   "maker_fee_bps": 2.0,
   "maker_rebate_bps": 0.35,
   "taker_fee_bps": 5.0,
