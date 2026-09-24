@@ -43,6 +43,15 @@ class EventBacktestResult:
     inventory_limit_breaches: int = 0
     inventory_carry_usd: float = 0.0
     attribution_residual_usd: float = 0.0
+    inventory_suppression_events: int = 0
+    inventory_suppressed_bid_qty: float = 0.0
+    inventory_suppressed_ask_qty: float = 0.0
+    inventory_ratio_abs_mean: float = 0.0
+    inventory_ratio_abs_max: float = 0.0
+    directional_flow_suppressed_quotes: int = 0
+    directional_flow_bid_suppressed: int = 0
+    directional_flow_ask_suppressed: int = 0
+    directional_flow_imbalance_mean: float = 0.0
 
 
 def _future_mid_by_time(
@@ -150,6 +159,14 @@ def run_event_backtest(
     inventory_max = 0.0
     inventory_limit_breaches = 0
     mid_price_movement_usd = 0.0
+    directional_flow_suppressed = 0
+    directional_flow_bid_suppressed = 0
+    directional_flow_ask_suppressed = 0
+    directional_flow_values: list[float] = []
+    inventory_suppression_events = 0
+    inventory_suppressed_bid_qty = 0.0
+    inventory_suppressed_ask_qty = 0.0
+    inventory_ratio_abs_samples: list[float] = []
 
     def process_trade(trade: TradeEvent) -> None:
         nonlocal inventory, cash, fees_usd, buy_fills, sell_fills
@@ -252,6 +269,7 @@ def run_event_backtest(
         mids.append((depth_event.timestamp_ns, mid))
         flow_imbalance = signed_flow / total_flow if total_flow > 0 else 0.0
         flow_imbalance = max(-1.0, min(1.0, flow_imbalance))
+        directional_flow_values.append(flow_imbalance)
         book_imbalance = _book_imbalance(book)
         center = _quote_center(mid, book_imbalance, config)
         bid, ask, bid_qty, ask_qty = generate_quotes(center, spread_bps, inventory, config)
@@ -306,6 +324,21 @@ def run_event_backtest(
                 bid_qty = 0.0
                 toxicity_suppressed += 1
                 toxic_flow_values.append(abs(flow_imbalance))
+
+        # Directional flow suppression: when aggressive buy flow dominates,
+        # suppress the bid (don't buy into strength).  When aggressive sell
+        # flow dominates, suppress the ask (don't sell into weakness).
+        # Uses flow_imbalance alone — a single-sided signal that does not
+        # require the book-imbalance agreement the toxicity filter demands.
+        if config.directional_flow_enabled:
+            if flow_imbalance >= config.directional_flow_threshold:
+                bid_qty = 0.0
+                directional_flow_suppressed += 1
+                directional_flow_bid_suppressed += 1
+            elif flow_imbalance <= -config.directional_flow_threshold:
+                ask_qty = 0.0
+                directional_flow_suppressed += 1
+                directional_flow_ask_suppressed += 1
 
         desired = QuoteIntent(
             quote_id=f"v2q-{quote_counter}",
@@ -402,4 +435,23 @@ def run_event_backtest(
         inventory_limit_breaches=inventory_limit_breaches,
         inventory_carry_usd=mid_price_movement_usd,
         attribution_residual_usd=round(attribution_residual_usd, 8),
+        inventory_suppression_events=inventory_suppression_events,
+        inventory_suppressed_bid_qty=inventory_suppressed_bid_qty,
+        inventory_suppressed_ask_qty=inventory_suppressed_ask_qty,
+        inventory_ratio_abs_mean=(
+            sum(inventory_ratio_abs_samples) / len(inventory_ratio_abs_samples)
+            if inventory_ratio_abs_samples
+            else 0.0
+        ),
+        inventory_ratio_abs_max=(
+            max(inventory_ratio_abs_samples) if inventory_ratio_abs_samples else 0.0
+        ),
+        directional_flow_suppressed_quotes=directional_flow_suppressed,
+        directional_flow_bid_suppressed=directional_flow_bid_suppressed,
+        directional_flow_ask_suppressed=directional_flow_ask_suppressed,
+        directional_flow_imbalance_mean=(
+            sum(directional_flow_values) / len(directional_flow_values)
+            if directional_flow_values
+            else 0.0
+        ),
     )
