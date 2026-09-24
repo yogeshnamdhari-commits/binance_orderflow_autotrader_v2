@@ -1,0 +1,67 @@
+{
+  "baseline": {
+    "3b8eee35": {
+      "realized_pnl_usd": -603.0279999342057,
+      "fills": 93
+    },
+    "477cf6ae": {
+      "realized_pnl_usd": -4117.776691700779,
+      "fills": 621
+    },
+    "9863cf18": {
+      "realized_pnl_usd": -227.11001645002926,
+      "fills": 163
+    },
+    "e4153485": {
+      "realized_pnl_usd": -3617.7220283607076,
+      "fills": 678
+    },
+    "ebe81a64": {
+      "realized_pnl_usd": 395.70904088949266,
+      "fills": 164
+    }
+  },
+  "threshold": 0.7,
+  "candidate": {
+    "3b8eee35": {
+      "fills": 52,
+      "realized_pnl_usd": -201.38867026649325,
+      "delta": 401.63932966771245,
+      "inventory_carry_usd": -200.86331104032126,
+      "inventory_max": 400.60335915862913,
+      "suppressed": 24476
+    },
+    "477cf6ae": {
+      "fills": 432,
+      "realized_pnl_usd": -1211.6486816593313,
+      "delta": 2906.128010041448,
+      "inventory_carry_usd": -1207.408295268999,
+      "inventory_max": 1999.9898946707226,
+      "suppressed": 11143
+    },
+    "9863cf18": {
+      "fills": 97,
+      "realized_pnl_usd": 797.4853216546953,
+      "delta": 1024.5953381047245,
+      "inventory_carry_usd": 798.4056396244057,
+      "inventory_max": 899.0838446854284,
+      "suppressed": 13275
+    },
+    "e4153485": {
+      "fills": 440,
+      "realized_pnl_usd": -2710.9605384370175,
+      "delta": 906.7614899236901,
+      "inventory_carry_usd": -2706.885252894432,
+      "inventory_max": 4988.9544341868095,
+      "suppressed": 25204
+    },
+    "ebe81a64": {
+      "fills": 83,
+      "realized_pnl_usd": -302.1239881741571,
+      "delta": -697.8330290636497,
+      "inventory_carry_usd": -301.3186352177504,
+      "inventory_max": 801.1495482779858,
+      "suppressed": 26486
+    }
+  }
+}
