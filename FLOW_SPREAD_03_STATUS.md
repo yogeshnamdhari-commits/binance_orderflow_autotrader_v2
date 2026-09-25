@@ -2,13 +2,75 @@ FLOW-SPREAD-0.3
 ================================================================================
 Research:        PASS / candidate retained
 In-sample:       +$390.62 (5 captures, retrospective)
-True OOS:        +$1,888.33 (1 untouched capture)
-OOS breaches:    0
+True OOS #1:     +$1,888.33 (capture 91317697)
+True OOS #2:     -$1,075.19 (capture 898e6421)
+OOS breaches:    0 (both captures)
 Parameter:       FROZEN
-Robustness:      NOT YET ESTABLISHED
-Certification:   NOT CERTIFIED (6/7 gates pass)
+Robustness:      NOT ESTABLISHED (1 positive, 1 negative OOS)
+Certification:   NOT CERTIFIED (6/7 on OOS #1, 5/7 on OOS #2)
 Deployment:      NO_DEPLOY
 ================================================================================
+
+SECOND UNTOUCHED OOS CAPTURE
+--------------------------------------------------------------------------------
+  session_id:  898e6421285a4ad88e921a955fa52f41
+  duration:    3,601.4 s
+  events:      1,149,599 (35,279 depth, 89,942 trade, 1,024,377 bookTicker, 1 reconnect)
+  bootstrap:   BRIDGED, snapshot_source=REST
+  collected:   AFTER candidate frozen (commit b3e95f2, sha256 6d43d31d)
+  provenance:   candidate config identical to OOS #1
+
+OOS #2 RESULT
+  fills:                   303
+  gross_spread_capture:    $0.2865
+  fees:                    $2.95
+  realized_pnl:            -$1,075.19
+  net_pnl:                 -$3.69
+  inventory_carry:         -$1,072.53
+  inventory_max:           $1,485.80 (cap $5,000)
+  inventory_limit_breaches: 0
+  pnl_per_fill:            -$3.55
+
+CERTIFICATION GATES (5/7 pass)
+  attribution_reconciled:      PASS
+  gross_capture_positive:       PASS
+  inventory_within_limit:       PASS
+  no_inventory_breaches:        PASS
+  sufficient_fills:            PASS
+  realized_pnl_positive:        FAIL  (OOS #1 passed this gate)
+  net_pnl_positive:             FAIL
+
+FORENSIC ON OOS #2
+  Diagnosis: PERSISTENT_CARRY (not endpoint artifact)
+
+  Endpoint   Inventory     Mid        MTM        Net PnL
+  10%         -0.01070    $84,152    -$900.13    -$1,975.32
+  25%         -0.00832    $84,103    -$699.47    -$1,774.66
+  50%         +0.00581    $83,809    +$404.04    -$588.45
+  75%         +0.01657    $83,635    +$1,385.85    +$310.65
+  90%         +0.01280    $83,614    +$1,069.95     -$5.25
+  95%         +0.01639    $83,588    +$1,369.73    +$294.53
+  100%        +0.01280    $83,673    +$1,071.38     -$3.82
+
+  Net oscillates between -$1,975 and +$311 across endpoints. Realized
+  PnL itself is negative -- this is not an endpoint-marking artifact.
+  The candidate is directionally unstable across captures.
+
+CONCLUSION
+--------------------------------------------------------------------------------
+A single positive untouched OOS does not establish robustness. OOS #1 was
++$1,888.33 realized; OOS #2 is -$1,075.19 realized, opposite sign, with
+realized_pnl_positive now failing. The candidate config (6d43d31d) is
+identical across both captures; no parameters were changed.
+
+The flow-spread mechanism is NOT disproven, but it is NOT established.
+The first OOS result was likely favorable market conditions, not a
+durable edge. Candidate remains FROZEN, NOT CERTIFIED, NO_DEPLOY.
+
+Next legitimate step is NOT another parameter sweep. It is to understand
+why the candidate is directionally unstable -- specifically whether the
+0.3 bps spread point interacts with market regime in a way that produces
+sign-flipping PnL. That requires analysis, not re-tuning.
 
 FORENSIC RECONCILIATION OF THE BINDING NET PnL GATE
 --------------------------------------------------------------------------------
