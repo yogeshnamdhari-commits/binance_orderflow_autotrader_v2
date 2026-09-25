@@ -1,0 +1,71 @@
+{
+  "label": "oos",
+  "candidate_config": "app/mm/config_v20_flow_spread_03bps.json",
+  "candidate_config_sha256": "6d43d31db37a1cc9d570a5d796f45b7757c82ee9f0987ac2bcfacfa36ca74a1a",
+  "candidate_fingerprint": {
+    "symbol": "BTCUSDT",
+    "quote_interval_ms": 100,
+    "base_half_spread_bps": 2.5,
+    "max_half_spread_bps": 4.0,
+    "inventory_target": 0.0,
+    "inventory_penalty_bps": 2.0,
+    "max_position_notional_usd": 5000,
+    "quote_size_usd": 100.0,
+    "maker_fee_bps": 2.0,
+    "maker_rebate_bps": 0.35,
+    "taker_fee_bps": 5.0,
+    "live_order_submission": false,
+    "cancel_on_adverse_selection": true,
+    "adverse_selection_threshold_bps": 0.75,
+    "min_top_level_qty": 0.0,
+    "toxicity_filter_enabled": true,
+    "toxicity_imbalance_threshold": 0.65,
+    "toxicity_flow_threshold": 0.6,
+    "microprice_skew_bps": 1.0,
+    "flow_window_ms": 1000,
+    "inventory_suppression_enabled": true,
+    "inventory_suppression_power": 1.0,
+    "directional_flow_enabled": true,
+    "directional_flow_threshold": 0.3,
+    "directional_flow_weight": 0.0,
+    "directional_flow_spread_bps": 0.3
+  },
+  "captures_evaluated": 1,
+  "aggregate": {
+    "total_fills": 303,
+    "total_gross_spread_capture_usd": 0.286458,
+    "total_fees_usd": 2.948229,
+    "total_realized_pnl_usd": -1075.194999,
+    "total_net_pnl_usd": -3.694933,
+    "total_inventory_carry_usd": -1072.533227,
+    "max_inventory_usd": 1485.795927,
+    "total_inventory_limit_breaches": 0,
+    "captures_positive_realized": 0,
+    "pnl_per_fill": -3.548498
+  },
+  "per_capture": {
+    "898e6421285a4ad88e921a955fa52f41": {
+      "capture_dir": "898e6421285a4ad88e921a955fa52f41",
+      "fills": 303,
+      "gross_spread_capture_usd": 0.28645759203967064,
+      "fees_usd": 2.9482293423931347,
+      "realized_pnl_usd": -1075.1949988195827,
+      "net_pnl_usd": -3.694933190441361,
+      "inventory_carry_usd": -1072.533227069229,
+      "inventory_mtm_usd": 1071.5000656291413,
+      "adverse_selection_usd": 0.423737450072165,
+      "inventory_max": 1485.7959273275476,
+      "inventory_final": 0.012804342908158765,
+      "inventory_limit_breaches": 0,
+      "pnl_per_fill": -3.548498
+    }
+  },
+  "worst_capture": {
+    "capture_dir": "898e6421285a4ad88e921a955fa52f41",
+    "realized_pnl_usd": -1075.1949988195827
+  },
+  "best_capture": {
+    "capture_dir": "898e6421285a4ad88e921a955fa52f41",
+    "realized_pnl_usd": -1075.1949988195827
+  }
+}
