@@ -56,7 +56,15 @@ def normalize_ws_event(raw_json: str, receive_ns: int | None = None) -> Normaliz
 
 
 class DepthSequenceValidator:
-    """Validate Binance diff-depth continuity without modifying input events."""
+    """Validate Binance diff-depth continuity without modifying input events.
+
+    Binance's depth stream does not update every update ID on every
+    publish. A single depthUpdate may skip IDs (U > prev_u + 1) while
+    still being contiguous, because the exchange only guarantees that
+    the explicit prev_final_update_id (pu) chains to the previous
+    event's final_update_id. The real continuity check is therefore
+    pu == previous_u, not U == previous_u + 1.
+    """
 
     def __init__(self) -> None:
         self.previous_u: int | None = None
@@ -81,10 +89,6 @@ class DepthSequenceValidator:
         if previous_update is not None and previous_update != previous:
             self.previous_u = final_update
             return SequenceStatus("GAP", previous, first_update, final_update, "PU_MISMATCH")
-
-        if first_update > previous + 1 or final_update <= previous:
-            self.previous_u = final_update
-            return SequenceStatus("GAP", previous, first_update, final_update, "UPDATE_ID_GAP")
 
         self.previous_u = final_update
         return SequenceStatus("CONTIGUOUS", previous, first_update, final_update)
@@ -153,6 +157,7 @@ class SessionRecorder:
         }
         self._events.write(json.dumps(row, ensure_ascii=False, separators=(",", ":")) + "\n")
         self._events.flush()
+        self._manifest["event_count"] += 1
 
     def record_raw(self, raw_json: str, receive_ns: int | None = None) -> None:
         if self._events is None or self._manifest is None:
