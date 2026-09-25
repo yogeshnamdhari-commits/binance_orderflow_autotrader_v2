@@ -1,0 +1,39 @@
+{
+  "bootstrap": {
+    "first_U": 11658455388166,
+    "first_bridge_index": 121,
+    "first_pu": 11658455388123,
+    "first_u": 11658455395822,
+    "pre_bridge_event_rows_discarded": 121,
+    "pre_bridge_events_skipped": 121,
+    "snapshot_last_update_id": 11658455392484,
+    "snapshot_source": "REST",
+    "status": "BRIDGED"
+  },
+  "count_correction": {
+    "corrected_at": "2026-09-25",
+    "corrected_event_count": 1670792,
+    "previous_event_count": 1670791,
+    "reason": "reconnect marker rows were not counted by the recorder at write time; events.jsonl is the source of truth"
+  },
+  "diagnostics": {
+    "book_ticker_events": 1534073,
+    "depth_events": 35282,
+    "gaps": 35222,
+    "parse_errors": 0,
+    "reconnect_boundaries": 1,
+    "total_events": 1670791,
+    "trade_events": 101436
+  },
+  "end_ns": 1790360158090502000,
+  "event_count": 1670792,
+  "schema_version": "v10.raw.v1",
+  "session_id": "913176970ae64234b93809d8bde47fff",
+  "start_ns": 1790356556633679000,
+  "streams": [
+    "btcusdt@depth@100ms",
+    "btcusdt@trade",
+    "btcusdt@bookTicker"
+  ],
+  "symbol": "BTCUSDT"
+}
