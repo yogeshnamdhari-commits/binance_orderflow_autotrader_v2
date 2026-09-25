@@ -84,6 +84,26 @@ class V10Recorder:
     def mark_reconnect(self) -> None:
         self._diagnostics["reconnect_boundaries"] += 1
         self.depth_validator = DepthSequenceValidator()
+        # Emit a marker row so deterministic replay can reset depth-sequence
+        # expectations at the reconnect boundary. Binance's new stream does
+        # not guarantee pu continuity across a reconnect, so the gap check
+        # must be skipped at these exact points.
+        if self._events is not None:
+            self._events.write(
+                json.dumps(
+                    {
+                        "receive_ns": time.time_ns(),
+                        "stream": None,
+                        "event_type": "reconnect",
+                        "event_time_ms": None,
+                        "raw_json": "",
+                    },
+                    ensure_ascii=False,
+                    separators=(",", ":"),
+                )
+                + "\n"
+            )
+            self._events.flush()
 
     def diagnostics(self) -> dict[str, int]:
         return dict(self._diagnostics)
@@ -154,4 +174,4 @@ class V10Recorder:
         self.session._write_manifest()
 
     def close(self, end_ns: int | None = None) -> None:
-        self.session.close(end_ns=end_ns)
+        self.session.close(end_ns=end_ns, diagnostics=self.diagnostics())

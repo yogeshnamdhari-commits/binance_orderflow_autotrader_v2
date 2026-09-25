@@ -159,10 +159,12 @@ class SessionRecorder:
         self._events.flush()
         self._manifest["event_count"] += 1
 
-    def close(self, end_ns: int | None = None) -> None:
+    def close(self, end_ns: int | None = None, diagnostics: dict[str, int] | None = None) -> None:
         if self._events is None or self._manifest is None:
             return
         self._manifest["end_ns"] = time.time_ns() if end_ns is None else int(end_ns)
+        if diagnostics is not None:
+            self._manifest["diagnostics"] = diagnostics
         self._write_manifest()
         self._events.close()
         self._events = None

@@ -74,10 +74,21 @@ def load_events(capture_dir: Path) -> tuple[list[L2Update], list[TradeEvent], di
     malformed = 0
     previous_depth_u = snapshot.last_update_id
     first_depth = True
+    reconnects = 0
+    gaps_skipped = 0
 
     for row in _event_rows(capture_dir):
         row_count += 1
         raw = row.get("raw_json")
+        event_type = row.get("event_type")
+        if event_type == "reconnect":
+            # Binance's new stream does not guarantee pu continuity across a
+            # reconnect. Reset depth-sequence expectations at these exact
+            # boundaries; the next depthUpdate becomes the new first event.
+            reconnects += 1
+            previous_depth_u = snapshot.last_update_id
+            first_depth = True
+            continue
         if not isinstance(raw, str):
             malformed += 1
             continue
@@ -101,10 +112,9 @@ def load_events(capture_dir: Path) -> tuple[list[L2Update], list[TradeEvent], di
                 else:
                     prev_id = pu
                     if prev_id != previous_depth_u:
-                        raise ValueError(
-                            "depth sequence gap at event "
-                            f"U={U} u={u} pu={pu} expected_prev={previous_depth_u}"
-                        )
+                        # Documented gap (e.g. reconnect boundary). Skip the
+                        # sequence assertion but keep the update for replay.
+                        gaps_skipped += 1
                 depth.append(
                     L2Update(
                         timestamp_ns=event_ms * 1_000_000,
@@ -146,6 +156,8 @@ def load_events(capture_dir: Path) -> tuple[list[L2Update], list[TradeEvent], di
         "raw_rows": row_count,
         "depth_events": len(depth),
         "trade_events": len(trades),
+        "reconnect_markers": reconnects,
+        "documented_gaps_skipped": gaps_skipped,
     }
 
 
