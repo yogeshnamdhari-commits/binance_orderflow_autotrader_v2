@@ -10,6 +10,39 @@ Certification:   NOT CERTIFIED (6/7 gates pass)
 Deployment:      NO_DEPLOY
 ================================================================================
 
+FORENSIC RECONCILIATION OF THE BINDING NET PnL GATE
+--------------------------------------------------------------------------------
+The candidate shows realized +$1,888.33 but net -$6.53, failing the
+net_pnl_positive gate. scripts/v20_inventory_carry_forensic.py replays
+the frozen config once and projects net PnL at hypothetical endpoints
+along the inventory trajectory. It does NOT change the candidate.
+
+Diagnosis: ENDPOINT_ARTIFACT (not persistent carry).
+
+  Endpoint   Inventory     Mid        MTM        Net PnL
+  10%         +0.00597    $83,859    +$500.55    +$2,388.88
+  25%         +0.00500    $83,626    +$418.08    +$2,306.40
+  50%         +0.00482    $83,793    +$404.04    +$2,292.36
+  75%         -0.00967    $83,774    -$810.44    +$1,077.89
+  90%         -0.01543    $83,917   -$1,294.48    +$593.85
+  95%         -0.02119    $83,970   -$1,779.09    +$109.23
+  100%        -0.02257    $83,966   -$1,894.70    -$6.37
+
+Net PnL is positive at every sampled endpoint from 10% through 95%.
+Only the final capture endpoint flips it negative. The residual
+position is 0.0226 BTC (~$960 notional) at endpoint -- small. The drag
+is price movement against a tiny short, not accumulated inventory carry.
+
+Inventory persistence: 100% of trajectory points have nonzero inventory,
+but max absolute inventory is 0.0226 BTC. The strategy holds a small
+position throughout; the economic deficit is endpoint mark-to-market,
+not trading losses.
+
+Certification status is NOT changed by this finding. The net_pnl gate
+is deterministic and currently fails; the gate was not modified using
+the OOS result.
+================================================================================
+
 FROZEN CANDIDATE (sha256 6d43d31db37a1cc9d570a5d796f45b7757c82ee9f0987ac2bcfacfa36ca74a1a)
   inventory_suppression_enabled: true
   inventory_suppression_power:    1.0

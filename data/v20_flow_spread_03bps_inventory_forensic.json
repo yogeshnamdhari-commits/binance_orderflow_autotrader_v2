@@ -1,0 +1,80 @@
+{
+  "all_earlier_endpoints_net_positive": true,
+  "candidate_config_sha256": "6d43d31db37a1cc9d570a5d796f45b7757c82ee9f0987ac2bcfacfa36ca74a1a",
+  "capture_session_id": "913176970ae64234b93809d8bde47fff",
+  "diagnosis": "ENDPOINT_ARTIFACT",
+  "endpoints": [
+    {
+      "endpoint_index": 45,
+      "endpoint_ts_ns": 1790356905238000000,
+      "fraction": 0.1,
+      "inventory_at_endpoint": 0.005969,
+      "mid_at_endpoint": 83859.75,
+      "mtm_at_endpoint": 500.55486,
+      "net_at_endpoint": 2388.88106
+    },
+    {
+      "endpoint_index": 114,
+      "endpoint_ts_ns": 1790357426493000000,
+      "fraction": 0.25,
+      "inventory_at_endpoint": 0.004999,
+      "mid_at_endpoint": 83626.05,
+      "mtm_at_endpoint": 418.075997,
+      "net_at_endpoint": 2306.402197
+    },
+    {
+      "endpoint_index": 228,
+      "endpoint_ts_ns": 1790358129620000000,
+      "fraction": 0.5,
+      "inventory_at_endpoint": 0.004822,
+      "mid_at_endpoint": 83793.55,
+      "mtm_at_endpoint": 404.037286,
+      "net_at_endpoint": 2292.363487
+    },
+    {
+      "endpoint_index": 342,
+      "endpoint_ts_ns": 1790359226977000000,
+      "fraction": 0.75,
+      "inventory_at_endpoint": -0.009674,
+      "mid_at_endpoint": 83774.25,
+      "mtm_at_endpoint": -810.436564,
+      "net_at_endpoint": 1077.889636
+    },
+    {
+      "endpoint_index": 410,
+      "endpoint_ts_ns": 1790359853375000000,
+      "fraction": 0.9,
+      "inventory_at_endpoint": -0.015426,
+      "mid_at_endpoint": 83917.45,
+      "mtm_at_endpoint": -1294.475785,
+      "net_at_endpoint": 593.850415
+    },
+    {
+      "endpoint_index": 433,
+      "endpoint_ts_ns": 1790359954344000000,
+      "fraction": 0.95,
+      "inventory_at_endpoint": -0.021187,
+      "mid_at_endpoint": 83969.95,
+      "mtm_at_endpoint": -1779.094035,
+      "net_at_endpoint": 109.232166
+    },
+    {
+      "endpoint_index": 455,
+      "endpoint_ts_ns": 1790360135484000000,
+      "fraction": 1.0,
+      "inventory_at_endpoint": -0.022565,
+      "mid_at_endpoint": 83966.15,
+      "mtm_at_endpoint": -1894.696336,
+      "net_at_endpoint": -6.370136
+    }
+  ],
+  "final_inventory": -0.022565,
+  "inventory_carry_usd": 1892.224656,
+  "inventory_mtm_usd": -1894.854291,
+  "inventory_persistence_fraction": 1.0,
+  "max_abs_inventory": 0.022568,
+  "max_abs_inventory_ts_ns": 1790359968070000000,
+  "net_pnl_usd": -6.528091,
+  "realized_pnl_usd": 1888.3262,
+  "trajectory_points": 456
+}
