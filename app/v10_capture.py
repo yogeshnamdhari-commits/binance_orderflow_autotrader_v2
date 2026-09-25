@@ -216,149 +216,181 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
 
     import websocket
 
-    state: dict[str, object] = {
-        "snapshot_id": None,
-        "snapshot_source": "REST",
-        "bridge_found": False,
-        "snapshot_fetched": False,
-        "bridge_deadline": None,
-        "buffered": [],
-    }
     deadline = time.monotonic() + duration_seconds
-    snapshot_lock = threading.Lock()
+    # Session-level flag: once the bridge is established it must survive
+    # reconnects. Per-socket state dicts are intentionally fresh on each
+    # reconnect, so on_close must not clobber a previously-BRIDGED manifest.
+    bridged_once = {"value": False}
 
-    def close_socket() -> None:
-        socket.close()
+    def make_socket():
+        state: dict[str, object] = {
+            "snapshot_id": None,
+            "snapshot_source": "REST",
+            "bridge_found": False,
+            "snapshot_fetched": False,
+            "bridge_deadline": None,
+            "buffered": [],
+        }
+        snapshot_lock = threading.Lock()
 
-    def fetch_snapshot_and_find_bridge() -> None:
-        buffered_to_replay = None
-        with snapshot_lock:
-            if state["snapshot_fetched"] or state["bridge_found"]:
-                return
+        def close_socket() -> None:
             try:
-                snap, snapshot_source = fetch_snapshot_with_fallback(symbol.upper(), limit=1000)
-                state["snapshot_source"] = snapshot_source
-                snapshot_id = int(snap["lastUpdateId"])
-                (session_dir / "snapshot.json").write_text(
-                    json.dumps(snap, indent=2, sort_keys=True) + "\n",
-                    encoding="utf-8",
-                )
-                state["snapshot_id"] = snapshot_id
-                state["snapshot_fetched"] = True
-                first_bridge = find_bridging_index(state["buffered"], snapshot_id)
-                if first_bridge is not None:
-                    state["bridge_found"] = True
-                    buffered_to_replay = list(state["buffered"])
-                    state["buffered"].clear()
-                    recorder.record_bootstrap(
-                        snapshot_id,
-                        first_bridge,
-                        buffered_to_replay,
-                        snapshot_source=str(state["snapshot_source"]),
-                    )
-                    for raw, ns, _stream in buffered_to_replay[first_bridge:]:
-                        recorder.handle_message(raw, receive_ns=ns)
-                    buffered_to_replay = None
-                else:
-                    state["bridge_deadline"] = time.monotonic() + BRIDGE_TIMEOUT_SECONDS
-            except Exception as exc:
-                recorder.record_bootstrap_failure(-1, "SNAPSHOT_FETCH_FAILED", str(exc))
-                close_socket()
+                socket.close()
+            except Exception:
+                pass
+
+        def fetch_snapshot_and_find_bridge() -> None:
+            # Never re-fetch or overwrite the snapshot after the bridge is
+            # established. A fresh socket on reconnect would otherwise clobber
+            # snapshot.json and restart bridge search against a stale book.
+            if bridged_once["value"] or state["bridge_found"]:
                 return
-
-    def on_message(_ws, message) -> None:
-        receive_ns = time.time_ns()
-        try:
-            parsed = json.loads(message)
-        except Exception:
-            return
-        stream = parsed.get("stream") if isinstance(parsed, dict) else None
-
-        buffered_to_replay = None
-        with snapshot_lock:
-            if not state["bridge_found"]:
-                state["buffered"].append((message, receive_ns, stream))
-                if state["snapshot_fetched"] and state["snapshot_id"] is not None:
-                    first_bridge = find_bridging_index(state["buffered"], state["snapshot_id"])
+            buffered_to_replay = None
+            with snapshot_lock:
+                if state["snapshot_fetched"] or state["bridge_found"]:
+                    return
+                try:
+                    snap, snapshot_source = fetch_snapshot_with_fallback(symbol.upper(), limit=1000)
+                    state["snapshot_source"] = snapshot_source
+                    snapshot_id = int(snap["lastUpdateId"])
+                    (session_dir / "snapshot.json").write_text(
+                        json.dumps(snap, indent=2, sort_keys=True) + "\n",
+                        encoding="utf-8",
+                    )
+                    state["snapshot_id"] = snapshot_id
+                    state["snapshot_fetched"] = True
+                    first_bridge = find_bridging_index(state["buffered"], snapshot_id)
                     if first_bridge is not None:
                         state["bridge_found"] = True
+                        bridged_once["value"] = True
                         buffered_to_replay = list(state["buffered"])
                         state["buffered"].clear()
                         recorder.record_bootstrap(
-                            state["snapshot_id"],
+                            snapshot_id,
                             first_bridge,
                             buffered_to_replay,
+                            snapshot_source=str(state["snapshot_source"]),
                         )
                         for raw, ns, _stream in buffered_to_replay[first_bridge:]:
                             recorder.handle_message(raw, receive_ns=ns)
-                        return
-                    elif state["bridge_deadline"] is not None and time.monotonic() > state["bridge_deadline"]:
-                        recorder.record_bootstrap_failure(
-                            int(state["snapshot_id"]),
-                            "BRIDGE_TIMEOUT",
-                            "No depthUpdate satisfying U <= snapshot_id <= u found within bootstrap window",
-                        )
-                        close_socket()
-                        return
-                else:
+                        buffered_to_replay = None
+                    else:
+                        state["bridge_deadline"] = time.monotonic() + BRIDGE_TIMEOUT_SECONDS
+                except Exception as exc:
+                    recorder.record_bootstrap_failure(-1, "SNAPSHOT_FETCH_FAILED", str(exc))
+                    close_socket()
                     return
 
-        recorder.handle_message(message, receive_ns=receive_ns)
-        if time.monotonic() >= deadline:
-            close_socket()
+        def on_message(_ws, message) -> None:
+            receive_ns = time.time_ns()
+            try:
+                parsed = json.loads(message)
+            except Exception:
+                return
+            stream = parsed.get("stream") if isinstance(parsed, dict) else None
 
-    def on_error(_ws, _error) -> None:
-        recorder.mark_reconnect()
+            buffered_to_replay = None
+            with snapshot_lock:
+                if not state["bridge_found"]:
+                    state["buffered"].append((message, receive_ns, stream))
+                    if state["snapshot_fetched"] and state["snapshot_id"] is not None:
+                        first_bridge = find_bridging_index(state["buffered"], state["snapshot_id"])
+                        if first_bridge is not None:
+                            state["bridge_found"] = True
+                            bridged_once["value"] = True
+                            buffered_to_replay = list(state["buffered"])
+                            state["buffered"].clear()
+                            recorder.record_bootstrap(
+                                state["snapshot_id"],
+                                first_bridge,
+                                buffered_to_replay,
+                            )
+                            for raw, ns, _stream in buffered_to_replay[first_bridge:]:
+                                recorder.handle_message(raw, receive_ns=ns)
+                            return
+                        elif state["bridge_deadline"] is not None and time.monotonic() > state["bridge_deadline"]:
+                            recorder.record_bootstrap_failure(
+                                int(state["snapshot_id"]),
+                                "BRIDGE_TIMEOUT",
+                                "No depthUpdate satisfying U <= snapshot_id+1 <= u found within bootstrap window",
+                            )
+                            close_socket()
+                            return
+                    else:
+                        return
 
-    def on_close(_ws, _status_code, _message) -> None:
-        if not state["bridge_found"] and not state["snapshot_fetched"]:
-            recorder.record_bootstrap_failure(
-                int(state["snapshot_id"]) if state["snapshot_id"] is not None else -1,
-                "CAPTURE_CLOSED",
-                "WebSocket closed before snapshot was fetched",
-            )
-        elif not state["bridge_found"]:
-            recorder.record_bootstrap_failure(
-                int(state["snapshot_id"]),
-                "BRIDGE_TIMEOUT",
-                "No depthUpdate satisfying U <= snapshot_id+1 <= u found within bootstrap window",
-            )
-        recorder.close()
+            recorder.handle_message(message, receive_ns=receive_ns)
+            if time.monotonic() >= deadline:
+                close_socket()
 
-    snapshot_thread: threading.Thread | None = None
+        def on_error(_ws, _error) -> None:
+            recorder.mark_reconnect()
 
-    def on_open(_ws) -> None:
-        nonlocal snapshot_thread
-        # Start snapshot acquisition only after the market-data socket is
-        # actually open. The websocket is already buffering events, so the
-        # snapshot can be taken immediately rather than waiting a fixed 5s.
-        if snapshot_thread is None or not snapshot_thread.is_alive():
-            snapshot_thread = threading.Thread(
-                target=fetch_snapshot_and_find_bridge,
-                daemon=True,
-            )
-            snapshot_thread.start()
+        def on_close(_ws, _status_code, _message) -> None:
+            # Never clobber a previously-BRIDGED manifest on reconnect.
+            if bridged_once["value"]:
+                return
+            if not state["bridge_found"] and not state["snapshot_fetched"]:
+                recorder.record_bootstrap_failure(
+                    int(state["snapshot_id"]) if state["snapshot_id"] is not None else -1,
+                    "CAPTURE_CLOSED",
+                    "WebSocket closed before snapshot was fetched",
+                )
+            elif not state["bridge_found"]:
+                recorder.record_bootstrap_failure(
+                    int(state["snapshot_id"]),
+                    "BRIDGE_TIMEOUT",
+                    "No depthUpdate satisfying U <= snapshot_id+1 <= u found within bootstrap window",
+                )
 
-    socket = websocket.WebSocketApp(
-        ws_url,
-        on_open=on_open,
-        on_message=on_message,
-        on_error=on_error,
-        on_close=on_close,
-    )
+        snapshot_thread: threading.Thread | None = None
+
+        def on_open(_ws) -> None:
+            nonlocal snapshot_thread
+            if snapshot_thread is None or not snapshot_thread.is_alive():
+                snapshot_thread = threading.Thread(
+                    target=fetch_snapshot_and_find_bridge,
+                    daemon=True,
+                )
+                snapshot_thread.start()
+
+        socket = websocket.WebSocketApp(
+            ws_url,
+            on_open=on_open,
+            on_message=on_message,
+            on_error=on_error,
+            on_close=on_close,
+        )
+        return socket, state
+
+    socket, _ = make_socket()
 
     def force_close_at_deadline() -> None:
         remaining = max(0.0, deadline - time.monotonic())
         time.sleep(remaining)
-        close_socket()
+        try:
+            socket.close()
+        except Exception:
+            pass
 
     deadline_thread = threading.Thread(target=force_close_at_deadline, daemon=True)
     deadline_thread.start()
-    
-    try:
-        socket.run_forever()
-    finally:
-        recorder.close()
+
+    # Reconnect loop: Binance public WS drops intermittently. A single
+    # run_forever() call exits on close, so wrap it until the deadline is met.
+    while time.monotonic() < deadline:
+        socket, _ = make_socket()
+        try:
+            socket.run_forever()
+        except Exception:
+            pass
+        if not bridged_once["value"]:
+            # Bridge never established this session; abort rather than retry
+            # forever with a broken snapshot source.
+            break
+        time.sleep(1.0)
+
+    recorder.close()
     return session_dir
 
 

@@ -34,6 +34,7 @@ class V10Recorder:
         output_dir: str | Path,
         ws_url: str,
         streams: list[str],
+        session_id: str | None = None,
         clock_ns: Callable[[], int] | None = None,
     ) -> None:
         self.symbol = symbol.upper()
@@ -41,7 +42,7 @@ class V10Recorder:
         self.ws_url = ws_url
         self.streams = list(streams)
         self.clock_ns = clock_ns
-        self.session = SessionRecorder(self.output_dir, self.symbol, self.streams)
+        self.session = SessionRecorder(self.output_dir, self.symbol, self.streams, session_id=session_id)
         self.depth_validator = DepthSequenceValidator()
         self._diagnostics = {
             "total_events": 0,
