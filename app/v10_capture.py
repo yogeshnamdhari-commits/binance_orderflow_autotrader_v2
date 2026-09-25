@@ -21,7 +21,7 @@ DEFAULT_STREAMS = ["btcusdt@depth@100ms", "btcusdt@trade", "btcusdt@bookTicker"]
 DEPTH_REST_URL = "https://fapi.binance.com/fapi/v1/depth"
 
 DEPTH_API_WS = "wss://ws-fapi.binance.com/ws-fapi/v1"
-BRIDGE_TIMEOUT_SECONDS = 20.0
+BRIDGE_TIMEOUT_SECONDS = 60.0
 
 
 def build_ws_url(base_url: str, streams: list[str]) -> str:
@@ -287,6 +287,15 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
                 parsed = json.loads(message)
             except Exception:
                 return
+
+            # Once the session bridge is established, events are written
+            # directly. The per-socket buffer is only for pre-bridge events.
+            if bridged_once["value"]:
+                recorder.handle_message(message, receive_ns=receive_ns)
+                if time.monotonic() >= deadline:
+                    close_socket()
+                return
+
             stream = parsed.get("stream") if isinstance(parsed, dict) else None
 
             buffered_to_replay = None
@@ -327,21 +336,10 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
             recorder.mark_reconnect()
 
         def on_close(_ws, _status_code, _message) -> None:
-            # Never clobber a previously-BRIDGED manifest on reconnect.
-            if bridged_once["value"]:
-                return
-            if not state["bridge_found"] and not state["snapshot_fetched"]:
-                recorder.record_bootstrap_failure(
-                    int(state["snapshot_id"]) if state["snapshot_id"] is not None else -1,
-                    "CAPTURE_CLOSED",
-                    "WebSocket closed before snapshot was fetched",
-                )
-            elif not state["bridge_found"]:
-                recorder.record_bootstrap_failure(
-                    int(state["snapshot_id"]),
-                    "BRIDGE_TIMEOUT",
-                    "No depthUpdate satisfying U <= snapshot_id+1 <= u found within bootstrap window",
-                )
+            # No-op for bootstrap status. Final status is written once after
+            # the reconnect loop: BRIDGED if bridged_once, else FAILED. This
+            # prevents repeated reconnects from clobbering a good manifest.
+            pass
 
         snapshot_thread: threading.Thread | None = None
 
@@ -378,18 +376,26 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
 
     # Reconnect loop: Binance public WS drops intermittently. A single
     # run_forever() call exits on close, so wrap it until the deadline is met.
+    # The bridge is retried on every reconnect; only abort if the deadline
+    # expires while the bridge is still unfound.
     while time.monotonic() < deadline:
         socket, _ = make_socket()
         try:
             socket.run_forever()
         except Exception:
             pass
-        if not bridged_once["value"]:
-            # Bridge never established this session; abort rather than retry
-            # forever with a broken snapshot source.
-            break
+        if bridged_once["value"]:
+            recorder.mark_reconnect()
         time.sleep(1.0)
 
+    # Finalize bootstrap status exactly once. on_close is intentionally a
+    # no-op so repeated reconnects cannot clobber a BRIDGED manifest.
+    if not bridged_once["value"]:
+        recorder.record_bootstrap_failure(
+            -1,
+            "BRIDGE_TIMEOUT",
+            "No depthUpdate satisfying U <= snapshot_id+1 <= u found within bootstrap window",
+        )
     recorder.close()
     return session_dir
 
