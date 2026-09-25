@@ -88,22 +88,7 @@ class V10Recorder:
         # expectations at the reconnect boundary. Binance's new stream does
         # not guarantee pu continuity across a reconnect, so the gap check
         # must be skipped at these exact points.
-        if self._events is not None:
-            self._events.write(
-                json.dumps(
-                    {
-                        "receive_ns": time.time_ns(),
-                        "stream": None,
-                        "event_type": "reconnect",
-                        "event_time_ms": None,
-                        "raw_json": "",
-                    },
-                    ensure_ascii=False,
-                    separators=(",", ":"),
-                )
-                + "\n"
-            )
-            self._events.flush()
+        self.session.record_reconnect_marker()
 
     def diagnostics(self) -> dict[str, int]:
         return dict(self._diagnostics)

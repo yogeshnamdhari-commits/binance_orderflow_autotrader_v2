@@ -132,6 +132,27 @@ class SessionRecorder:
         self._events.close()
         self._events = (self.session_dir / "events.jsonl").open("w", encoding="utf-8")
         self._manifest["event_count"] = 0
+        self._write_manifest()
+
+    def record_reconnect_marker(self) -> None:
+        """Emit an explicit reconnect marker row.
+
+        Binance's new stream does not guarantee pu continuity across a
+        reconnect, so deterministic replay must reset depth-sequence
+        expectations at these exact points. The marker is a normal event
+        row with event_type="reconnect" and an empty raw_json payload.
+        """
+        if self._events is None or self._manifest is None or self.session_dir is None:
+            raise RuntimeError("session is not started")
+        row = {
+            "receive_ns": time.time_ns(),
+            "stream": None,
+            "event_type": "reconnect",
+            "event_time_ms": None,
+            "raw_json": "",
+        }
+        self._events.write(json.dumps(row, ensure_ascii=False, separators=(",", ":")) + "\n")
+        self._events.flush()
 
     def record_raw(self, raw_json: str, receive_ns: int | None = None) -> None:
         if self._events is None or self._manifest is None:

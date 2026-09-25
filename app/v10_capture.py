@@ -378,25 +378,28 @@ def run_capture(symbol: str, output_dir: str | Path, duration_seconds: int, ws_b
     # run_forever() call exits on close, so wrap it until the deadline is met.
     # The bridge is retried on every reconnect; only abort if the deadline
     # expires while the bridge is still unfound.
-    while time.monotonic() < deadline:
-        socket, _ = make_socket()
-        try:
-            socket.run_forever()
-        except Exception:
-            pass
-        if bridged_once["value"]:
-            recorder.mark_reconnect()
-        time.sleep(1.0)
-
-    # Finalize bootstrap status exactly once. on_close is intentionally a
-    # no-op so repeated reconnects cannot clobber a BRIDGED manifest.
-    if not bridged_once["value"]:
-        recorder.record_bootstrap_failure(
-            -1,
-            "BRIDGE_TIMEOUT",
-            "No depthUpdate satisfying U <= snapshot_id+1 <= u found within bootstrap window",
-        )
-    recorder.close()
+    try:
+        while time.monotonic() < deadline:
+            socket, _ = make_socket()
+            try:
+                socket.run_forever()
+            except Exception:
+                pass
+            if bridged_once["value"]:
+                recorder.mark_reconnect()
+            time.sleep(1.0)
+    finally:
+        # Finalize bootstrap status exactly once. on_close is intentionally
+        # a no-op so repeated reconnects cannot clobber a BRIDGED manifest.
+        # This finally block guarantees the manifest is written even if the
+        # loop is interrupted by an exception, signal, or deadline.
+        if not bridged_once["value"]:
+            recorder.record_bootstrap_failure(
+                -1,
+                "BRIDGE_TIMEOUT",
+                "No depthUpdate satisfying U <= snapshot_id+1 <= u found within bootstrap window",
+            )
+        recorder.close()
     return session_dir
 
 
