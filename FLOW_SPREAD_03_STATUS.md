@@ -306,4 +306,81 @@ Current authoritative status: 5d0d762 documents a frozen, non-certified
 candidate with mixed OOS realized performance. No certification and no live
 deployment.
 
+THIRD UNTOUCHED OOS CAPTURE (OOS #3)
+--------------------------------------------------------------------------------
+  session_id:  fe02163990f04b4890908d834c1b3fdd
+  duration:    3,597.3 s
+  events:      1,359,827 (35,270 depth, 141,385 trade, 1,183,172 bookTicker)
+  bootstrap:   BRIDGED, snapshot_source=REST
+  collected:   AFTER candidate frozen (commit cb399c5, sha256 6d43d31d)
+  provenance:   manifest sha256 dab602fafc29e46509524bda19518add08a47f60da398570c49be21608b69827,
+                snapshot sha256 42bad92cb2a42fa9f8f68f0b5dec45e5cf226564d43ce2429ccc0c637c9ac9d8,
+                events sha256 980475bff8de95e6e892d62c8073a7e946d232c327f75f6c40de590f60c6fc7e
+  quality_gate: PASS (BTCUSDT, 3597s, 0 parse errors, BRIDGED, REST)
+
+OOS #3 RESULT
+  fills:                   592
+  gross_spread_capture:    $0.4031
+  fees:                    $5.25
+  realized_pnl:            -$3,329.51
+  net_pnl:                 -$16.25
+  inventory_carry:         -$3,324.66
+  inventory_max:           $4,997.02 (cap $5,000)
+  inventory_limit_breaches: 27
+  pnl_per_fill:            -$5.62
+  gross_capture_per_fill:  $0.00068092
+
+CERTIFICATION GATES (4/7 pass)
+  attribution_reconciled:      PASS
+  gross_capture_positive:       PASS
+  inventory_within_limit:       PASS
+  no_inventory_breaches:        FAIL  (27 breaches)
+  sufficient_fills:            PASS
+  realized_pnl_positive:        FAIL
+  net_pnl_positive:             FAIL
+
+OOS #3 DIAGNOSIS: PERSISTENT_CARRY (negative realized throughout)
+  - Negative realized P&L (-$3,329.51) is the dominant economic result
+  - Inventory breaches: 27 (exceeds 0 limit)
+  - Inventory max: $4,997.02 (near cap $5,000)
+  - Net P&L negative at all endpoints (persistent carry pattern)
+
+3-CAPTURE ROBUSTNESS ASSESSMENT
+--------------------------------------------------------------------------------
+  OOS #1 (91317697): +$1,888.33 realized, 6/7 gates, ENDPOINT_ARTIFACT
+  OOS #2 (898e6421): -$1,075.19 realized, 5/7 gates, PERSISTENT_CARRY
+  OOS #3 (fe021639): -$3,329.51 realized, 4/7 gates, PERSISTENT_CARRY
+
+  Aggregate: 1,351 fills, -$1,516.37 realized P&L, -$26.47 net P&L
+
+  Positive realized captures: 1 of 3
+  Negative realized captures: 2 of 3
+  Cross-capture consistency: NOT ESTABLISHED
+
+  Inventory breaches: 0, 0, 27 (OOS #3 violates no_inventory_breaches)
+
+  The candidate fails 3 of 7 gates on OOS #3, including both realized and net P&L.
+
+FINAL DISPOSITION
+--------------------------------------------------------------------------------
+  Candidate:        FROZEN
+  Research evidence: COMPLETE
+  OOS #1:           Positive realized
+  OOS #2:           Negative realized
+  OOS #3:           Negative realized
+  Robustness:       NOT ESTABLISHED
+  Certification:    NOT CERTIFIED
+  Deployment:       NO_DEPLOY
+  Remote sync:      COMPLETE (commit cb399c5)
+
+  The frozen candidate produces inconsistent realized economics across three
+  untouched captures. Two of three are negative, and OOS #3 additionally
+  violates the inventory breach gate. There is no valid basis to certify
+  this candidate or deploy it.
+
+  The next legitimate research phase is a new experiment from a clean
+  branch, not further parameter tuning of FLOW-SPREAD-0.3.
+
+  NO LIVE ORDERS. NO PARAMETER RETUNING. NO CERTIFICATION BY EXCEPTION.
+
 ===============================================================================
