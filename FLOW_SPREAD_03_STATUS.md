@@ -190,3 +190,120 @@ NEXT STEPS (not yet done)
      trading loss, but the gate is deterministic and currently fails.
   3. Only after robustness is established should certification proceed.
   4. Live deployment remains NO_DEPLOY throughout.
+
+REGIME DECOMPOSITION ANALYSIS
+--------------------------------------------------------------------------------
+scripts/v20_regime_decomposition.py compares OOS #1 vs OOS #2 using invariant
+capture session IDs from certification outputs.
+
+OOS #1 (91317697) - Diagnosis: ENDPOINT_ARTIFACT
+  Realized PnL:       +$1,888.33
+  Net PnL:            -$6.53
+  Inventory carry:    +$1,892.22
+  Final inventory:    -0.022565 BTC (short)
+  Fills:              456
+  Gross capture:      $0.37
+
+  Regime distribution (fills per regime):
+    HIGH_INVENTORY:    13 fills
+    MEDIUM_INVENTORY:  68 fills
+    LOW_INVENTORY:     69 fills
+    NEUTRAL_INVENTORY: 306 fills
+
+  Net PnL positive at all earlier endpoints (10%-95%), only flips at 100%.
+
+OOS #2 (898e6421) - Diagnosis: PERSISTENT_CARRY
+  Realized PnL:       -$1,075.19
+  Net PnL:            -$3.69
+  Inventory carry:    -$1,072.53
+  Final inventory:    +0.012804 BTC (long)
+  Fills:              303
+  Gross capture:      $0.29
+
+  Regime distribution (fills per regime):
+    MEDIUM_INVENTORY:   25 fills
+    LOW_INVENTORY:      69 fills
+    NEUTRAL_INVENTORY: 209 fills
+
+  Net PnL negative at ALL endpoints - persistent carry pattern.
+
+Comparison
+  Realized PnL delta:    +$2,963.52 (OOS #1 - OOS #2)
+  Inventory carry delta: +$2,964.76 (OOS #1 - OOS #2)
+  Fills delta:           +153 (OOS #1 - OOS #2)
+
+Sign-flipping cause: OOS #2 had persistent negative realized PnL (trading loss),
+OOS #1 had positive trading but negative mark-to-market on residual position.
+
+FINAL EVIDENCE INTERPRETATION
+--------------------------------------------------------------------------------
+The regime decomposition adds an important distinction: the two OOS failures
+have different mechanisms.
+
+OOS #1 (91317697): ENDPOINT_ARTIFACT
+  - Realized PnL is positive (+$1,888.33) -- the trading was profitable.
+  - Net PnL is negative (-$6.53) only at the final endpoint.
+  - All earlier endpoints (10%-95%) show positive net PnL.
+  - The deficit is a small residual short (-0.022565 BTC, ~$960 notional)
+    marked to market at the capture cutoff, not accumulated trading losses.
+
+OOS #2 (898e6421): PERSISTENT_CARRY
+  - Realized PnL is already negative (-$1,075.19) -- the trading was unprofitable.
+  - Net PnL is negative at ALL endpoints, including the earliest.
+  - This is not an endpoint-marking artifact; the trading itself was negative.
+
+CLEAN CONCLUSION
+--------------------------------------------------------------------------------
+  Execution edge observed          ✅
+  Inventory breaches                ✅ 0
+  Positive realized OOS             ✅ on OOS #1
+  Negative realized OOS             ❌ on OOS #2
+  Cross-capture consistency         ❌
+  Robustness                        ❌ NOT ESTABLISHED
+  Certification                     ❌
+  Deployment                        🔒 NO_DEPLOY
+
+The candidate is not simply suffering from an accounting artifact. The two
+untouched captures show different realized-P&L behavior under exactly the
+same frozen configuration.
+
+The next research question is no longer "Which spread parameter should we
+choose?" It is:
+
+  Under what observable market conditions does the frozen flow-spread
+  mechanism produce positive versus negative realized economics?
+
+That is a regime-dependence question, not a parameter-optimization question.
+
+The analysis should remain frozen and be used to identify relationships among:
+
+  flow imbalance
+  volatility
+  trade intensity
+  spread stability
+  inventory direction
+  adverse selection
+  fill-side asymmetry
+  realized spread capture
+
+without changing the candidate or using OOS results to retune it.
+
+BOOKKEEPING RECONCILIATION REQUIREMENT
+--------------------------------------------------------------------------------
+The OOS #1 diagnosis depends on distinguishing realized trading economics
+from terminal mark-to-market effects. Inventory carry, realized P&L, fees,
+and terminal net P&L must reconcile exactly at every endpoint:
+
+  net_pnl = realized_pnl + inventory_mtm
+  inventory_mtm = final_inventory * mid_at_endpoint
+  realized_pnl = gross_spread_capture + inventory_carry - fees - adverse_selection
+
+This reconciliation is verified by scripts/v20_inventory_carry_forensic.py
+and scripts/v20_certify_frozen_candidate.py. The attribution_residual_usd
+field is asserted to be zero (<= 1e-6) before certification proceeds.
+
+Current authoritative status: 5d0d762 documents a frozen, non-certified
+candidate with mixed OOS realized performance. No certification and no live
+deployment.
+
+===============================================================================
