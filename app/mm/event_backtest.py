@@ -58,6 +58,13 @@ class EventBacktestResult:
     directional_flow_spread_bid_bps_sum: float = 0.0
     directional_flow_spread_ask_bps_sum: float = 0.0
     directional_flow_imbalance_mean: float = 0.0
+    active_hedge_trades: int = 0
+    active_hedge_qty: float = 0.0
+    active_hedge_notional: float = 0.0
+    breach_quote_size_reduction_events: int = 0
+    inventory_breach_penalty_applied: float = 0.0
+    flow_bias_bps_sum: float = 0.0
+    flow_bias_quotes: int = 0
 
 
 def _future_mid_by_time(
@@ -179,6 +186,13 @@ def run_event_backtest(
     inventory_suppressed_bid_qty = 0.0
     inventory_suppressed_ask_qty = 0.0
     inventory_ratio_abs_samples: list[float] = []
+    active_hedge_trades: int = 0
+    active_hedge_qty: float = 0.0
+    active_hedge_notional: float = 0.0
+    breach_quote_size_reduction_events: int = 0
+    inventory_breach_penalty_applied: float = 0.0
+    flow_bias_bps_sum: float = 0.0
+    flow_bias_quotes: int = 0
 
     def process_trade(trade: TradeEvent) -> None:
         nonlocal inventory, cash, fees_usd, buy_fills, sell_fills
@@ -284,7 +298,21 @@ def run_event_backtest(
         directional_flow_values.append(flow_imbalance)
         book_imbalance = _book_imbalance(book)
         center = _quote_center(mid, book_imbalance, config)
-        bid, ask, bid_qty, ask_qty = generate_quotes(center, spread_bps, inventory, config)
+        # --- ACTIVE_FLOW_HEDGE-0.1: Nonlinear inventory penalty ---
+        if config.inventory_penalty_slope > 0.0 and config.max_position_notional_usd > 0:
+            inventory_pct = abs(inventory * mid) / config.max_position_notional_usd
+            penalty_steps = int(inventory_pct * 10)
+            inventory_penalty_bps = config.inventory_penalty_base_bps + config.inventory_penalty_slope * penalty_steps
+        else:
+            inventory_penalty_bps = config.inventory_penalty_bps
+
+        bid, ask, bid_qty, ask_qty = generate_quotes(
+            center, spread_bps, inventory, config,
+            inventory_penalty_bps=inventory_penalty_bps,
+            flow_imbalance=flow_imbalance,
+            flow_quote_bias_bps=config.flow_quote_bias_bps,
+            quote_size_scale=quote_size_scale,
+        )
 
         # Enforce inventory risk limit: suppress the side that would increase
         # exposure beyond max_position_notional_usd.  This is a hard stop —
@@ -297,6 +325,35 @@ def run_event_backtest(
             elif inventory < 0:
                 ask_qty = 0.0
                 inventory_limit_breaches += 1
+
+        # ACTIVE_FLOW_HEDGE-0.1: breach-response sizing
+        # After the first inventory limit breach, reduce quote size by 50%.
+        quote_size_scale = 1.0
+        if inventory_limit_breaches >= config.max_inventory_breaches_allowed and config.max_inventory_breaches_allowed >= 0:
+            breach_count_so_far = inventory_limit_breaches
+            if breach_count_so_far > 0 and config.quote_size_reduction_after_breach > 0:
+                quote_size_scale = max(0.0, 1.0 - config.quote_size_reduction_after_breach)
+                breach_quote_size_reduction_events += 1
+
+        # ACTIVE_FLOW_HEDGE-0.1: active inventory hedge
+        # When |inventory| exceeds hedge_threshold_notional, place offsetting
+        # passive orders for hedge_ratio * excess inventory.
+        if config.hedge_threshold_notional > 0 and config.hedge_ratio > 0 and mid > 0:
+            hedge_notional_target = config.hedge_threshold_notional
+            excess = max(0.0, current_exposure - hedge_notional_target)
+            if excess > 0:
+                hedge_qty = config.hedge_ratio * (excess / mid)
+                hedge_notional = hedge_qty * mid
+                active_hedge_qty += hedge_qty
+                active_hedge_notional += hedge_notional
+                active_hedge_trades += 1
+                # Offset inventory with a passive order in the opposite direction
+                if inventory > 0:
+                    # Inventory is long; place sell to reduce
+                    ask_qty = max(ask_qty, hedge_qty * 0.1)
+                else:
+                    # Inventory is short; place buy to reduce
+                    bid_qty = max(bid_qty, hedge_qty * 0.1)
 
         best_bid = max(book.bids.keys()) if book.bids else 0.0
         best_ask = min(book.asks.keys()) if book.asks else float("inf")
@@ -510,4 +567,11 @@ def run_event_backtest(
             if directional_flow_values
             else 0.0
         ),
+        active_hedge_trades=active_hedge_trades,
+        active_hedge_qty=active_hedge_qty,
+        active_hedge_notional=active_hedge_notional,
+        breach_quote_size_reduction_events=breach_quote_size_reduction_events,
+        inventory_breach_penalty_applied=inventory_breach_penalty_applied,
+        flow_bias_bps_sum=flow_bias_bps_sum,
+        flow_bias_quotes=flow_bias_quotes,
     )

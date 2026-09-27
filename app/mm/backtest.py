@@ -131,8 +131,20 @@ def generate_quotes(
     spread_bps: float,
     inventory: float,
     config: V20Config,
+    *,
+    inventory_penalty_bps: float | None = None,
+    flow_imbalance: float = 0.0,
+    flow_quote_bias_bps: float = 0.0,
+    quote_size_scale: float = 1.0,
 ) -> tuple[float, float, float, float]:
-    """Generate bid/ask quotes around mid-price."""
+    """Generate bid/ask quotes around mid-price.
+
+    ACTIVE_FLOW_HEDGE-0.1 extensions:
+      - inventory_penalty_bps: override for nonlinear inventory penalty
+      - flow_imbalance: signed flow (-1..1) for active flow bias
+      - flow_quote_bias_bps: base bias applied per unit of flow
+      - quote_size_scale: breach-response sizing multiplier
+    """
 
     half_spread = config.base_half_spread_bps / 10_000.0
 
@@ -142,21 +154,24 @@ def generate_quotes(
 
     half_spread = min(half_spread, config.max_half_spread_bps / 10_000.0)
 
-    # Normalize inventory by maximum notional and skew quotes against the
-    # current position.  The old implementation used raw asset quantity and
-    # moved both quotes in the wrong direction for inventory control.
     max_notional = max(abs(config.max_position_notional_usd), 1e-9)
     inventory_drift = inventory - config.inventory_target
     inventory_fraction = (inventory_drift * mid_price) / max_notional
     inventory_fraction = max(-1.0, min(1.0, inventory_fraction))
-    skew_bps = -inventory_fraction * config.inventory_penalty_bps
+
+    effective_penalty = inventory_penalty_bps if inventory_penalty_bps is not None else config.inventory_penalty_bps
+    skew_bps = -inventory_fraction * effective_penalty
     skew_fraction = skew_bps / 10_000.0
 
-    bid_price = mid_price * (1.0 - half_spread + skew_fraction)
-    ask_price = mid_price * (1.0 + half_spread + skew_fraction)
+    # ACTIVE_FLOW_HEDGE-0.1: active flow quote bias
+    flow_bias_fraction = flow_imbalance * flow_quote_bias_bps / 10_000.0
 
-    bid_qty = config.quote_size_usd / bid_price if bid_price > 0 else 0
-    ask_qty = config.quote_size_usd / ask_price if ask_price > 0 else 0
+    bid_price = mid_price * (1.0 - half_spread + skew_fraction + flow_bias_fraction)
+    ask_price = mid_price * (1.0 + half_spread + skew_fraction + flow_bias_fraction)
+
+    effective_quote_size = config.quote_size_usd * quote_size_scale
+    bid_qty = effective_quote_size / bid_price if bid_price > 0 else 0
+    ask_qty = effective_quote_size / ask_price if ask_price > 0 else 0
 
     return bid_price, ask_price, bid_qty, ask_qty
 

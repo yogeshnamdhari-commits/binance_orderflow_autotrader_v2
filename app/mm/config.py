@@ -46,6 +46,13 @@ class V20Config:
     directional_flow_threshold: float = 0.3
     directional_flow_weight: float = 0.0
     directional_flow_spread_bps: float = 0.0
+    flow_quote_bias_bps: float = 0.0
+    hedge_threshold_notional: float = 0.0
+    hedge_ratio: float = 0.0
+    inventory_penalty_base_bps: float = 2.0
+    inventory_penalty_slope: float = 0.0
+    max_inventory_breaches_allowed: int = 0
+    quote_size_reduction_after_breach: float = 0.0
 
     @classmethod
     def from_json(cls, filepath: str) -> V20Config:
