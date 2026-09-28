@@ -1,0 +1,8 @@
+{
+  "authorized": false,
+  "candidate_config_sha256": "",
+  "required_research_commit": "a06e8f590634777bbd5ade86ef3b2563194ca2ed",
+  "forward_certification_status": "NOT_CERTIFIED",
+  "production_identity_status": "NOT_CERTIFIED",
+  "execution_authorization": "BLOCKED"
+}
