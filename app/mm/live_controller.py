@@ -64,7 +64,6 @@ class ActiveFlowHedgeLiveController:
         if not book.is_valid():
             raise ProductionSafetyError("invalid L2 book")
 
-        mid = book.get_mid_price()
         best_bid = max(book.bids)
         best_ask = min(book.asks)
 
@@ -80,8 +79,8 @@ class ActiveFlowHedgeLiveController:
         self._revision += 1
         nonce = int(time.time() * 1000)
         for side, price, qty, prefix in (
-            ("BUY", bid, bid_qty, "B"),
-            ("SELL", ask, ask_qty, "S"),
+            ("BUY", pair.bid_price, pair.bid_qty, "B"),
+            ("SELL", pair.ask_price, pair.ask_qty, "S"),
         ):
             try:
                 p, q = self.guard.validate_quote(
