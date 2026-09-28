@@ -103,7 +103,7 @@ class LiveService:
         self.book = book
         self.buffer = []
         self.guard.update_market_heartbeat(
-            book.timestamp_ns // 1_000_000,
+            int(time.time() * 1000),
             synchronized=book.is_valid() and not book._awaiting_first_diff,
         )
         return self.book.is_valid()
@@ -149,7 +149,7 @@ class LiveService:
             return
 
         self.guard.update_market_heartbeat(
-            update.timestamp_ns // 1_000_000, synchronized=self.book.is_valid()
+            int(time.time() * 1000), synchronized=self.book.is_valid()
         )
 
         if not self.book.is_valid():
