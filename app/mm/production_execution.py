@@ -242,6 +242,14 @@ class BinanceFuturesREST:
             signed=True,
         )
 
+    def cancel_order(self, symbol: str, client_order_id: str) -> Any:
+        return self._request(
+            "DELETE",
+            "/fapi/v1/order",
+            {"symbol": symbol, "origClientOrderId": client_order_id},
+            signed=True,
+        )
+
     def cancel_all(self, symbol: str) -> Any:
         return self._request(
             "DELETE", "/fapi/v1/allOpenOrders", {"symbol": symbol}, signed=True
@@ -263,6 +271,7 @@ class BinanceFuturesREST:
 
 @dataclass
 class ExecutionState:
+    authorized: bool = False
     book_synchronized: bool = False
     user_stream_healthy: bool = False
     reconciliation_ok: bool = False
@@ -343,6 +352,7 @@ class ProductionExecutionGuard:
 
     def trip(self, reason: str) -> None:
         with self._lock:
+            self.state.authorized = False
             self.state.kill_switch = True
             self.state.kill_reason = reason
             self.state.reconciliation_ok = False
@@ -360,6 +370,16 @@ class ProductionExecutionGuard:
         with self._lock:
             self.state.last_user_event_ms = int(event_ms)
             self.state.user_stream_healthy = True
+
+    def update_user_stream_health(
+        self, healthy: bool, event_ms: int | None = None, reason: str = ""
+    ) -> None:
+        now_ms = int(time.time() * 1000) if event_ms is None else int(event_ms)
+        with self._lock:
+            self.state.last_user_event_ms = now_ms
+            self.state.user_stream_healthy = bool(healthy)
+        if not healthy and reason:
+            self.trip(reason)
 
     def update_position(self, position_qty: float, mark_price: float) -> None:
         notional = abs(float(position_qty) * float(mark_price))
@@ -489,6 +509,22 @@ class ProductionExecutionGuard:
         if not self.state.reconciliation_ok:
             raise ProductionSafetyError("reconciliation gate not satisfied")
 
+        with self._lock:
+            self.state.authorized = True
+
+    def cancel_managed_orders(self) -> None:
+        with self._lock:
+            client_ids = list(self.state.open_orders)
+        for client_id in client_ids:
+            try:
+                self.rest.cancel_order(self.symbol, client_id)
+            except Exception as exc:
+                self.trip(f"managed order cancellation failed: {exc}")
+                raise ProductionSafetyError(str(exc)) from exc
+        self.reconcile()
+        if self.state.kill_switch:
+            raise ProductionSafetyError(self.state.kill_reason)
+
     def validate_quote(
         self,
         *,
@@ -504,6 +540,10 @@ class ProductionExecutionGuard:
             position = self.state.position_qty
             open_count = len(self.state.open_orders)
 
+        with self._lock:
+            authorized = self.state.authorized
+        if not authorized:
+            raise ProductionSafetyError("execution authorization gate not satisfied")
         if kill:
             raise ProductionSafetyError(self.state.kill_reason)
         if rules is None:
@@ -571,17 +611,19 @@ class ProductionExecutionGuard:
 
 
 class UserDataStreamMonitor:
-    """Authenticated USDⓈ-M listenKey monitor with configurable private URL."""
+    """Authenticated USDⓈ-M listenKey monitor with explicit connection health."""
 
     def __init__(
         self,
         rest: BinanceFuturesREST,
         on_event: Callable[[dict[str, Any]], None],
-        ws_url_template: str = "wss://fstream.binance.com/private/ws/{listen_key}",
+        ws_url_template: str = "wss://fstream.binance.com/ws/{listen_key}",
+        on_status: Callable[[bool, int, str], None] | None = None,
     ) -> None:
         self.rest = rest
         self.on_event = on_event
         self.ws_url_template = ws_url_template
+        self.on_status = on_status
         self.listen_key: str | None = None
         self.stop_event = threading.Event()
         self.thread: threading.Thread | None = None
@@ -604,8 +646,14 @@ class UserDataStreamMonitor:
             try:
                 if self.listen_key:
                     self.listen_key = self.rest.keepalive_listen_key(self.listen_key)
-            except Exception:
-                pass
+            except Exception as exc:
+                if self.on_status:
+                    self.on_status(
+                        False,
+                        int(time.time() * 1000),
+                        f"user stream keepalive failed: {exc}",
+                    )
+                return
 
     def _run(self) -> None:
         if not self.listen_key:
@@ -619,11 +667,41 @@ class UserDataStreamMonitor:
                 return
             self.on_event(event)
 
+        def on_open(_ws: websocket.WebSocketApp) -> None:
+            if self.on_status:
+                self.on_status(
+                    True, int(time.time() * 1000), "user stream connected"
+                )
+
+        def on_pong(_ws: websocket.WebSocketApp, _payload: bytes) -> None:
+            if self.on_status:
+                self.on_status(
+                    True, int(time.time() * 1000), "user stream pong"
+                )
+
+        def on_error(_ws: websocket.WebSocketApp, error: Any) -> None:
+            if self.on_status:
+                self.on_status(
+                    False,
+                    int(time.time() * 1000),
+                    f"user stream error: {error}",
+                )
+
+        def on_close(
+            _ws: websocket.WebSocketApp, _code: Any, _msg: Any
+        ) -> None:
+            if self.on_status and not self.stop_event.is_set():
+                self.on_status(
+                    False, int(time.time() * 1000), "user stream closed"
+                )
+
         app = websocket.WebSocketApp(
             url,
             on_message=on_message,
-            on_error=lambda *_: None,
-            on_close=lambda *_: None,
+            on_open=on_open,
+            on_pong=on_pong,
+            on_error=on_error,
+            on_close=on_close,
         )
         app.run_forever(ping_interval=20, ping_timeout=10)
 
