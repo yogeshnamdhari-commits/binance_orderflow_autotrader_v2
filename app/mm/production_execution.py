@@ -617,7 +617,7 @@ class UserDataStreamMonitor:
         self,
         rest: BinanceFuturesREST,
         on_event: Callable[[dict[str, Any]], None],
-        ws_url_template: str = "wss://fstream.binance.com/ws/{listen_key}",
+        ws_url_template: str = "wss://fstream.binance.com/private/ws/{listen_key}",
         on_status: Callable[[bool, int, str], None] | None = None,
     ) -> None:
         self.rest = rest
