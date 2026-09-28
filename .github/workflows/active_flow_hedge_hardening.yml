@@ -1,0 +1,33 @@
+name: Active Flow Hedge Production Hardening
+
+on:
+  push:
+    branches:
+      - production/active-flow-hedge-0.1-hardening
+  pull_request:
+    branches:
+      - production/active-flow-hedge-0.1-hardening
+
+jobs:
+  hardening:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest requests websocket-client python-dotenv pandas pyarrow joblib scikit-learn
+      - name: Compile production modules
+        run: |
+          python -m py_compile \
+            app/mm/production_execution.py \
+            app/mm/live_controller.py \
+            scripts/production_preflight.py
+      - name: Run hardening tests
+        run: pytest -q tests/test_production_hardening.py
+      - name: Verify live authorization is fail-closed
+        run: |
+          python scripts/production_preflight.py
