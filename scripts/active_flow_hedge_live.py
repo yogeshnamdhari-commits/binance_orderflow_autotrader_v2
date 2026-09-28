@@ -17,7 +17,6 @@ import websocket
 
 from app.mm.book import L2Snapshot, L2Update, OrderBook
 from app.mm.config import V20Config
-from app.mm.live_quote_engine import ActiveFlowHedgeQuoteEngine
 from app.mm.live_controller import ActiveFlowHedgeLiveController
 from app.mm.production_execution import (
     BinanceFuturesREST,
@@ -64,7 +63,6 @@ class LiveService:
         self.signed_flow = 0.0
         self.total_flow = 0.0
         self.window_ms = max(1, int(config.flow_window_ms))
-        self.stop = threading.Event()
 
     def _snapshot(self) -> L2Snapshot:
         response = self.rest._request(
@@ -158,7 +156,8 @@ class LiveService:
             self.guard.trip("L2 book invalid")
             return
 
-        self.guard.health_check(update.timestamp_ns // 1_000_000)
+        if self.guard.state.authorized:
+            self.guard.health_check(update.timestamp_ns // 1_000_000)
         if self.guard.state.kill_switch:
             return
 
@@ -281,9 +280,8 @@ class LiveService:
             self.guard.trip("startup feed synchronization timeout")
             raise ProductionSafetyError("startup feed synchronization timeout")
 
-        # REST reconciliation occurs inside authorize() immediately before the
-        # authorization bit becomes true, so no first order can race startup.
-        self.guard.reconcile()
+        # authorize() performs the final REST reconciliation and only then
+        # flips the execution authorization bit.
         self.guard.authorize()
 
         self.watchdog_thread = threading.Thread(
