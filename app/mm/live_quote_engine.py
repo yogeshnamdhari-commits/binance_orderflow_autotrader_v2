@@ -99,6 +99,23 @@ class ActiveFlowHedgeQuoteEngine:
                 elif inventory < 0:
                     bid_qty = max(bid_qty, hedge_qty * 0.1)
 
+        # Match the retrospective passive-geometry step before toxicity/flow
+        # filters: clamp inside-market quotes to the top of book and suppress
+        # any side whose raw quote would have crossed the displayed book.
+        best_bid = max(book.bids.keys())
+        best_ask = min(book.asks.keys())
+        if best_bid < best_ask:
+            suppress_bid = bid > best_bid
+            suppress_ask = ask < best_ask
+            if suppress_bid:
+                bid_qty = 0.0
+            if suppress_ask:
+                ask_qty = 0.0
+            bid = min(bid, best_bid)
+            ask = max(ask, best_ask)
+            bid = max(bid, best_bid)
+            ask = min(ask, best_ask)
+
         # Existing candidate: toxicity and directional-flow suppression.
         bull_toxic = (
             self.config.toxicity_filter_enabled
