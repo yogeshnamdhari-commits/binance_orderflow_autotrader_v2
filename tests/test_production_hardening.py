@@ -42,6 +42,9 @@ class FakeREST:
     def cancel_all(self, symbol):
         return {}
 
+    def cancel_order(self, symbol, client_order_id):
+        return {"clientOrderId": client_order_id, "status": "CANCELED"}
+
 
 def write_manifest(path: Path, sha: str):
     path.write_text(json.dumps({
@@ -64,6 +67,7 @@ def make_guard(fake, manifest_path):
         manifest_path=manifest_path,
     )
     guard.rules = fake.rules
+    guard.state.authorized = True
     guard.state.book_synchronized = True
     guard.state.user_stream_healthy = True
     guard.state.reconciliation_ok = True
@@ -133,3 +137,29 @@ def test_candidate_parameters_remain_frozen():
     assert data["inventory_penalty_slope"] == 0.5
     assert data["quote_size_reduction_after_breach"] == 0.5
     assert data["max_position_notional_usd"] == 5000.0
+
+
+def test_quote_requires_explicit_authorization():
+    fake = FakeREST()
+    with tempfile.TemporaryDirectory() as td:
+        guard = make_guard(fake, Path(td) / "manifest.json")
+        guard.state.authorized = False
+        with pytest.raises(ProductionSafetyError, match="execution authorization"):
+            guard.validate_quote(
+                side="BUY",
+                price=82999.90,
+                qty=0.001,
+                best_bid=82999.80,
+                best_ask=83000.10,
+            )
+
+
+def test_user_stream_failure_revokes_authorization():
+    fake = FakeREST()
+    with tempfile.TemporaryDirectory() as td:
+        guard = make_guard(fake, Path(td) / "manifest.json")
+        guard.update_user_stream_health(
+            False, event_ms=83000000, reason="test user stream failure"
+        )
+        assert guard.state.authorized is False
+        assert guard.state.kill_switch is True
