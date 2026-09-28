@@ -163,3 +163,19 @@ def test_user_stream_failure_revokes_authorization():
         )
         assert guard.state.authorized is False
         assert guard.state.kill_switch is True
+
+
+def test_live_runner_bootstraps_feeds_before_authorization():
+    root = Path(__file__).resolve().parents[1]
+    source = (root / "scripts" / "active_flow_hedge_live.py").read_text()
+    start_user = source.index("        self.user_stream.start()")
+    start_market = source.index("        self.market_thread.start()")
+    start_auth = source.index("        self.guard.authorize()")
+    assert start_user < start_auth
+    assert start_market < start_auth
+
+
+def test_private_user_stream_uses_routed_endpoint():
+    root = Path(__file__).resolve().parents[1]
+    source = (root / "app" / "mm" / "production_execution.py").read_text()
+    assert "wss://fstream.binance.com/private/ws/{listen_key}" in source
