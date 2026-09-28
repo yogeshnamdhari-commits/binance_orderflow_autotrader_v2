@@ -15,6 +15,7 @@ from app.mm.production_execution import DeploymentManifest, ProductionSafetyErro
 
 
 RESEARCH_COMMIT = "a06e8f590634777bbd5ade86ef3b2563194ca2ed"
+FROZEN_CONFIG_SHA256 = "17f9350f139c7f646f5215bf7a0dc41bcb0d79c338f2d76cc29fa33a071a97aa"
 
 
 def main() -> int:
@@ -49,6 +50,11 @@ def main() -> int:
         raise SystemExit("FAIL-CLOSED VIOLATION: strategy config live_order_submission must remain false")
 
     print(f"CONFIG_SHA256={sha}")
+    if sha != FROZEN_CONFIG_SHA256:
+        raise SystemExit(
+            f"FROZEN CONFIG SHA MISMATCH: {sha} != {FROZEN_CONFIG_SHA256}"
+        )
+    print(f"FROZEN_CONFIG_SHA256={FROZEN_CONFIG_SHA256}")
     print(f"RESEARCH_REFERENCE={RESEARCH_COMMIT}")
     print("STRATEGY_PARAMETERS=PASS")
     print("LIVE_ORDER_SUBMISSION=FALSE")
