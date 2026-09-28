@@ -52,7 +52,12 @@ class LiveService:
             ),
         )
         self.controller = ActiveFlowHedgeLiveController(config, self.guard)
-        self.quote_engine = ActiveFlowHedgeQuoteEngine(config)
+        self.last_quote_action_ms = 0
+        self.last_target: tuple[tuple[str, float, float], ...] | None = None
+        self.stop = threading.Event()
+        self.market_thread: threading.Thread | None = None
+        self.watchdog_thread: threading.Thread | None = None
+        self.user_stream: UserDataStreamMonitor | None = None
         self.book: OrderBook | None = None
         self.buffer: list[L2Update] = []
         self.flow: deque[tuple[int, float]] = deque()
@@ -158,12 +163,10 @@ class LiveService:
             return
 
         try:
-            pair = self.quote_engine.build(
-                book=self.book,
-                inventory=self.guard.state.position_qty,
-                flow_imbalance=self._flow_imbalance(),
-                inventory_limit_breaches=0,
-            )
+            now_ms = int(time.time() * 1000)
+            if now_ms - self.last_quote_action_ms < max(1, self.config.quote_interval_ms):
+                return
+
             best_bid = max(self.book.bids)
             best_ask = min(self.book.asks)
             quotes = self.controller.build_quotes(
@@ -172,8 +175,21 @@ class LiveService:
                 flow_imbalance=self._flow_imbalance(),
                 quote_size_scale=1.0,
             )
+            target = tuple(
+                sorted((q.side, round(q.price, 12), round(q.qty, 12)) for q in quotes)
+            )
+
+            if target == self.last_target and self.guard.state.open_orders:
+                return
+
+            if target != self.last_target:
+                self.guard.cancel_managed_orders()
+
             if quotes:
                 self.controller.submit(quotes, best_bid=best_bid, best_ask=best_ask)
+
+            self.last_target = target
+            self.last_quote_action_ms = now_ms
         except ProductionSafetyError:
             return
         except Exception as exc:
@@ -191,30 +207,101 @@ class LiveService:
         except Exception as exc:
             self.guard.trip(f"market message processing failure: {exc}")
 
-    def run(self) -> None:
-        # Must complete all authorization gates before the first live submission.
-        self.guard.authorize()
-        user_stream = UserDataStreamMonitor(
-            self.rest,
-            self._on_user_event,
-            ws_url_template=os.environ.get(
-                "BINANCE_USER_WS_TEMPLATE",
-                "wss://fstream.binance.com/private/ws/{listen_key}",
-            ),
-        )
-        user_stream.start()
-
+    def _run_market(self) -> None:
         url = os.environ.get(
             "BINANCE_MARKET_WS",
             "wss://fstream.binance.com/public/stream?streams="
             + f"{self.config.symbol.lower()}@depth@100ms/"
             + f"{self.config.symbol.lower()}@aggTrade",
         )
-        app = websocket.WebSocketApp(url, on_message=self.on_message)
+
+        def on_error(_ws, error) -> None:
+            if not self.stop.is_set():
+                self.guard.trip(f"market websocket error: {error}")
+
+        def on_close(_ws, _code, _msg) -> None:
+            if not self.stop.is_set():
+                self.guard.trip("market websocket closed")
+
+        app = websocket.WebSocketApp(
+            url,
+            on_message=self.on_message,
+            on_error=on_error,
+            on_close=on_close,
+        )
+        app.run_forever(ping_interval=20, ping_timeout=10)
+
+    def _watchdog(self) -> None:
+        while not self.stop.wait(0.25):
+            try:
+                self.guard.health_check()
+            except Exception as exc:
+                self.guard.trip(f"watchdog failure: {exc}")
+
+    def _on_user_status(self, healthy: bool, event_ms: int, reason: str) -> None:
+        self.guard.update_user_stream_health(
+            healthy, event_ms=event_ms, reason=reason
+        )
+
+    def run(self) -> None:
+        # Bootstrap both feeds before authorization. The execution guard blocks
+        # every order until the deployment manifest and all health gates pass.
+        self.stop.clear()
+        self.user_stream = UserDataStreamMonitor(
+            self.rest,
+            self._on_user_event,
+            ws_url_template=os.environ.get(
+                "BINANCE_USER_WS_TEMPLATE",
+                "wss://fstream.binance.com/private/ws/{listen_key}",
+            ),
+            on_status=self._on_user_status,
+        )
+        self.user_stream.start()
+
+        self.market_thread = threading.Thread(
+            target=self._run_market, name="AFH-market", daemon=True
+        )
+        self.market_thread.start()
+
+        deadline = time.monotonic() + 15.0
+        while time.monotonic() < deadline:
+            if self.guard.state.kill_switch:
+                raise ProductionSafetyError(self.guard.state.kill_reason)
+            if (
+                self.guard.state.user_stream_healthy
+                and self.guard.state.book_synchronized
+            ):
+                break
+            time.sleep(0.05)
+
+        if not (
+            self.guard.state.user_stream_healthy
+            and self.guard.state.book_synchronized
+        ):
+            self.guard.trip("startup feed synchronization timeout")
+            raise ProductionSafetyError("startup feed synchronization timeout")
+
+        # REST reconciliation occurs inside authorize() immediately before the
+        # authorization bit becomes true, so no first order can race startup.
+        self.guard.reconcile()
+        self.guard.authorize()
+
+        self.watchdog_thread = threading.Thread(
+            target=self._watchdog, name="AFH-watchdog", daemon=True
+        )
+        self.watchdog_thread.start()
+
         try:
-            app.run_forever(ping_interval=20, ping_timeout=10)
+            while (
+                self.market_thread.is_alive()
+                and not self.guard.state.kill_switch
+                and not self.stop.wait(0.25)
+            ):
+                pass
         finally:
-            user_stream.stop()
+            self.stop.set()
+            if self.user_stream:
+                self.user_stream.stop()
 
     def _on_user_event(self, event: dict) -> None:
         event_type = event.get("e")
@@ -224,6 +311,8 @@ class LiveService:
             self.guard.update_account_event(event)
         elif event_type == "listenKeyExpired":
             self.guard.trip("listenKey expired")
+        elif event_type == "MARGIN_CALL":
+            self.guard.trip("Binance MARGIN_CALL received")
 
 
 def main() -> int:
