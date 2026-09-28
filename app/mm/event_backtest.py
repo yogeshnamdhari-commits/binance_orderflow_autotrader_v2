@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from bisect import bisect_right
 from collections import deque
 from dataclasses import dataclass, field
 from typing import Sequence
@@ -58,11 +59,14 @@ class EventBacktestResult:
     directional_flow_spread_bid_bps_sum: float = 0.0
     directional_flow_spread_ask_bps_sum: float = 0.0
     directional_flow_imbalance_mean: float = 0.0
-    active_hedge_trades: int = 0
-    active_hedge_qty: float = 0.0
-    active_hedge_notional: float = 0.0
+    hedge_quote_adjustments: int = 0
+    hedge_qty_adjusted: float = 0.0
+    hedge_notional_impact: float = 0.0
+    hedge_active: bool = False
     breach_quote_size_reduction_events: int = 0
     inventory_breach_penalty_applied: float = 0.0
+    flow_bias_bps_sum: float = 0.0
+    flow_bias_quotes: int = 0
     flow_bias_bps_sum: float = 0.0
     flow_bias_quotes: int = 0
 
@@ -186,9 +190,10 @@ def run_event_backtest(
     inventory_suppressed_bid_qty = 0.0
     inventory_suppressed_ask_qty = 0.0
     inventory_ratio_abs_samples: list[float] = []
-    active_hedge_trades: int = 0
-    active_hedge_qty: float = 0.0
-    active_hedge_notional: float = 0.0
+    hedge_quote_adjustments: int = 0
+    hedge_qty_adjusted: float = 0.0
+    hedge_notional_impact: float = 0.0
+    hedge_active: bool = False
     breach_quote_size_reduction_events: int = 0
     inventory_breach_penalty_applied: float = 0.0
     flow_bias_bps_sum: float = 0.0
@@ -298,6 +303,7 @@ def run_event_backtest(
         directional_flow_values.append(flow_imbalance)
         book_imbalance = _book_imbalance(book)
         center = _quote_center(mid, book_imbalance, config)
+
         # --- ACTIVE_FLOW_HEDGE-0.1: Nonlinear inventory penalty ---
         if config.inventory_penalty_slope > 0.0 and config.max_position_notional_usd > 0:
             inventory_pct = abs(inventory * mid) / config.max_position_notional_usd
@@ -305,15 +311,6 @@ def run_event_backtest(
             inventory_penalty_bps = config.inventory_penalty_base_bps + config.inventory_penalty_slope * penalty_steps
         else:
             inventory_penalty_bps = config.inventory_penalty_bps
-
-        bid, ask, bid_qty, ask_qty = generate_quotes(
-            center, spread_bps, inventory, config,
-            inventory_penalty_bps=inventory_penalty_bps,
-            flow_imbalance=flow_imbalance,
-            flow_quote_bias_bps=config.flow_quote_bias_bps,
-            quote_size_scale=quote_size_scale,
-        )
-
         # Enforce inventory risk limit: suppress the side that would increase
         # exposure beyond max_position_notional_usd.  This is a hard stop —
         # the strategy must not accumulate inventory beyond the configured cap.
@@ -325,6 +322,21 @@ def run_event_backtest(
             elif inventory < 0:
                 ask_qty = 0.0
                 inventory_limit_breaches += 1
+
+        # ACTIVE_FLOW_HEDGE-0.1: breach-response sizing
+        # After the first inventory limit breach, reduce quote size by configured %.
+        quote_size_scale = 1.0
+        if inventory_limit_breaches > 0 and config.quote_size_reduction_after_breach > 0:
+            quote_size_scale = max(0.0, 1.0 - config.quote_size_reduction_after_breach)
+            breach_quote_size_reduction_events += 1
+
+        bid, ask, bid_qty, ask_qty = generate_quotes(
+            center, spread_bps, inventory, config,
+            inventory_penalty_bps=inventory_penalty_bps,
+            flow_imbalance=flow_imbalance,
+            flow_quote_bias_bps=config.flow_quote_bias_bps,
+            quote_size_scale=quote_size_scale,
+        )
 
         # ACTIVE_FLOW_HEDGE-0.1: breach-response sizing
         # After the first inventory limit breach, reduce quote size by 50%.
@@ -344,9 +356,9 @@ def run_event_backtest(
             if excess > 0:
                 hedge_qty = config.hedge_ratio * (excess / mid)
                 hedge_notional = hedge_qty * mid
-                active_hedge_qty += hedge_qty
-                active_hedge_notional += hedge_notional
-                active_hedge_trades += 1
+                hedge_qty_adjusted += hedge_qty
+                hedge_notional_impact += hedge_notional
+                hedge_quote_adjustments += 1
                 # Offset inventory with a passive order in the opposite direction
                 if inventory > 0:
                     # Inventory is long; place sell to reduce
@@ -496,12 +508,25 @@ def run_event_backtest(
     realized_pnl_usd = cash
     net_pnl_usd = realized_pnl_usd + inventory_mtm_usd
 
+    # Prefix sums for O(log N) future_mid queries (ACTIVE_FLOW_HEDGE-0.1)
+    mid_times = [ts for ts, _ in mids]
+    mid_prefix = [0.0]
+    for _, mid in mids:
+        mid_prefix.append(mid_prefix[-1] + mid)
+
+    def future_mid_fast(fill_ts: int, horizon_ns: int) -> float | None:
+        left = bisect_right(mid_times, fill_ts)
+        right = bisect_right(mid_times, fill_ts + horizon_ns)
+        if right <= left:
+            return None
+        return (mid_prefix[right] - mid_prefix[left]) / (right - left)
+
     as_by_horizon: dict[int, float] = {}
     for horizon in horizon_ms:
         values: list[float] = []
         horizon_ns = int(horizon * 1_000_000)
         for ts, side, price in fills_for_as:
-            future_mid = _future_mid_by_time(mids, ts, horizon_ns)
+            future_mid = future_mid_fast(ts, horizon_ns)
             values.append(_adverse_selection(price, side, future_mid))
         as_by_horizon[horizon] = sum(values) / len(values) if values else 0.0
 
@@ -567,9 +592,9 @@ def run_event_backtest(
             if directional_flow_values
             else 0.0
         ),
-        active_hedge_trades=active_hedge_trades,
-        active_hedge_qty=active_hedge_qty,
-        active_hedge_notional=active_hedge_notional,
+        hedge_quote_adjustments=hedge_quote_adjustments,
+        hedge_qty_adjusted=hedge_qty_adjusted,
+        hedge_notional_impact=hedge_notional_impact,
         breach_quote_size_reduction_events=breach_quote_size_reduction_events,
         inventory_breach_penalty_applied=inventory_breach_penalty_applied,
         flow_bias_bps_sum=flow_bias_bps_sum,
