@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import hashlib
 import time
 
-from .backtest import generate_quotes
+from .live_quote_engine import ActiveFlowHedgeQuoteEngine
 from .book import OrderBook
 from .config import V20Config
 from .production_execution import (
@@ -39,6 +39,7 @@ class ActiveFlowHedgeLiveController:
         self.config = config
         self.guard = guard
         self._revision = 0
+        self._quote_engine = ActiveFlowHedgeQuoteEngine(config)
 
     @staticmethod
     def _book_imbalance(book: OrderBook) -> float:
@@ -64,20 +65,14 @@ class ActiveFlowHedgeLiveController:
             raise ProductionSafetyError("invalid L2 book")
 
         mid = book.get_mid_price()
-        spread = book.get_spread_bps()
         best_bid = max(book.bids)
         best_ask = min(book.asks)
-        imbalance = max(-1.0, min(1.0, self._book_imbalance(book)))
-        center = mid * (1.0 + max(0.0, self.config.microprice_skew_bps) * imbalance / 10_000.0)
 
-        bid, ask, bid_qty, ask_qty = generate_quotes(
-            center,
-            spread,
-            inventory,
-            self.config,
+        pair = self._quote_engine.build(
+            book=book,
+            inventory=inventory,
+            flow_imbalance=flow_imbalance,
             inventory_penalty_bps=inventory_penalty_bps,
-            flow_imbalance=max(-1.0, min(1.0, flow_imbalance)),
-            flow_quote_bias_bps=self.config.flow_quote_bias_bps,
             quote_size_scale=quote_size_scale,
         )
 
