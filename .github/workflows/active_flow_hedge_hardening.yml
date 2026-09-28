@@ -25,7 +25,8 @@ jobs:
           python -m py_compile \
             app/mm/production_execution.py \
             app/mm/live_controller.py \
-            scripts/production_preflight.py             scripts/active_flow_hedge_live.py
+            scripts/production_preflight.py \
+            scripts/active_flow_hedge_live.py
       - name: Run hardening tests
         run: pytest -q tests/test_production_hardening.py
       - name: Verify live authorization is fail-closed
