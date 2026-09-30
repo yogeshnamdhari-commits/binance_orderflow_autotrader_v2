@@ -62,6 +62,9 @@ class LiveService:
         self.flow: deque[tuple[int, float]] = deque()
         self.signed_flow = 0.0
         self.total_flow = 0.0
+        self.latest_mark_price = 0.0
+        self.latest_funding_rate = 0.0
+        self.next_funding_time_ms = 0
         self.window_ms = max(1, int(config.flow_window_ms))
 
     def _snapshot(self) -> L2Snapshot:
@@ -203,6 +206,10 @@ class LiveService:
                 self._on_depth(m)
             elif event_type == "aggTrade":
                 self._on_trade(m)
+            elif event_type == "markPriceUpdate":
+                self.latest_mark_price = float(m.get("p", 0.0))
+                self.latest_funding_rate = float(m.get("r", 0.0))
+                self.next_funding_time_ms = int(m.get("T", 0))
         except Exception as exc:
             self.guard.trip(f"market message processing failure: {exc}")
 
@@ -211,7 +218,8 @@ class LiveService:
             "BINANCE_MARKET_WS",
             "wss://fstream.binance.com/stream?streams="
             + f"{self.config.symbol.lower()}@depth@100ms/"
-            + f"{self.config.symbol.lower()}@aggTrade",
+            + f"{self.config.symbol.lower()}@aggTrade/"
+            + f"{self.config.symbol.lower()}@markPrice@1s",
         )
 
         def on_error(_ws, error) -> None:
