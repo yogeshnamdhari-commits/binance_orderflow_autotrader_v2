@@ -19,7 +19,7 @@ from typing import Any, Iterator
 from app.mm.book import L2Snapshot, L2Update
 from app.mm.config import V20Config
 from app.mm.event_backtest import EventBacktestResult, run_event_backtest
-from app.mm.execution_replay import Side, TradeEvent
+from app.mm.execution_replay import FundingRateEvent, MarkPriceEvent, Side, TradeEvent
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -164,6 +164,42 @@ def load_events(capture_dir: Path) -> tuple[list[L2Update], list[TradeEvent], di
     }
 
 
+def load_perpetual_auxiliary_events(
+    capture_dir: Path,
+) -> tuple[list[MarkPriceEvent], list[FundingRateEvent]]:
+    """Load mark-price/funding observations from an authentic USDⓈ-M capture."""
+    marks: list[MarkPriceEvent] = []
+    funding: list[FundingRateEvent] = []
+    for row in _event_rows(capture_dir):
+        if row.get("event_type") != "markPriceUpdate":
+            continue
+        envelope = json.loads(row["raw_json"])
+        data = envelope.get("data", envelope)
+        if data.get("e") != "markPriceUpdate":
+            continue
+        event_ms = int(data.get("E") or 0)
+        mark = float(data["p"])
+        next_funding_ms = int(data.get("T") or 0)
+        rate = float(data["r"]) if data.get("r") not in (None, "") else None
+        marks.append(
+            MarkPriceEvent(
+                timestamp_ns=event_ms * 1_000_000,
+                mark_price=mark,
+                next_funding_time_ns=next_funding_ms * 1_000_000,
+                funding_rate=rate,
+            )
+        )
+        if rate is not None and next_funding_ms > 0:
+            funding.append(
+                FundingRateEvent(
+                    timestamp_ns=next_funding_ms * 1_000_000,
+                    funding_rate=rate,
+                    mark_price=mark,
+                )
+            )
+    return marks, funding
+
+
 def summarize(result: EventBacktestResult) -> dict[str, Any]:
     return {
         "fills": result.fills,
@@ -192,11 +228,23 @@ def summarize(result: EventBacktestResult) -> dict[str, Any]:
     }
 
 
-def _run(capture_dir: Path, config_path: Path, snapshot: L2Snapshot, depth: list[L2Update], trades: list[TradeEvent]) -> tuple[EventBacktestResult, str]:
+def _run(
+    capture_dir: Path,
+    config_path: Path,
+    snapshot: L2Snapshot,
+    depth: list[L2Update],
+    trades: list[TradeEvent],
+    marks: list[MarkPriceEvent] | None = None,
+    funding: list[FundingRateEvent] | None = None,
+) -> tuple[EventBacktestResult, str]:
     config, config_hash = V20Config.load_authoritative(str(config_path))
     if config.symbol.upper() != "BTCUSDT":
         raise ValueError(f"capture runner currently requires BTCUSDT, got {config.symbol}")
-    result = run_event_backtest(snapshot, depth, trades, config)
+    result = run_event_backtest(
+        snapshot, depth, trades, config,
+        mark_price_events=marks or (),
+        funding_events=funding or (),
+    )
     return result, config_hash
 
 
@@ -217,8 +265,15 @@ def main() -> int:
 
     snapshot = load_snapshot(capture_dir)
     depth, trades, counts = load_events(capture_dir)
-    baseline, baseline_hash = _run(capture_dir, args.baseline_config, snapshot, depth, trades)
-    candidate, candidate_hash = _run(capture_dir, args.candidate_config, snapshot, depth, trades)
+    marks, funding = load_perpetual_auxiliary_events(capture_dir)
+    if manifest.get("instrument") == "PERPETUAL" and (not marks or not funding):
+        raise SystemExit("perpetual capture must contain markPriceUpdate/funding observations")
+    baseline, baseline_hash = _run(
+        capture_dir, args.baseline_config, snapshot, depth, trades, marks, funding
+    )
+    candidate, candidate_hash = _run(
+        capture_dir, args.candidate_config, snapshot, depth, trades, marks, funding
+    )
 
     report = {
         "capture": {
@@ -228,6 +283,8 @@ def main() -> int:
             "start_ns": manifest.get("start_ns"),
             "end_ns": manifest.get("end_ns"),
             **counts,
+            "mark_price_events": len(marks),
+            "funding_events": len(funding),
         },
         "baseline": {"config": str(args.baseline_config), "config_sha256": baseline_hash, **summarize(baseline)},
         "candidate": {"config": str(args.candidate_config), "config_sha256": candidate_hash, **summarize(candidate)},
