@@ -148,8 +148,8 @@ def run_event_backtest(
     # Depth is processed before trade when timestamps tie.
     events.extend((e.timestamp_ns, 0, e) for e in sorted_depth)
     events.extend((e.timestamp_ns, 1, e) for e in sorted_trades)
-    events.extend((e.timestamp_ns, -1, e) for e in sorted(mark_price_events, key=lambda x: x.timestamp_ns))
-    events.extend((e.timestamp_ns, -2, e) for e in sorted(funding_events, key=lambda x: x.timestamp_ns))
+    events.extend((e.timestamp_ns, -2, e) for e in sorted(mark_price_events, key=lambda x: x.timestamp_ns))
+    events.extend((e.timestamp_ns, -1, e) for e in sorted(funding_events, key=lambda x: x.timestamp_ns))
     events.sort(key=lambda x: (x[0], x[1]))
 
     flow_queue: deque[tuple[int, float]] = deque()
@@ -279,14 +279,14 @@ def run_event_backtest(
                 inventory_max = max(inventory_max, abs(inventory * current_mid))
 
     for timestamp_ns, kind, event in events:
-        if kind == -1:
+        if kind == -2:
             mark_event = event
             assert isinstance(mark_event, MarkPriceEvent)
             if mark_event.mark_price > 0:
                 latest_mark_price = mark_event.mark_price
             continue
 
-        if kind == -2:
+        if kind == -1:
             funding_event = event
             assert isinstance(funding_event, FundingRateEvent)
             if funding_event.timestamp_ns <= last_funding_time_ns:
