@@ -223,6 +223,8 @@ def summarize(result: EventBacktestResult) -> dict[str, Any]:
         "quote_crossings_detected": result.quote_crossings_detected,
         "quote_crossings_suppressed": result.quote_crossings_suppressed,
         "avg_fill_holding_time_ns": result.avg_fill_holding_time_ns,
+        "funding_pnl_usd": result.funding_pnl_usd,
+        "final_mark_price": result.final_mark_price,
     }
 
 
