@@ -209,7 +209,7 @@ class LiveService:
     def _run_market(self) -> None:
         url = os.environ.get(
             "BINANCE_MARKET_WS",
-            "wss://fstream.binance.com/public/stream?streams="
+            "wss://fstream.binance.com/stream?streams="
             + f"{self.config.symbol.lower()}@depth@100ms/"
             + f"{self.config.symbol.lower()}@aggTrade",
         )
@@ -251,7 +251,7 @@ class LiveService:
             self._on_user_event,
             ws_url_template=os.environ.get(
                 "BINANCE_USER_WS_TEMPLATE",
-                "wss://fstream.binance.com/private/ws/{listen_key}",
+                "wss://fstream.binance.com/ws/{listen_key}",
             ),
             on_status=self._on_user_status,
         )
