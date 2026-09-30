@@ -8,7 +8,14 @@ import math
 
 from .book import L2Snapshot, L2Update, OrderBook
 from .config import V20Config
-from .execution_replay import PassiveQuoteReplay, QuoteIntent, Side, TradeEvent
+from .execution_replay import (
+    FundingRateEvent,
+    MarkPriceEvent,
+    PassiveQuoteReplay,
+    QuoteIntent,
+    Side,
+    TradeEvent,
+)
 from .backtest import generate_quotes, _enforce_passive_geometry
 
 
@@ -67,8 +74,8 @@ class EventBacktestResult:
     inventory_breach_penalty_applied: float = 0.0
     flow_bias_bps_sum: float = 0.0
     flow_bias_quotes: int = 0
-    flow_bias_bps_sum: float = 0.0
-    flow_bias_quotes: int = 0
+    funding_pnl_usd: float = 0.0
+    final_mark_price: float = 0.0
 
 
 def _future_mid_by_time(
@@ -121,6 +128,8 @@ def run_event_backtest(
     config: V20Config,
     *,
     horizon_ms: Sequence[int] = (1, 5, 10, 25, 50, 100),
+    mark_price_events: Sequence[MarkPriceEvent] = (),
+    funding_events: Sequence[FundingRateEvent] = (),
 ) -> EventBacktestResult:
     """Replay depth and trade events chronologically with optional toxicity controls.
 
@@ -139,6 +148,8 @@ def run_event_backtest(
     # Depth is processed before trade when timestamps tie.
     events.extend((e.timestamp_ns, 0, e) for e in sorted_depth)
     events.extend((e.timestamp_ns, 1, e) for e in sorted_trades)
+    events.extend((e.timestamp_ns, -1, e) for e in sorted(mark_price_events, key=lambda x: x.timestamp_ns))
+    events.extend((e.timestamp_ns, -2, e) for e in sorted(funding_events, key=lambda x: x.timestamp_ns))
     events.sort(key=lambda x: (x[0], x[1]))
 
     flow_queue: deque[tuple[int, float]] = deque()
@@ -150,6 +161,9 @@ def run_event_backtest(
     inventory = 0.0
     cash = 0.0
     fees_usd = 0.0
+    funding_pnl_usd = 0.0
+    latest_mark_price = 0.0
+    last_funding_time_ns = -1
     fills_for_as: list[tuple[int, Side, float]] = []
     fill_records: list[dict[str, float | int | Side]] = []
 
@@ -265,6 +279,25 @@ def run_event_backtest(
                 inventory_max = max(inventory_max, abs(inventory * current_mid))
 
     for timestamp_ns, kind, event in events:
+        if kind == -1:
+            mark_event = event
+            assert isinstance(mark_event, MarkPriceEvent)
+            if mark_event.mark_price > 0:
+                latest_mark_price = mark_event.mark_price
+            continue
+
+        if kind == -2:
+            funding_event = event
+            assert isinstance(funding_event, FundingRateEvent)
+            if funding_event.timestamp_ns <= last_funding_time_ns:
+                continue
+            if latest_mark_price > 0 and inventory != 0.0:
+                funding_pnl_usd -= (
+                    inventory * latest_mark_price * funding_event.funding_rate
+                )
+            last_funding_time_ns = funding_event.timestamp_ns
+            continue
+
         if kind == 1:
             trade = event
             assert isinstance(trade, TradeEvent)
@@ -504,8 +537,9 @@ def run_event_backtest(
 
     stats = replay.stats()
     final_mid = mids[-1][1] if mids else 0.0
-    inventory_mtm_usd = inventory * final_mid
-    realized_pnl_usd = cash
+    final_mark_price = latest_mark_price if latest_mark_price > 0 else final_mid
+    inventory_mtm_usd = inventory * final_mark_price
+    realized_pnl_usd = cash + funding_pnl_usd
     net_pnl_usd = realized_pnl_usd + inventory_mtm_usd
 
     # Prefix sums for O(log N) future_mid queries (ACTIVE_FLOW_HEDGE-0.1)
@@ -599,4 +633,6 @@ def run_event_backtest(
         inventory_breach_penalty_applied=inventory_breach_penalty_applied,
         flow_bias_bps_sum=flow_bias_bps_sum,
         flow_bias_quotes=flow_bias_quotes,
+        funding_pnl_usd=funding_pnl_usd,
+        final_mark_price=final_mark_price,
     )
