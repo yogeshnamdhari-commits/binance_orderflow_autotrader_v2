@@ -65,3 +65,19 @@ NOT CERTIFIED, NO_DEPLOY.
 
 Therefore this branch is execution-hardened, but it is not economically
 certified for live trading.
+
+
+## BTCUSDT USDⓈ-M perpetual scope
+
+The production adapter is restricted to the registered ACTIVE_FLOW_HEDGE-0.1 candidate and BTCUSDT USDⓈ-M perpetual execution. The alpha/quote parameters are not retuned by the futures infrastructure.
+
+Authentic research captures must contain:
+- BTCUSDT USDⓈ-M depth@100ms
+- BTCUSDT USDⓈ-M aggTrade
+- BTCUSDT USDⓈ-M markPrice@1s
+- funding-rate observations
+- a valid REST depth snapshot bridged to the first depth update
+
+Capture sequence gaps and reconnects are fail-closed for certification. Spot captures are not valid futures certification evidence.
+
+The capture collector is scripts/capture_btcusdt_perp.py. The frozen-candidate gate is scripts/validate_afh01_btcusdt_perp.py.
