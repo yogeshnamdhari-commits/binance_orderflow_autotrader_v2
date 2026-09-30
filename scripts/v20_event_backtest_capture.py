@@ -169,7 +169,7 @@ def load_perpetual_auxiliary_events(
 ) -> tuple[list[MarkPriceEvent], list[FundingRateEvent]]:
     """Load mark-price/funding observations from an authentic USDⓈ-M capture."""
     marks: list[MarkPriceEvent] = []
-    funding: list[FundingRateEvent] = []
+    funding_by_time: dict[int, FundingRateEvent] = {}
     for row in _event_rows(capture_dir):
         if row.get("event_type") != "markPriceUpdate":
             continue
@@ -190,14 +190,12 @@ def load_perpetual_auxiliary_events(
             )
         )
         if rate is not None and next_funding_ms > 0:
-            funding.append(
-                FundingRateEvent(
-                    timestamp_ns=next_funding_ms * 1_000_000,
-                    funding_rate=rate,
-                    mark_price=mark,
-                )
+            funding_by_time[next_funding_ms * 1_000_000] = FundingRateEvent(
+                timestamp_ns=next_funding_ms * 1_000_000,
+                funding_rate=rate,
+                mark_price=None,
             )
-    return marks, funding
+    return marks, sorted(funding_by_time.values(), key=lambda x: x.timestamp_ns)
 
 
 def summarize(result: EventBacktestResult) -> dict[str, Any]:
