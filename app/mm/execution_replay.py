@@ -34,6 +34,25 @@ class TradeEvent:
 
 
 @dataclass(frozen=True)
+class MarkPriceEvent:
+    """BTCUSDT USDⓈ-M mark-price observation."""
+
+    timestamp_ns: int
+    mark_price: float
+    next_funding_time_ns: int = 0
+    funding_rate: float | None = None
+
+
+@dataclass(frozen=True)
+class FundingRateEvent:
+    """Funding rate scheduled for the specified funding timestamp."""
+
+    timestamp_ns: int
+    funding_rate: float
+    mark_price: float | None = None
+
+
+@dataclass(frozen=True)
 class CancelEvent:
     timestamp_ns: int
     quote_id: str
