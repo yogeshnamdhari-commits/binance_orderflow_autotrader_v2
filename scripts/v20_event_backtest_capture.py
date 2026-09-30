@@ -75,7 +75,7 @@ def load_events(capture_dir: Path) -> tuple[list[L2Update], list[TradeEvent], di
     previous_depth_u = snapshot.last_update_id
     first_depth = True
     reconnects = 0
-    gaps_skipped = 0
+    gaps_detected = 0
 
     for row in _event_rows(capture_dir):
         row_count += 1
@@ -112,9 +112,12 @@ def load_events(capture_dir: Path) -> tuple[list[L2Update], list[TradeEvent], di
                 else:
                     prev_id = pu
                     if prev_id != previous_depth_u:
-                        # Documented gap (e.g. reconnect boundary). Skip the
-                        # sequence assertion but keep the update for replay.
-                        gaps_skipped += 1
+                        gaps_detected += 1
+                        raise ValueError(
+                            "L2 sequence gap in capture: "
+                            f"expected pu={previous_depth_u}, got pu={prev_id}, "
+                            f"U={U}, u={u}"
+                        )
                 depth.append(
                     L2Update(
                         timestamp_ns=event_ms * 1_000_000,
@@ -157,7 +160,7 @@ def load_events(capture_dir: Path) -> tuple[list[L2Update], list[TradeEvent], di
         "depth_events": len(depth),
         "trade_events": len(trades),
         "reconnect_markers": reconnects,
-        "documented_gaps_skipped": gaps_skipped,
+        "sequence_gaps_detected": gaps_detected,
     }
 
 
