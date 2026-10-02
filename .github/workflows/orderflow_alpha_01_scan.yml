@@ -1,13 +1,10 @@
 name: ORDERFLOW_ALPHA-0.1 Fresh BTCUSDT Scan
 
 concurrency:
-  group: orderflow-alpha-0.1-{{'{'} github.event.pull_request.number || github.ref {'}'}{'}'}
+  group: orderflow-alpha-0.1-{{'{'} github.head_ref || github.ref {'}'}{'}'}
   cancel-in-progress: true
 
 on:
-  push:
-    branches:
-      - research/orderflow-alpha-0.1
   pull_request:
     branches:
       - production/active-flow-hedge-0.1-hardening
