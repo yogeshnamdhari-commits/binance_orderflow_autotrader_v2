@@ -14,8 +14,9 @@ Run one capture at a time:
   python research/collect_orderflow_state_transition.py --capture 1
   python research/collect_orderflow_state_transition.py --capture 2
   python research/collect_orderflow_state_transition.py --capture 3
+  python research/collect_orderflow_state_transition.py --capture 4
 
-Capture 1 is development-only. Captures 2 and 3 are untouched OOS.
+Capture 1 is development-only. Captures 2, 3, and 4 are untouched OOS.
 """
 
 from __future__ import annotations
@@ -395,7 +396,7 @@ async def capture(capture_no: int) -> int:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--capture", type=int, choices=(1, 2, 3), required=True)
+    parser.add_argument("--capture", type=int, choices=(1, 2, 3, 4), required=True)
     return parser.parse_args()
 
 
