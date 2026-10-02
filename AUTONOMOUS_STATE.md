@@ -159,3 +159,49 @@ EXP-018: Cross-market derivatives analysis COMPLETE — REJECTED, no incremental
 ## DEPLOYMENT_STATUS
 DEPLOYABLE_EDGE = FALSE
 LIVE_TRADING = HARD_BLOCKED
+
+
+---
+
+## CURRENT RESEARCH STATE — 2026-10-02
+
+### CURRENT_PHASE
+PHASE_2_ALPHA_DISCOVERY
+
+### FROZEN_CANDIDATES
+- ACTIVE_FLOW_HEDGE-0.1 — FROZEN / NOT CERTIFIED
+- DIRECTIONAL_TAKER-0.1 — FROZEN / NOT CERTIFIED
+- DIRECTIONAL_TAKER-0.2 — FROZEN / NOT CERTIFIED
+- MAKER_QUEUE-0.1 — FROZEN / NOT CERTIFIED
+
+These four candidates are immutable research records. Phase 2 does not modify or retroactively reclassify them.
+
+### CURRENT_HYPOTHESIS
+ORDERFLOW_ALPHA-0.1
+
+Search 250ms, 500ms, 1s, 2s, 5s, 10s, 30s and 60s horizons using expanded BTCUSDT USD-M perpetual order-flow features: trade-flow imbalance, L2 imbalance, microprice displacement, depth depletion/replenishment, trade intensity, volatility and flow-volatility interactions.
+
+### ECONOMIC_GATE
+One-way taker cost basis: 1.7 bps
+Round-trip cost: 3.4 bps
+Safety buffer: 2.0 bps
+Gross-edge gate: >5.4 bps
+
+The 5.4 bps figure is a preregistered research gate, not an observed alpha result.
+
+### VALIDATION_DESIGN
+Three fresh authentic BTCUSDT USD-M perpetual captures: capture 1 development, captures 2-3 untouched OOS. Reject any capture with sequence gaps, reconnects or invalid bootstrap. Require positive OOS net economics after the 3.4 bps round-trip cost.
+
+### DATA_ACQUISITION_STATUS
+The initial GitHub-hosted capture attempt stopped at the Binance Futures REST depth snapshot with HTTP 451. This is an acquisition-environment failure, not economic evidence. The collector now uses the Binance Futures WebSocket API depth snapshot and the current USD-M /public and /market stream paths.
+
+### CURRENT_RESULT
+ORDERFLOW_ALPHA-0.1 = PENDING FRESH AUTHENTIC DATA
+
+### DEPLOYMENT_STATUS
+ECONOMIC_CERTIFICATION = NOT_CERTIFIED
+LIVE_AUTHORIZATION = BLOCKED
+DEPLOYMENT = NO_DEPLOY
+
+### NEXT_ACTION
+Complete the preregistered fresh-data capture and alpha/horizon scan. No live execution. No frozen-candidate changes.
