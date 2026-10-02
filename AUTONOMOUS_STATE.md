@@ -161,10 +161,10 @@ LIVE_TRADING = HARD_BLOCKED
 
 ---
 
-## CURRENT RESEARCH STATE — 2026-10-02
+## CURRENT RESEARCH STATE — 2026-10-03
 
 ### CURRENT_PHASE
-PHASE_2_ALPHA_DISCOVERY
+PHASE_2_ALPHA_DISCOVERY_CLOSED
 
 ### FROZEN_CANDIDATES
 - ACTIVE_FLOW_HEDGE-0.1 — FROZEN / NOT CERTIFIED
@@ -175,7 +175,7 @@ PHASE_2_ALPHA_DISCOVERY
 These four candidates are immutable research records. Phase 2 does not modify or retroactively reclassify them.
 
 ### CURRENT_HYPOTHESIS
-ORDERFLOW_ALPHA-0.1
+ORDERFLOW_ALPHA-0.1 — CLOSED / REJECTED
 
 Search 250ms, 500ms, 1s, 2s, 5s, 10s, 30s and 60s horizons using expanded BTCUSDT USD-M perpetual order-flow features: trade-flow imbalance, L2 imbalance, microprice displacement, depth depletion/replenishment, trade intensity, volatility and flow-volatility interactions.
 
@@ -194,7 +194,7 @@ Three fresh authentic BTCUSDT USD-M perpetual captures: capture 1 development, c
 The initial GitHub-hosted capture attempt stopped at the Binance Futures REST depth snapshot with HTTP 451. This is an acquisition-environment failure, not economic evidence. The collector now uses the Binance Futures WebSocket API depth snapshot and the current USD-M /public and /market stream paths.
 
 ### CURRENT_RESULT
-ORDERFLOW_ALPHA-0.1 = PENDING FRESH AUTHENTIC DATA
+ORDERFLOW_ALPHA-0.1 = CLOSED / REJECTED — best pooled OOS gross +1.2194154631 bps, net -2.1805845369 bps at 30s on book_imbalance_10; no economic candidate
 
 ### DEPLOYMENT_STATUS
 ECONOMIC_CERTIFICATION = NOT_CERTIFIED
@@ -202,7 +202,7 @@ LIVE_AUTHORIZATION = BLOCKED
 DEPLOYMENT = NO_DEPLOY
 
 ### NEXT_ACTION
-Complete the preregistered fresh-data capture and alpha/horizon scan. No live execution. No frozen-candidate changes.
+Register a new hypothesis before any further alpha research. Preserve all frozen candidates and the completed ORDERFLOW_ALPHA-0.1 evidence. No live execution.
 
 
 ---
@@ -238,7 +238,7 @@ NO_DEPLOY
 
 ### RESEARCH_PHASE
 Phase 1 remains CLOSED and immutable.
-Phase 2 remains ACTIVE with ORDERFLOW_ALPHA-0.1 as the current alpha-discovery hypothesis.
+Phase 2 ORDERFLOW_ALPHA-0.1 is CLOSED / REJECTED. Any further research requires a new preregistered hypothesis.
 
 The execution-layer hardening is an infrastructure state transition only. It does not create, imply, or retroactively establish trading edge.
 
