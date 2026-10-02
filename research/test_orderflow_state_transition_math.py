@@ -115,9 +115,10 @@ def score_timestamp_fields(
 ) -> dict[str, int]:
     """Build deterministic timestamp diagnostics for a scored signal."""
     if not (
-        signal_time_exchange_ms <= entry_book_time_exchange_ms <= exit_book_time_exchange_ms
+        signal_book_time_exchange_ms <= signal_time_exchange_ms
+        <= entry_book_time_exchange_ms <= exit_book_time_exchange_ms
     ):
-        raise ValueError("non-monotonic signal/entry/exit timestamps")
+        raise ValueError("non-monotonic signal/book/entry/exit timestamps")
     return {
         "signal_time_exchange_ms": signal_time_exchange_ms,
         "book_snapshot_age_ms": signal_time_exchange_ms - signal_book_time_exchange_ms,
@@ -128,22 +129,23 @@ def score_timestamp_fields(
 
 
 def test_long_and_short_sign_symmetry() -> None:
-    # The same favorable 1% underlying path is represented from opposite
-    # directional perspectives. Both should produce the same positive edge
-    # magnitude for their corresponding directional trade.
+    # The same entry/exit prices must produce opposite directional signs.
+    # Exact equal magnitude is not expected for simple-return bps because
+    # LONG and SHORT use reciprocal price ratios.
     long_gross = executable_gross_bps("LONG", 100.0, 101.0)
-    short_gross = executable_gross_bps("SHORT", 101.0, 100.0)
+    short_gross = executable_gross_bps("SHORT", 100.0, 101.0)
 
-    assert isclose(long_gross, short_gross, rel_tol=0, abs_tol=1e-12)
+    assert long_gross > 0
+    assert short_gross < 0
     assert isclose(long_gross, 100.0, rel_tol=0, abs_tol=1e-12)
+    assert isclose(short_gross, -99.00990099009901, rel_tol=0, abs_tol=1e-12)
 
-    # On the same adverse price path, both directions must flip sign.
+    # Reversing the underlying price path reverses both directional signs.
     long_loss = executable_gross_bps("LONG", 101.0, 100.0)
-    short_loss = executable_gross_bps("SHORT", 100.0, 101.0)
+    short_gain = executable_gross_bps("SHORT", 101.0, 100.0)
 
-    assert isclose(long_loss, short_loss, rel_tol=0, abs_tol=1e-12)
     assert long_loss < 0
-
+    assert short_gain > 0
 
 def test_long_fixed_quantity_vwap_and_exact_fee_normalization() -> None:
     entry_vwap, entry_qty = vwap_for_notional(
