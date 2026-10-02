@@ -255,6 +255,27 @@ Do not use an IID t-statistic as the primary inference.
 
 Capture 1 remains development-only. It cannot select thresholds, alter the signal rule, choose the cost model, or determine the OOS decision. Captures 2, 3, and 4 remain untouched OOS.
 
+### 9.0 Timestamp and execution-record contract
+
+Each scored signal must retain a machine-readable evidence row containing at minimum:
+
+- `signal_time_exchange_ms`
+- `book_snapshot_age_ms`
+- `entry_snapshot_delay_ms`
+- `entry_vwap_price`
+- `exit_vwap_price`
+- `gross_bps`
+- `executable_gross_bps`
+- `fee_bps`
+- `funding_bps`
+- `net_bps`
+- `book_depth_sufficient`
+- `exclusion_reason` when the outcome is unresolved/excluded
+
+The signal-time book age is measured between the signal timestamp and the reconstructed book timestamp used to evaluate the state. Under the registered event-driven reconstruction this should normally be zero because the signal is generated from the current depth event. The economically relevant execution-latency diagnostic is `entry_snapshot_delay_ms`, measured from signal time to the first subsequent valid book snapshot used for entry.
+
+No arbitrary stale-book millisecond cutoff is introduced by this amendment. A signal is invalid for executable scoring when the required post-signal entry snapshot or +5-second exit snapshot cannot be resolved from valid captured data; the reason must be recorded rather than silently dropped.
+
 ### 9.1 Results table contract
 
 | Metric | Definition |
