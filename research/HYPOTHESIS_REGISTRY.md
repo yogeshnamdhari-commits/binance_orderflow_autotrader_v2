@@ -151,7 +151,7 @@ information set.
 
 ---
 
-## CURRENT PHASE 2 REGISTRY — 2026-10-02
+## HISTORICAL PHASE 2 REGISTRY — 2026-10-02
 
 ### Frozen 100ms Flow-Execution Family
 | ID | Execution | Result | Status |
@@ -161,8 +161,8 @@ information set.
 | DIRECTIONAL_TAKER-0.2 | Taker/Maker | -1.99 bps net | FROZEN / NOT CERTIFIED |
 | MAKER_QUEUE-0.1 | Maker/Maker + queue | -99.23 bps net | FROZEN / NOT CERTIFIED |
 
-### ORDERFLOW_ALPHA-0.1
-**Status:** ACTIVE RESEARCH / PENDING FRESH AUTHENTIC DATA
+### ORDERFLOW_ALPHA-0.1 — HISTORICAL REGISTRATION
+**Status:** CLOSED / REJECTED (final closure recorded 2026-10-03)
 
 **Scope:** BTCUSDT USD-M perpetual only.
 
@@ -174,7 +174,7 @@ information set.
 
 **Validation:** three fresh authentic captures; first development-only, second and third untouched OOS; no look-ahead; reject invalid sequence/reconnect/bootstrap captures; require positive OOS net economics after execution costs.
 
-**Current result:** NO RESULT YET. The first GitHub-hosted acquisition attempt failed at Binance Futures REST depth with HTTP 451. The collector was changed to use the Futures WebSocket API for the depth snapshot and current /public and /market stream routing.
+**Final result:** Best pooled OOS candidate was book_imbalance_10 at 30 seconds: +1.2194154631 bps gross, -2.1805845369 bps net after the preregistered 3.4 bps round-trip cost; 720 pooled OOS observations. No candidate cleared the >5.4 bps gross-edge gate.
 
 **Deployment:** NOT CERTIFIED / BLOCKED / NO_DEPLOY
 
