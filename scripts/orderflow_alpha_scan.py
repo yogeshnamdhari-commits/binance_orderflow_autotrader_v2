@@ -158,10 +158,12 @@ def _build_panel(capture: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     records: list[dict[str, float | int]] = []
     prev_depth5: float | None = None
     mid_hist: deque[tuple[int, float]] = deque()
+    trade_time_q: deque[int] = deque()
 
     for d in depth:
         while trade_i < len(trades) and trades[trade_i].ts_ns <= d.ts_ns:
             t = trades[trade_i]
+            trade_time_q.append(t.ts_ns)
             for w in FLOW_WINDOWS_MS:
                 cutoff = t.ts_ns - w * 1_000_000
                 q = flow_q[w]
@@ -179,6 +181,9 @@ def _build_panel(capture: Path) -> tuple[dict[str, Any], dict[str, Any]]:
             mid, spread, micro, bi5, bi10, depth5 = book.state()
         except ValueError:
             continue
+
+        while trade_time_q and trade_time_q[0] < d.ts_ns - 1_000_000_000:
+            trade_time_q.popleft()
 
         mids.append((d.ts_ns, mid))
         mid_hist.append((d.ts_ns, mid))
@@ -311,8 +316,10 @@ def main() -> int:
     oos=[]
     for gross_dev,n_dev,s in top:
         session_rows=[]
+        oos_values_by_session=[]
         for idx in (1,2):
             vals=_values(panels[idx]["records"],s)
+            oos_values_by_session.append(vals)
             gross=float(np.mean(vals)) if len(vals) else float("nan")
             ci=_bootstrap_ci(vals)
             net=gross-ROUND_TRIP_COST_BPS if math.isfinite(gross) else float("nan")
@@ -323,8 +330,8 @@ def main() -> int:
                 "passes_gross_gate":bool(math.isfinite(gross) and gross>GROSS_GATE_BPS),
                 "passes_net_gate":bool(math.isfinite(net) and net>0),
             })
-        valid=[x for x in session_rows if math.isfinite(x["gross_bps"])]
-        pooled_vals=np.concatenate([_values(panels[i]["records"],s) for i in (1,2) if len(_values(panels[i]["records"],s))])
+        nonempty=[vals for vals in oos_values_by_session if len(vals)]
+        pooled_vals=np.concatenate(nonempty) if nonempty else np.asarray([], dtype=float)
         pg=float(np.mean(pooled_vals)) if len(pooled_vals) else float("nan")
         pci=_bootstrap_ci(pooled_vals)
         oos.append({
