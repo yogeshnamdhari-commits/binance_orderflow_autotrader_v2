@@ -4,14 +4,19 @@
 Research infrastructure only. This script never places orders.
 
 Captured streams:
-  - BTCUSDT depth@100ms
-  - BTCUSDT aggTrade
-  - BTCUSDT markPrice@1s (mark price + current funding information)
+  - BTCUSDT depth@100ms (USDⓈ-M public stream)
+  - BTCUSDT aggTrade (USDⓈ-M market stream)
+  - BTCUSDT markPrice@1s (USDⓈ-M market stream)
 
-The raw events are preserved verbatim in events.jsonl. A REST depth snapshot
-is acquired after the WebSocket buffer starts so the snapshot can be bridged
-to the first valid depth update. Any sequence discontinuity after the bridge
-terminates the capture instead of producing a silently invalid dataset.
+The current USDⓈ-M WebSocket architecture separates high-frequency public
+streams from regular market streams. The order-book snapshot is requested over
+Binance's public Futures WebSocket API (method=depth) so the collector does not
+depend on the Futures REST endpoint being reachable from the capture host.
+
+The depth stream is started before the snapshot request. All depth updates are
+buffered until the snapshot's lastUpdateId is bridged. Any sequence
+discontinuity after the bridge terminates the capture rather than producing a
+silently invalid dataset. Any reconnect also invalidates the session.
 """
 
 from __future__ import annotations
@@ -23,13 +28,13 @@ import threading
 import time
 import uuid
 
-import requests
 import websocket
 
 
 SYMBOL = "BTCUSDT"
-WS_BASE = "wss://fstream.binance.com/stream?streams="
-REST_BASE = "https://fapi.binance.com"
+WS_PUBLIC_RAW = "wss://fstream.binance.com/public/ws"
+WS_MARKET_COMBINED = "wss://fstream.binance.com/market/stream"
+WS_API = "wss://ws-fapi.binance.com/ws-fapi/v1"
 
 
 class Capture:
@@ -52,6 +57,8 @@ class Capture:
         self.mark_count = 0
         self.sequence_gaps = 0
         self.reconnects = 0
+        self.errors: list[str] = []
+        self.websocket_threads: list[threading.Thread] = []
 
     def write_row(self, event_type: str, raw: str, **extra) -> None:
         row = {
@@ -65,30 +72,68 @@ class Capture:
             fh.flush()
         self.event_count += 1
 
+    def _snapshot_ws(self) -> dict:
+        request_id = uuid.uuid4().hex
+        ws = websocket.create_connection(WS_API, timeout=10)
+        try:
+            ws.send(
+                json.dumps(
+                    {
+                        "id": request_id,
+                        "method": "depth",
+                        "params": {
+                            "symbol": SYMBOL,
+                            "limit": 1000,
+                            "returnRateLimits": False,
+                        },
+                    },
+                    separators=(",", ":"),
+                )
+            )
+            deadline = time.monotonic() + 10
+            while time.monotonic() < deadline:
+                raw = ws.recv()
+                if not raw:
+                    continue
+                payload = json.loads(raw)
+                if str(payload.get("id")) != request_id:
+                    continue
+                if int(payload.get("status", 0)) != 200:
+                    raise RuntimeError(
+                        f"Binance Futures WebSocket depth request failed: {payload}"
+                    )
+                result = payload.get("result")
+                if not isinstance(result, dict) or not result.get("lastUpdateId"):
+                    raise RuntimeError("invalid BTCUSDT Futures WebSocket depth snapshot")
+                return result
+            raise TimeoutError("timed out waiting for BTCUSDT Futures WebSocket depth snapshot")
+        finally:
+            ws.close()
+
     def fetch_snapshot(self) -> None:
-        r = requests.get(
-            f"{REST_BASE}/fapi/v1/depth",
-            params={"symbol": SYMBOL, "limit": 1000},
-            timeout=10,
-        )
-        r.raise_for_status()
-        payload = r.json()
-        if not payload.get("lastUpdateId"):
-            raise RuntimeError("invalid BTCUSDT futures depth snapshot")
+        payload = self._snapshot_ws()
         self.snapshot_last_id = int(payload["lastUpdateId"])
         self.snapshot_path.write_text(
             json.dumps(
                 {
-                    "T": int(time.time() * 1000),
+                    "T": int(payload.get("T", time.time() * 1000)),
+                    "E": int(payload.get("E", 0)),
                     "lastUpdateId": self.snapshot_last_id,
                     "bids": payload["bids"],
                     "asks": payload["asks"],
+                    "source": "binance_usdm_websocket_api.depth",
+                    "endpoint": WS_API,
                 },
                 separators=(",", ":"),
             )
             + "\n",
             encoding="utf-8",
         )
+
+    def _unwrap(self, raw: str) -> tuple[dict, str]:
+        envelope = json.loads(raw)
+        data = envelope.get("data", envelope)
+        return data, json.dumps(envelope, separators=(",", ":"))
 
     def process_depth(self, raw: str, data: dict) -> None:
         U = int(data["U"])
@@ -116,74 +161,111 @@ class Capture:
         if pu and self.previous_u is not None and pu != self.previous_u:
             self.sequence_gaps += 1
             raise RuntimeError(
-                f"BTCUSDT futures L2 sequence gap: expected pu={self.previous_u}, got {pu}"
+                f"BTCUSDT Futures L2 sequence gap: expected pu={self.previous_u}, got pu={pu}"
             )
 
         self.previous_u = u
         self.depth_count += 1
         self.write_row("depthUpdate", raw)
 
-    def on_message(self, _ws, raw: str) -> None:
-        envelope = json.loads(raw)
-        data = envelope.get("data", envelope)
-        event = data.get("e")
+    def on_depth_message(self, _ws, raw: str) -> None:
+        try:
+            data, envelope = self._unwrap(raw)
+            if data.get("e") == "depthUpdate":
+                self.process_depth(envelope, data)
+        except Exception as exc:
+            self.errors.append(str(exc))
+            self.stopped.set()
 
-        if event == "depthUpdate":
-            self.process_depth(raw, data)
-        elif event == "aggTrade":
-            self.trade_count += 1
-            self.write_row("aggTrade", raw)
-        elif event == "markPriceUpdate":
-            # Contains mark price and current funding-rate information.
-            self.mark_count += 1
-            self.write_row("markPriceUpdate", raw)
+    def on_market_message(self, _ws, raw: str) -> None:
+        try:
+            data, envelope = self._unwrap(raw)
+            event = data.get("e")
+            if event == "aggTrade":
+                self.trade_count += 1
+                self.write_row("aggTrade", envelope)
+            elif event == "markPriceUpdate":
+                self.mark_count += 1
+                self.write_row("markPriceUpdate", envelope)
+        except Exception as exc:
+            self.errors.append(str(exc))
+            self.stopped.set()
 
     def on_error(self, _ws, error) -> None:
+        message = f"WebSocket error: {error}"
+        self.errors.append(message)
         self.stopped.set()
-        raise RuntimeError(f"WebSocket error: {error}")
 
     def on_close(self, _ws, _code, _msg) -> None:
         if not self.stopped.is_set():
             self.reconnects += 1
-            self.write_row("reconnect", json.dumps({"reason": "websocket_closed"}))
+            self.write_row(
+                "reconnect",
+                json.dumps({"reason": "websocket_closed"}, separators=(",", ":")),
+            )
             self.stopped.set()
 
-    def run(self) -> None:
-        streams = (
-            f"{SYMBOL.lower()}@depth@100ms/"
-            f"{SYMBOL.lower()}@aggTrade/"
-            f"{SYMBOL.lower()}@markPrice@1s"
-        )
-        url = WS_BASE + streams
+    def _run_socket(self, ws: websocket.WebSocketApp) -> None:
+        ws.run_forever(ping_interval=20, ping_timeout=10)
 
-        ws = websocket.WebSocketApp(
-            url,
-            on_message=self.on_message,
+    def run(self) -> None:
+        depth_url = f"{WS_PUBLIC_RAW}/{SYMBOL.lower()}@depth@100ms"
+        market_url = (
+            f"{WS_MARKET_COMBINED}?streams="
+            f"{SYMBOL.lower()}@aggTrade/{SYMBOL.lower()}@markPrice@1s"
+        )
+
+        depth_ws = websocket.WebSocketApp(
+            depth_url,
+            on_message=self.on_depth_message,
             on_error=self.on_error,
             on_close=self.on_close,
         )
-        thread = threading.Thread(
-            target=lambda: ws.run_forever(ping_interval=20, ping_timeout=10),
-            daemon=True,
+        market_ws = websocket.WebSocketApp(
+            market_url,
+            on_message=self.on_market_message,
+            on_error=self.on_error,
+            on_close=self.on_close,
         )
-        thread.start()
 
-        time.sleep(0.25)
+        depth_thread = threading.Thread(
+            target=lambda: self._run_socket(depth_ws),
+            daemon=True,
+            name="btc-depth",
+        )
+        market_thread = threading.Thread(
+            target=lambda: self._run_socket(market_ws),
+            daemon=True,
+            name="btc-market",
+        )
+        self.websocket_threads = [depth_thread, market_thread]
+        depth_thread.start()
+        market_thread.start()
+
+        # Give both streams time to establish before requesting the snapshot.
+        time.sleep(0.5)
         self.fetch_snapshot()
 
         deadline = time.monotonic() + self.duration_s
         while time.monotonic() < deadline and not self.stopped.is_set():
-            if self.bridged:
-                time.sleep(0.25)
-            else:
-                time.sleep(0.05)
+            time.sleep(0.25)
 
         self.stopped.set()
-        ws.close()
-        thread.join(timeout=5)
+        depth_ws.close()
+        market_ws.close()
+        for thread in self.websocket_threads:
+            thread.join(timeout=5)
 
+        if self.errors:
+            raise RuntimeError("; ".join(self.errors))
         if not self.bridged:
             raise RuntimeError("capture ended without a valid snapshot/depth bridge")
+        if self.sequence_gaps:
+            raise RuntimeError(f"capture ended with {self.sequence_gaps} sequence gaps")
+        if self.reconnects:
+            raise RuntimeError(f"capture ended with {self.reconnects} reconnects")
+        if not self.trade_count or not self.mark_count:
+            raise RuntimeError("capture lacks required trade/mark-price observations")
 
         manifest = {
             "schema_version": "AFH01-BTCUSDT-USD-M-PERP-v1",
@@ -197,6 +279,11 @@ class Capture:
                 "btcusdt@aggTrade",
                 "btcusdt@markPrice@1s",
             ],
+            "stream_endpoints": {
+                "depth": depth_url,
+                "market": market_url,
+                "snapshot": WS_API,
+            },
             "start_ns": self.started_ns,
             "end_ns": time.time_ns(),
             "event_count": self.event_count,
@@ -208,8 +295,15 @@ class Capture:
             "bootstrap": {
                 "status": "BRIDGED",
                 "snapshot_last_update_id": self.snapshot_last_id,
+                "snapshot_source": "websocket_api.depth",
             },
-            "certification_eligible": self.sequence_gaps == 0 and self.reconnects == 0,
+            "certification_eligible": (
+                self.sequence_gaps == 0
+                and self.reconnects == 0
+                and self.bridged
+                and self.trade_count > 0
+                and self.mark_count > 0
+            ),
         }
         (self.out / "manifest.json").write_text(
             json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
