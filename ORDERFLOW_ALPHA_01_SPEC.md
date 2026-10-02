@@ -47,3 +47,43 @@ are interpreted.
 - No frozen candidate/config is modified.
 - No live execution is enabled.
 - A negative OOS result closes the corresponding rule; it is not tuned on OOS data.
+
+
+## FINAL RESULT — 2026-10-03
+
+### Capture Integrity
+The preregistered three-session fresh-data run completed with valid data integrity:
+- Capture 1: 15,072 events; 5,886 depth; 8,585 trade; 601 mark/funding; 0 sequence gaps; 0 reconnects; BRIDGED bootstrap.
+- Capture 2: 16,788 events; 5,887 depth; 10,300 trade; 601 mark/funding; 0 sequence gaps; 0 reconnects; BRIDGED bootstrap.
+- Capture 3: 13,859 events; 5,886 depth; 7,372 trade; 601 mark/funding; 0 sequence gaps; 0 reconnects; BRIDGED bootstrap.
+
+A total of 240 preregistered development candidates were tested.
+
+### Economic Result
+No candidate satisfied the preregistered gross-edge gate of >5.4 bps and positive OOS net edge.
+
+Best pooled OOS candidate:
+- Feature: `book_imbalance_10`
+- Horizon: 30 seconds
+- Threshold: 0.9003740724396974
+- OOS observations: 720
+- Gross edge: +1.2194154631 bps
+- Net edge after 3.4 bps round-trip cost: -2.1805845369 bps
+- Economic candidate: false
+
+The gross-edge shortfall versus the 5.4 bps gate is 4.1805845369 bps.
+
+### Closure
+ORDERFLOW_ALPHA-0.1 is CLOSED / REJECTED on economic grounds under its preregistered information set and execution-cost assumptions.
+
+This result does not modify or reclassify any frozen Phase 1 candidate. It also does not establish that no profitable BTCUSDT order-flow strategy exists under different information, execution, or market assumptions.
+
+### Future Research Questions
+Any further research must be registered as a new hypothesis before testing. Plausible research dimensions already identified in the ledger include:
+- richer multi-level causal order-book state and state-transition features;
+- cross-venue or spot/perpetual lead-lag information;
+- funding, basis, open-interest, or liquidation information where authentic historical data can be obtained;
+- lower-cost maker execution and queue-position modeling;
+- instrument/market selection with different execution-cost-to-signal ratios.
+
+No future hypothesis is implied or preselected by this closure entry.
