@@ -12,15 +12,15 @@
 | Contract | Perpetual |
 | Signal object | Transition into persistent, aligned multi-level OFI state |
 | Primary horizon | 5 seconds |
-| Sessions | Capture 1 development; Captures 2 and 3 untouched OOS |
+| Sessions | Capture 1 development; Captures 2, 3, and 4 untouched OOS |
 | Live orders | **FALSE** |
 | Economic benchmark | 100 USDT reference taker/taker execution |
 | Base fee assumption | 5.0 bps per side / 10.0 bps round trip |
 | Spread / depth impact | Measured from reconstructed book VWAP at entry and exit |
 | Funding | Included only when the modeled 5-second hold crosses a settlement |
-| Safety buffer | 2.0 bps |
-| Statistical inference | 10,000-resample, 5-second block bootstrap; seed 20261003 |
-| OOS pass | Mean net > 2.0 bps; 95% CI lower bound > 0; both OOS session means > 0; minimum signal floors |
+| Safety buffer | 2.0 bps included in net_bps |
+| Statistical inference | 10,000-resample, 300-second clock-time block bootstrap; seed 20261003 |
+| OOS pass | Pooled 95% CI lower bound of net > 0; all 3 OOS session means > 0; >=30 signals/session; >=90 pooled |
 | Deployment | **NOT_CERTIFIED / BLOCKED / NO_DEPLOY** |
 | Branch | `research/orderflow-state-transition-01` |
 
