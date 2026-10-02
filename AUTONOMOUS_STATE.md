@@ -243,3 +243,43 @@ Phase 2 remains ACTIVE with ORDERFLOW_ALPHA-0.1 as the current alpha-discovery h
 The execution-layer hardening is an infrastructure state transition only. It does not create, imply, or retroactively establish trading edge.
 
 Frozen Phase 1 candidates remain unchanged and cannot be modified or reclassified through execution hardening.
+
+
+---
+
+## RESEARCH LEDGER FINALIZED — 2026-10-03 (PHASE 2 CLOSURE)
+
+### PHASE_STATUS
+- Phase 1 — CLOSED / FROZEN / NOT CERTIFIED.
+- Phase 2 ORDERFLOW_ALPHA-0.1 — CLOSED / REJECTED on the preregistered economic gate.
+- Further alpha discovery requires a separately preregistered new hypothesis.
+
+### ORDERFLOW_ALPHA-0.1_RESULT
+Fresh authentic BTCUSDT USD-M perpetual data integrity:
+- 3 captures completed.
+- Sequence gaps: 0 across all captures.
+- Reconnects: 0 across all captures.
+- Bootstrap: BRIDGED across all captures.
+- Development candidates tested: 240.
+
+Best pooled OOS candidate:
+- Feature: book_imbalance_10
+- Horizon: 30 seconds
+- OOS observations: 720
+- Gross edge: +1.2194154631 bps
+- Net edge: -2.1805845369 bps after 3.4 bps round-trip cost
+- Preregistered gross-edge gate: >5.4 bps
+- Economic candidate: FALSE
+
+### CERTIFICATION_AND_DEPLOYMENT
+ECONOMIC_CERTIFICATION = NOT_CERTIFIED
+LIVE_AUTHORIZATION = BLOCKED
+DEPLOYMENT = NO_DEPLOY
+
+### EXECUTION_LAYER
+The ACTIVE_FLOW_HEDGE-0.1 execution layer remains hardened, but hardening is an infrastructure state and does not constitute economic certification.
+
+### IMPORTANT_RESEARCH_BOUNDARY
+The Phase 2 preregistered scan is exhausted and closed. This does not prove that all conceivable BTCUSDT order-flow strategies are unprofitable; it establishes a negative result for the tested information set, rule family, data window and execution-cost assumptions.
+
+Any future investigation must be separately preregistered. Frozen candidates and their research records remain immutable.
