@@ -272,7 +272,7 @@ The following are prohibited:
 
 - Using future trades, future depth, or future mark price in feature construction.
 - Recomputing a normalization window using future observations.
-- Selecting thresholds from captures 2 or 3.
+- Selecting thresholds from captures 2, 3, or 4.
 - Changing the 5-second primary horizon after OOS inspection.
 - Adding funding, open interest, liquidations, cross-venue data, ML models, news, or extra indicators after registration.
 - Reusing previously inspected OOS captures for this hypothesis.
@@ -295,6 +295,10 @@ Stop and classify the capture as invalid if any of the following occurs:
 
 Do not repair an invalid session by guessing or backfilling synthetic values.
 
+## 11.5 Pre-capture synthetic measurement audit
+
+Before Capture 1 is collected, run `research/test_orderflow_state_transition_math.py` on the research branch. This synthetic audit checks deterministic VWAP construction, fixed-quantity exit handling, LONG/SHORT symmetry, taker-fee normalization, funding as a separate cost component, and fail-closed behavior on insufficient displayed depth. It uses no research captures or external market data and does not affect the preregistered research result.
+
 ## 12. Required evidence outputs
 
 The implementation must produce, at minimum:
@@ -305,7 +309,9 @@ The implementation must produce, at minimum:
 - excluded-event counts and reasons
 - signal count by direction
 - gross bps mean/median
+- executable gross bps mean/median
 - net bps mean/median
+- adverse-selection diagnostic mean/median
 - pooled OOS gross and net
 - 95% block-bootstrap CIs
 - per-session OOS gross/net
