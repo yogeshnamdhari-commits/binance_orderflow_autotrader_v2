@@ -4,6 +4,7 @@ from decimal import Decimal
 import json
 from pathlib import Path
 import tempfile
+import time
 
 import pytest
 
@@ -70,7 +71,12 @@ def make_guard(fake, manifest_path):
     guard.state.authorized = True
     guard.state.book_synchronized = True
     guard.state.user_stream_healthy = True
+    guard.state.trade_stream_healthy = True
     guard.state.reconciliation_ok = True
+    now_ms = int(time.time() * 1000)
+    guard.state.last_market_event_ms = now_ms
+    guard.state.last_user_event_ms = now_ms
+    guard.state.last_trade_event_ms = now_ms
     return guard
 
 
@@ -127,7 +133,7 @@ def test_position_limit_is_blocked():
 def test_candidate_parameters_remain_frozen():
     root = Path(__file__).resolve().parents[1]
     data = json.loads(
-        (root / "mm" / "config_v21_active_flow_hedge_01bps.json").read_text()
+        (root / "app" / "mm" / "config_v21_active_flow_hedge_01bps.json").read_text()
     )
     assert data["live_order_submission"] is False
     assert data["flow_quote_bias_bps"] == 1.0
@@ -169,13 +175,67 @@ def test_live_runner_bootstraps_feeds_before_authorization():
     root = Path(__file__).resolve().parents[1]
     source = (root / "scripts" / "active_flow_hedge_live.py").read_text()
     start_user = source.index("        self.user_stream.start()")
-    start_market = source.index("        self.market_thread.start()")
+    start_depth = source.index("        self.depth_thread.start()")
+    start_trade = source.index("        self.trade_thread.start()")
     start_auth = source.index("        self.guard.authorize()")
     assert start_user < start_auth
-    assert start_market < start_auth
+    assert start_depth < start_auth
+    assert start_trade < start_auth
 
 
 def test_private_user_stream_uses_routed_endpoint():
     root = Path(__file__).resolve().parents[1]
     source = (root / "app" / "mm" / "production_execution.py").read_text()
     assert "wss://fstream.binance.com/private/ws/{listen_key}" in source
+
+
+def test_trade_stream_failure_revokes_authorization():
+    fake = FakeREST()
+    with tempfile.TemporaryDirectory() as td:
+        guard = make_guard(fake, Path(td) / "manifest.json")
+        guard.state.trade_stream_healthy = False
+        guard.state.last_trade_event_ms = 0
+        guard.health_check()
+        assert guard.state.authorized is False
+        assert guard.state.kill_switch is True
+        assert "trade stream stale" in guard.state.kill_reason
+
+
+def test_live_runner_uses_current_routed_usdm_websockets():
+    root = Path(__file__).resolve().parents[1]
+    source = (root / "scripts" / "active_flow_hedge_live.py").read_text()
+    assert "wss://fstream.binance.com/public/ws/" in source
+    assert "wss://fstream.binance.com/market/stream?streams=" in source
+    assert "wss://fstream.binance.com/private/ws/{listen_key}" in source
+
+
+def test_live_authorization_requires_explicit_arming_gate(monkeypatch):
+    fake = FakeREST()
+    with tempfile.TemporaryDirectory() as td:
+        manifest = Path(td) / "manifest.json"
+        write_manifest(manifest, "abc")
+        guard = ProductionExecutionGuard(
+            rest=fake,
+            symbol="BTCUSDT",
+            max_position_notional_usd=5000,
+            candidate_config_sha256="abc",
+            research_reference_commit="a06e8f590634777bbd5ade86ef3b2563194ca2ed",
+            manifest_path=manifest,
+        )
+        guard.state.book_synchronized = True
+        guard.state.user_stream_healthy = True
+        guard.state.trade_stream_healthy = True
+        now_ms = int(time.time() * 1000)
+        guard.state.last_market_event_ms = now_ms
+        guard.state.last_user_event_ms = now_ms
+        guard.state.last_trade_event_ms = now_ms
+        guard.state.reconciliation_ok = True
+
+        monkeypatch.delenv("AFH_LIVE_ORDERS", raising=False)
+        with pytest.raises(ProductionSafetyError, match="AFH_LIVE_ORDERS=ARMED"):
+            guard.authorize()
+
+        monkeypatch.setenv("AFH_LIVE_ORDERS", "ARMED")
+        guard.state.kill_switch = False
+        guard.authorize()
+        assert guard.state.authorized is True

@@ -8,6 +8,7 @@ import hashlib
 import hmac
 import json
 import math
+import os
 from pathlib import Path
 import threading
 import time
@@ -274,9 +275,11 @@ class ExecutionState:
     authorized: bool = False
     book_synchronized: bool = False
     user_stream_healthy: bool = False
+    trade_stream_healthy: bool = False
     reconciliation_ok: bool = False
     last_market_event_ms: int = 0
     last_user_event_ms: int = 0
+    last_trade_event_ms: int = 0
     position_qty: float = 0.0
     position_notional_usd: float = 0.0
     open_orders: dict[str, dict[str, Any]] = field(default_factory=dict)
@@ -331,6 +334,10 @@ class ProductionExecutionGuard:
     ) -> None:
         self.rest = rest
         self.symbol = symbol
+        if self.symbol != "BTCUSDT":
+            raise ProductionSafetyError(
+                f"production scope is BTCUSDT only; got {self.symbol}"
+            )
         self.max_position_notional_usd = float(max_position_notional_usd)
         self.candidate_config_sha256 = candidate_config_sha256
         self.research_reference_commit = research_reference_commit
@@ -365,6 +372,11 @@ class ProductionExecutionGuard:
         with self._lock:
             self.state.last_market_event_ms = int(event_ms)
             self.state.book_synchronized = bool(synchronized)
+
+    def update_trade_heartbeat(self, event_ms: int) -> None:
+        with self._lock:
+            self.state.last_trade_event_ms = int(event_ms)
+            self.state.trade_stream_healthy = True
 
     def update_user_heartbeat(self, event_ms: int) -> None:
         with self._lock:
@@ -462,9 +474,14 @@ class ProductionExecutionGuard:
                 now - self.state.last_user_event_ms
                 if self.state.last_user_event_ms else 10**9
             )
+            trade_age = (
+                now - self.state.last_trade_event_ms
+                if self.state.last_trade_event_ms else 10**9
+            )
             blocked = self.state.kill_switch
             book_ok = self.state.book_synchronized
             user_ok = self.state.user_stream_healthy
+            trade_ok = self.state.trade_stream_healthy
             recon_ok = self.state.reconciliation_ok
 
         if blocked:
@@ -475,6 +492,8 @@ class ProductionExecutionGuard:
             self.trip(f"market data stale: {market_age}ms")
         elif not user_ok or user_age > self.max_user_stream_stale_ms:
             self.trip(f"user stream stale: {user_age}ms")
+        elif not trade_ok or trade_age > self.max_market_stale_ms:
+            self.trip(f"trade stream stale: {trade_age}ms")
         elif not recon_ok:
             self.trip("reconciliation not confirmed")
 
@@ -494,6 +513,10 @@ class ProductionExecutionGuard:
             raise ProductionSafetyError("execution authorization != AUTHORIZED")
         if self.kill_switch_path.exists():
             raise ProductionSafetyError("external kill switch present")
+        if os.environ.get("AFH_LIVE_ORDERS", "").upper() != "ARMED":
+            raise ProductionSafetyError(
+                "live execution arming gate not set: AFH_LIVE_ORDERS=ARMED required"
+            )
 
         self.rest.sync_clock()
         self.load_rules()
@@ -506,6 +529,8 @@ class ProductionExecutionGuard:
             raise ProductionSafetyError("book synchronization gate not satisfied")
         if not self.state.user_stream_healthy:
             raise ProductionSafetyError("user-data stream gate not satisfied")
+        if not self.state.trade_stream_healthy:
+            raise ProductionSafetyError("trade stream gate not satisfied")
         if not self.state.reconciliation_ok:
             raise ProductionSafetyError("reconciliation gate not satisfied")
 
@@ -534,6 +559,7 @@ class ProductionExecutionGuard:
         best_bid: float,
         best_ask: float,
     ) -> tuple[Decimal, Decimal]:
+        self.health_check()
         with self._lock:
             rules = self.rules
             kill = self.state.kill_switch
