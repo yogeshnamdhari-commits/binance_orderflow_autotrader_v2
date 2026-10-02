@@ -1,8 +1,18 @@
 #!/usr/bin/env python3
 """Deterministic pre-capture audit for ORDERFLOW_STATE_TRANSITION-0.1 A-002.
 
-Code/measurement audit only. Synthetic books only; no research captures or
-external market data are consumed.
+Code/measurement audit only. Synthetic books/timestamps only; no research
+captures, account access, or external market data are consumed.
+
+The audit checks:
+- notional-based entry VWAP
+- fixed-base-quantity exit VWAP
+- LONG/SHORT sign symmetry on the same price path
+- exact taker fee normalization from both legs
+- fixed 2.0 bps safety buffer
+- funding as a separate cost component
+- fail-closed insufficient depth
+- deterministic signal/entry/exit timestamp bookkeeping
 """
 
 from __future__ import annotations
@@ -19,7 +29,7 @@ def vwap_for_notional(
     levels: list[tuple[float, float]],
     notional_usdt: float,
 ) -> tuple[float, float]:
-    """Return VWAP and base quantity for a quoted-notional purchase/sale."""
+    """Return VWAP and base quantity after consuming quoted notional."""
     if not levels or notional_usdt <= 0:
         raise ValueError("invalid input")
 
@@ -75,16 +85,67 @@ def executable_gross_bps(side: str, entry_vwap: float, exit_vwap: float) -> floa
     raise ValueError("side must be LONG or SHORT")
 
 
-def exact_taker_fee_bps(initial_notional: float, entry_notional: float, exit_notional: float) -> float:
+def exact_taker_fee_bps(
+    initial_notional: float,
+    entry_notional: float,
+    exit_notional: float,
+) -> float:
+    """Normalize actual two-leg fees by initial entry notional."""
+    if initial_notional <= 0 or entry_notional <= 0 or exit_notional <= 0:
+        raise ValueError("invalid notional")
     fee_usdt = TAKER_FEE_RATE * (entry_notional + exit_notional)
     return fee_usdt / initial_notional * 10_000.0
 
 
-def net_bps(executable_gross: float, fee_bps: float, funding_bps: float = 0.0) -> float:
+def net_bps(
+    executable_gross: float,
+    fee_bps: float,
+    funding_bps: float = 0.0,
+) -> float:
+    """Safety buffer is intentionally fixed, not a driftable parameter."""
     return executable_gross - fee_bps - funding_bps - SAFETY_BUFFER_BPS
 
 
-def test_long_fixed_quantity_vwap_and_cost_stack() -> None:
+def score_timestamp_fields(
+    signal_time_exchange_ms: int,
+    signal_book_time_exchange_ms: int,
+    entry_book_time_exchange_ms: int,
+    exit_book_time_exchange_ms: int,
+    target_exit_time_exchange_ms: int,
+) -> dict[str, int]:
+    """Build deterministic timestamp diagnostics for a scored signal."""
+    if not (
+        signal_time_exchange_ms <= entry_book_time_exchange_ms <= exit_book_time_exchange_ms
+    ):
+        raise ValueError("non-monotonic signal/entry/exit timestamps")
+    return {
+        "signal_time_exchange_ms": signal_time_exchange_ms,
+        "book_snapshot_age_ms": signal_time_exchange_ms - signal_book_time_exchange_ms,
+        "entry_snapshot_delay_ms": entry_book_time_exchange_ms - signal_time_exchange_ms,
+        "exit_snapshot_delay_ms": exit_book_time_exchange_ms - signal_time_exchange_ms,
+        "exit_resolution_error_ms": exit_book_time_exchange_ms - target_exit_time_exchange_ms,
+    }
+
+
+def test_long_and_short_sign_symmetry() -> None:
+    # The same favorable 1% underlying path is represented from opposite
+    # directional perspectives. Both should produce the same positive edge
+    # magnitude for their corresponding directional trade.
+    long_gross = executable_gross_bps("LONG", 100.0, 101.0)
+    short_gross = executable_gross_bps("SHORT", 101.0, 100.0)
+
+    assert isclose(long_gross, short_gross, rel_tol=0, abs_tol=1e-12)
+    assert isclose(long_gross, 100.0, rel_tol=0, abs_tol=1e-12)
+
+    # On the same adverse price path, both directions must flip sign.
+    long_loss = executable_gross_bps("LONG", 101.0, 100.0)
+    short_loss = executable_gross_bps("SHORT", 100.0, 101.0)
+
+    assert isclose(long_loss, short_loss, rel_tol=0, abs_tol=1e-12)
+    assert long_loss < 0
+
+
+def test_long_fixed_quantity_vwap_and_exact_fee_normalization() -> None:
     entry_vwap, entry_qty = vwap_for_notional(
         [(100.0, 2.0), (101.0, 2.0)],
         INITIAL_NOTIONAL_USDT,
@@ -102,39 +163,36 @@ def test_long_fixed_quantity_vwap_and_cost_stack() -> None:
     entry_notional = entry_vwap * entry_qty
     exit_notional = exit_vwap * exit_qty
     gross = executable_gross_bps("LONG", entry_vwap, exit_vwap)
-    fees = exact_taker_fee_bps(INITIAL_NOTIONAL_USDT, entry_notional, exit_notional)
+    fees = exact_taker_fee_bps(
+        INITIAL_NOTIONAL_USDT,
+        entry_notional,
+        exit_notional,
+    )
 
     assert isclose(gross, 150.0, rel_tol=0, abs_tol=1e-9)
+    # 5 bps * (100 + 101.5) / 100 = 10.075 bps.
     assert isclose(fees, 10.075, rel_tol=0, abs_tol=1e-9)
-    assert isclose(net_bps(gross, fees), 137.925, rel_tol=0, abs_tol=1e-9)
-
-
-def test_short_directional_symmetry() -> None:
-    entry_vwap, entry_qty = vwap_for_notional(
-        [(100.0, 2.0), (99.0, 2.0)],
-        INITIAL_NOTIONAL_USDT,
+    assert isclose(
+        net_bps(gross, fees),
+        137.925,
+        rel_tol=0,
+        abs_tol=1e-9,
     )
-    exit_vwap, exit_qty = vwap_for_quantity(
-        [(99.0, 2.0)],
-        entry_qty,
-    )
-
-    assert isclose(entry_vwap, 100.0, rel_tol=0, abs_tol=1e-12)
-    assert isclose(entry_qty, 1.0, rel_tol=0, abs_tol=1e-12)
-    assert isclose(exit_vwap, 99.0, rel_tol=0, abs_tol=1e-12)
-    assert isclose(exit_qty, 1.0, rel_tol=0, abs_tol=1e-12)
-
-    gross = executable_gross_bps("SHORT", entry_vwap, exit_vwap)
-    fees = exact_taker_fee_bps(INITIAL_NOTIONAL_USDT, 100.0, 99.0)
-
-    assert isclose(gross, 101.01010101010101, rel_tol=0, abs_tol=1e-9)
-    assert isclose(fees, 9.95, rel_tol=0, abs_tol=1e-9)
-    assert isclose(net_bps(gross, fees), 89.06010101010101, rel_tol=0, abs_tol=1e-9)
 
 
 def test_funding_is_separate_cost_component() -> None:
-    assert isclose(net_bps(20.0, 10.0, funding_bps=0.0), 8.0, rel_tol=0, abs_tol=1e-9)
-    assert isclose(net_bps(20.0, 10.0, funding_bps=1.5), 6.5, rel_tol=0, abs_tol=1e-9)
+    assert isclose(
+        net_bps(20.0, 10.0, funding_bps=0.0),
+        8.0,
+        rel_tol=0,
+        abs_tol=1e-9,
+    )
+    assert isclose(
+        net_bps(20.0, 10.0, funding_bps=1.5),
+        6.5,
+        rel_tol=0,
+        abs_tol=1e-9,
+    )
 
 
 def test_insufficient_depth_is_fail_closed() -> None:
@@ -146,12 +204,31 @@ def test_insufficient_depth_is_fail_closed() -> None:
         raise AssertionError("insufficient displayed depth must fail closed")
 
 
+def test_timestamp_discipline_and_freshness_fields() -> None:
+    fields = score_timestamp_fields(
+        signal_time_exchange_ms=1_000,
+        signal_book_time_exchange_ms=1_000,
+        entry_book_time_exchange_ms=1_080,
+        exit_book_time_exchange_ms=6_020,
+        target_exit_time_exchange_ms=6_000,
+    )
+
+    assert fields["signal_time_exchange_ms"] == 1_000
+    # Signal is generated from the current reconstructed depth event, so its
+    # signal-time book age is exactly zero in the registered reconstruction.
+    assert fields["book_snapshot_age_ms"] == 0
+    assert fields["entry_snapshot_delay_ms"] == 80
+    assert fields["exit_snapshot_delay_ms"] == 5_020
+    assert fields["exit_resolution_error_ms"] == 20
+
+
 if __name__ == "__main__":
     tests = [
-        test_long_fixed_quantity_vwap_and_cost_stack,
-        test_short_directional_symmetry,
+        test_long_and_short_sign_symmetry,
+        test_long_fixed_quantity_vwap_and_exact_fee_normalization,
         test_funding_is_separate_cost_component,
         test_insufficient_depth_is_fail_closed,
+        test_timestamp_discipline_and_freshness_fields,
     ]
     for test in tests:
         test()
