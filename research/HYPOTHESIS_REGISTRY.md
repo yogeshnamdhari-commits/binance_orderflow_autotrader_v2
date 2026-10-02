@@ -177,3 +177,32 @@ information set.
 **Current result:** NO RESULT YET. The first GitHub-hosted acquisition attempt failed at Binance Futures REST depth with HTTP 451. The collector was changed to use the Futures WebSocket API for the depth snapshot and current /public and /market stream routing.
 
 **Deployment:** NOT CERTIFIED / BLOCKED / NO_DEPLOY
+
+
+---
+
+## ORDERFLOW_ALPHA-0.1 — FINAL CLOSURE — 2026-10-03
+
+**Status:** CLOSED / REJECTED
+
+**Scope:** BTCUSDT USD-M perpetual only.
+
+**Preregistered search:** 240 development candidates across the registered 250ms-60s horizons and feature/rule family.
+
+**Data integrity:** 3 fresh captures; 0 sequence gaps; 0 reconnects; BRIDGED bootstrap on all three.
+
+**Economic gate:** gross edge >5.4 bps and positive OOS net after 3.4 bps round-trip cost.
+
+**Best pooled OOS result:**
+- Feature: `book_imbalance_10`
+- Horizon: 30 seconds
+- OOS observations: 720
+- Gross: +1.2194154631 bps
+- Net: -2.1805845369 bps
+- Economic candidate: FALSE
+
+**Conclusion:** No tested candidate cleared the preregistered economic gate. ORDERFLOW_ALPHA-0.1 is therefore closed without certification or deployment.
+
+**Research boundary:** This is a negative result for the tested information set and assumptions, not a claim that every possible BTCUSDT order-flow strategy is impossible.
+
+**Next-state:** Any new research requires a new hypothesis registration. Frozen Phase 1 candidates remain immutable. Production execution hardening remains infrastructure only; deployment stays NO_DEPLOY.
