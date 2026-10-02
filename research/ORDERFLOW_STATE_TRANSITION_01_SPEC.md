@@ -1,6 +1,6 @@
 # ORDERFLOW_STATE_TRANSITION-0.1 — Preregistration
 
-**Status:** PREREGISTERED  
+**Status:** PREREGISTERED — AMENDED A-001 BEFORE DATA COLLECTION  
 **Registration date:** 2026-10-03  
 **Instrument:** BTCUSDT  
 **Market:** Binance USD-M Futures  
@@ -11,7 +11,7 @@
 
 ## 1. Research question
 
-Does a **transition into a persistent, aligned multi-level order-flow state** predict the direction of the BTCUSDT perpetual mid-price over the next 5 seconds, after a fixed taker-cost and safety-buffer hurdle?
+Does a **transition into a persistent, aligned multi-level order-flow state** predict the direction of the BTCUSDT perpetual over the next 5 seconds strongly enough to remain economically positive under a conservative, explicitly executable taker benchmark?
 
 This is intentionally different from testing a single static book-imbalance threshold. The object under test is the **state change and persistence** of order-flow pressure.
 
@@ -169,40 +169,93 @@ The first valid mid-price at or after the target timestamp is used. If the horiz
 
 They **cannot** be used to choose parameters, alter the rule, or overturn the primary 5 s economic decision.
 
-## 8. Economic gate
+## 8. Economic gate — Amendment A-001
 
-Use the established BTCUSDT taker reference:
+The original **3.4 bps** round-trip assumption is superseded because the current Binance USDⓈ-M Futures fee schedule lists the regular-user USDT-margined maker/taker rates at **2.0 / 5.0 bps per side**. The research benchmark therefore uses the conservative regular-user **taker/taker** case, with no BNB discount, VIP discount, Taker Program discount, maker rebate, or promotional rate.
 
-- Round-trip cost: **3.4 bps**
+Authoritative fee references:
+- Binance USDⓈ-M Futures fee schedule: https://www.binance.com/en-BH/fee/futureFee
+- Binance Futures fee FAQ: https://www.binance.com/en/support/faq/detail/98488a516eb84e3eb34605683dffd554
+
+Fixed fee model:
+- Entry taker fee: **5.0 bps**
+- Exit taker fee: **5.0 bps**
+- Round-trip commission: **10.0 bps**
 - Safety buffer: **2.0 bps**
-- Minimum gross edge: **5.4 bps**
+- No fixed 5.4 bps gross hurdle remains authoritative.
 
-For each scored observation:
+### 8.1 Executable reference trade
+
+The economic test is no longer based only on mid-price-to-mid-price return.
+
+Fixed reference notional: **100 USDT per signal**.
+
+For a LONG signal:
+1. Entry is the first valid reconstructed-book snapshot **strictly after the signal timestamp**.
+2. Entry execution price is the VWAP required to buy 100 USDT from the displayed ask levels.
+3. Exit is the first valid reconstructed-book snapshot **at or after signal timestamp + 5 seconds**.
+4. Exit execution price is the VWAP required to sell the 100 USDT position into the displayed bid levels.
+
+For a SHORT signal, bid/ask sides are reversed.
+
+This deterministic execution model therefore includes the observed spread and displayed-depth price impact for the fixed notional. It does not assume a zero-latency fill at the mid-price.
+
+If displayed depth is insufficient to execute the full 100 USDT reference notional at either leg, the observation is **unresolved and excluded**, with the exclusion recorded. No synthetic fill or price-imputation is permitted.
+
+### 8.2 Funding
+
+Funding is charged/credited only when the modeled 5-second holding interval actually crosses a Binance funding settlement timestamp. If no settlement occurs during the hold, funding cost is zero.
+
+When a settlement is crossed, use the funding rate recorded in the mark-price/funding stream immediately before that settlement. LONG and SHORT funding signs follow Binance's documented convention. No future funding information may enter the signal features.
+
+Funding reference:
+https://www.binance.com/en/support/faq/detail/360033525031
+
+Define:
 
 ```
-net_bps = gross_bps - 3.4
+gross_exec_bps = directional return from executable entry/exit prices
+fee_bps        = 10.0
+funding_bps    = realized funding debit/credit over the modeled hold
+
+net_bps        = gross_exec_bps - fee_bps - funding_bps
+buffered_net   = net_bps - 2.0
 ```
 
-### Primary economic candidate condition
+The 2.0 bps safety buffer is a separate hurdle; it is not double-counted as spread or slippage.
 
-The hypothesis is economically promising only when **pooled untouched OOS** satisfies both:
+### 8.3 Primary economic pass
+
+The hypothesis is economically promising only when **pooled untouched OOS** satisfies all of:
 
 ```
-gross_bps > 5.4
-net_bps   > 0
+mean(net_bps) > 2.0 bps
+95% CI lower bound of mean(net_bps) > 0
+both untouched OOS session means > 0
+pooled OOS signals >= 100
+each untouched OOS session signals >= 30
 ```
 
-OOS session-level gross and net results are mandatory for the audit record.
+The signal-count thresholds are minimum evidence floors, **not a claim of formal power sufficiency**.
 
-A positive result below 5.4 bps is **not** an economic pass.
+A positive mid-to-mid predictive result that fails this executable economic gate is **not an economic pass**.
 
-## 9. Statistical procedure
+## 9. Statistical procedure — Amendment A-001
 
-Use a **block bootstrap** over OOS signal outcomes to account for serial dependence.
+Primary inference remains the **5-second horizon**.
 
-- Block length: 5 seconds
-- Resamples: 10,000
-- Seed: 20261003
+The 5-second cooldown prevents overlapping primary signal windows under the registered rule. OOS outcomes are nevertheless dependent in market time, so use a deterministic block bootstrap.
+
+- Unit: chronological OOS signal outcomes
+- Block length: **5 seconds**
+- Resamples: **10,000**
+- Seed: **20261003**
+- Confidence interval: **two-sided 95% percentile bootstrap CI**
+- Primary CI target: pooled OOS mean `net_bps`
+
+No normal/IID t-statistic is used as the primary significance procedure.
+
+Capture 1 is development-only and cannot be used to select OOS thresholds, alter the state rule, choose the cost model, or decide the economic result.
 - Report 95% confidence intervals for pooled OOS gross and net edge.
 - Preserve signal order within bootstrap blocks.
 
@@ -317,3 +370,13 @@ DEPLOYMENT              = NO_DEPLOY
 ```
 
 This document is the fixed preregistration. Any change to a registered parameter or rule requires a new hypothesis ID and a new branch.
+
+## 16. Amendment A-001 — Economic and statistical clarification
+
+**Amendment status:** Registered before Capture 1 data collection.
+
+Reason for amendment: the original 3.4 bps round-trip execution assumption did not explicitly represent both taker legs and did not separately define spread, displayed-depth price impact, funding, or an executable entry/exit timestamp. The amendment corrects the economic benchmark without changing the registered signal logic, state thresholds, persistence rule, cooldown, primary 5-second horizon, required feeds, session roles, or no-live-order constraint.
+
+The amendment is based on Binance's current published USDⓈ-M Futures fee schedule and funding documentation as checked on **2026-10-03**.
+
+This amendment **supersedes Sections 8 and 9** wherever they conflict with this document's earlier text. All other preregistered rules remain unchanged.
