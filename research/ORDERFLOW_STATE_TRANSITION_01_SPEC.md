@@ -326,9 +326,13 @@ Frozen rule applied
    v
 Untouched OOS (captures 2+3)
    |
-   +--> pooled gross <= 5.4 bps ------------> CLOSED / REJECTED
+   +--> pooled mean net <= 2.0 bps ----------> CLOSED / REJECTED
    |
-   +--> pooled net <= 0 ---------------------> CLOSED / REJECTED
+   +--> 95% CI lower bound of net <= 0 -----> CLOSED / REJECTED
+   |
+   +--> either OOS session mean net <= 0 ----> CLOSED / REJECTED
+   |
+   +--> insufficient OOS signal count --------> CLOSED / REJECTED
    |
    v
 ECONOMIC_CANDIDATE = TRUE
