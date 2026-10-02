@@ -8,6 +8,7 @@ import hashlib
 import hmac
 import json
 import math
+import os
 from pathlib import Path
 import threading
 import time
@@ -512,6 +513,10 @@ class ProductionExecutionGuard:
             raise ProductionSafetyError("execution authorization != AUTHORIZED")
         if self.kill_switch_path.exists():
             raise ProductionSafetyError("external kill switch present")
+        if os.environ.get("AFH_LIVE_ORDERS", "").upper() != "ARMED":
+            raise ProductionSafetyError(
+                "live execution arming gate not set: AFH_LIVE_ORDERS=ARMED required"
+            )
 
         self.rest.sync_clock()
         self.load_rules()
