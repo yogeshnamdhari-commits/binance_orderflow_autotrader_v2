@@ -54,7 +54,8 @@ class LiveService:
         self.last_quote_action_ms = 0
         self.last_target: tuple[tuple[str, float, float], ...] | None = None
         self.stop = threading.Event()
-        self.market_thread: threading.Thread | None = None
+        self.depth_thread: threading.Thread | None = None
+        self.trade_thread: threading.Thread | None = None
         self.watchdog_thread: threading.Thread | None = None
         self.user_stream: UserDataStreamMonitor | None = None
         self.book: OrderBook | None = None
@@ -121,6 +122,7 @@ class LiveService:
         self.flow.append((ts, signed))
         self.signed_flow += signed
         self.total_flow += qty
+        self.guard.update_trade_heartbeat(ts)
         cutoff = ts - self.window_ms
         while self.flow and self.flow[0][0] < cutoff:
             _, old = self.flow.popleft()
@@ -213,30 +215,70 @@ class LiveService:
         except Exception as exc:
             self.guard.trip(f"market message processing failure: {exc}")
 
-    def _run_market(self) -> None:
+    @staticmethod
+    def _run_ws(
+        url: str,
+        *,
+        on_message,
+        on_error,
+        on_close,
+    ) -> None:
+        app = websocket.WebSocketApp(
+            url,
+            on_message=on_message,
+            on_error=on_error,
+            on_close=on_close,
+        )
+        app.run_forever(
+            ping_interval=20,
+            ping_timeout=10,
+            ping_payload="",
+        )
+
+    def _run_depth(self) -> None:
+        url = os.environ.get(
+            "BINANCE_DEPTH_WS",
+            f"wss://fstream.binance.com/public/ws/"
+            f"{self.config.symbol.lower()}@depth@100ms",
+        )
+
+        def on_error(_ws, error) -> None:
+            if not self.stop.is_set():
+                self.guard.trip(f"depth websocket error: {error}")
+
+        def on_close(_ws, _code, _msg) -> None:
+            if not self.stop.is_set():
+                self.guard.trip("depth websocket closed")
+
+        self._run_ws(
+            url,
+            on_message=self.on_message,
+            on_error=on_error,
+            on_close=on_close,
+        )
+
+    def _run_trade(self) -> None:
         url = os.environ.get(
             "BINANCE_MARKET_WS",
-            "wss://fstream.binance.com/stream?streams="
-            + f"{self.config.symbol.lower()}@depth@100ms/"
+            "wss://fstream.binance.com/market/stream?streams="
             + f"{self.config.symbol.lower()}@aggTrade/"
             + f"{self.config.symbol.lower()}@markPrice@1s",
         )
 
         def on_error(_ws, error) -> None:
             if not self.stop.is_set():
-                self.guard.trip(f"market websocket error: {error}")
+                self.guard.trip(f"trade websocket error: {error}")
 
         def on_close(_ws, _code, _msg) -> None:
             if not self.stop.is_set():
-                self.guard.trip("market websocket closed")
+                self.guard.trip("trade websocket closed")
 
-        app = websocket.WebSocketApp(
+        self._run_ws(
             url,
             on_message=self.on_message,
             on_error=on_error,
             on_close=on_close,
         )
-        app.run_forever(ping_interval=20, ping_timeout=10)
 
     def _watchdog(self) -> None:
         while not self.stop.wait(0.25):
@@ -259,16 +301,21 @@ class LiveService:
             self._on_user_event,
             ws_url_template=os.environ.get(
                 "BINANCE_USER_WS_TEMPLATE",
-                "wss://fstream.binance.com/ws/{listen_key}",
+                "wss://fstream.binance.com/private/ws/{listen_key}",
             ),
             on_status=self._on_user_status,
         )
         self.user_stream.start()
 
-        self.market_thread = threading.Thread(
-            target=self._run_market, name="AFH-market", daemon=True
+        self.depth_thread = threading.Thread(
+            target=self._run_depth, name="AFH-depth", daemon=True
         )
-        self.market_thread.start()
+        self.depth_thread.start()
+
+        self.trade_thread = threading.Thread(
+            target=self._run_trade, name="AFH-trade", daemon=True
+        )
+        self.trade_thread.start()
 
         deadline = time.monotonic() + 15.0
         while time.monotonic() < deadline:
@@ -277,6 +324,7 @@ class LiveService:
             if (
                 self.guard.state.user_stream_healthy
                 and self.guard.state.book_synchronized
+                and self.guard.state.trade_stream_healthy
             ):
                 break
             time.sleep(0.05)
@@ -284,6 +332,7 @@ class LiveService:
         if not (
             self.guard.state.user_stream_healthy
             and self.guard.state.book_synchronized
+            and self.guard.state.trade_stream_healthy
         ):
             self.guard.trip("startup feed synchronization timeout")
             raise ProductionSafetyError("startup feed synchronization timeout")
@@ -299,7 +348,10 @@ class LiveService:
 
         try:
             while (
-                self.market_thread.is_alive()
+                self.depth_thread is not None
+                and self.trade_thread is not None
+                and self.depth_thread.is_alive()
+                and self.trade_thread.is_alive()
                 and not self.guard.state.kill_switch
                 and not self.stop.wait(0.25)
             ):
