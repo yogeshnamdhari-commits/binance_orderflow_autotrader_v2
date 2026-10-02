@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - research/orderflow-alpha-0.1
+  pull_request:
+    branches:
+      - production/active-flow-hedge-0.1-hardening
   workflow_dispatch:
 
 jobs:
