@@ -147,3 +147,33 @@ D. **Instrument selection**: Test whether the same signal appears on other liqui
 
 This is a statistically and economically valid negative result for the current
 information set.
+
+
+---
+
+## CURRENT PHASE 2 REGISTRY — 2026-10-02
+
+### Frozen 100ms Flow-Execution Family
+| ID | Execution | Result | Status |
+|---|---|---:|---|
+| ACTIVE_FLOW_HEDGE-0.1 | Passive MM | 1 fill | FROZEN / NOT CERTIFIED |
+| DIRECTIONAL_TAKER-0.1 | Taker/Taker | -2.85 bps net | FROZEN / NOT CERTIFIED |
+| DIRECTIONAL_TAKER-0.2 | Taker/Maker | -1.99 bps net | FROZEN / NOT CERTIFIED |
+| MAKER_QUEUE-0.1 | Maker/Maker + queue | -99.23 bps net | FROZEN / NOT CERTIFIED |
+
+### ORDERFLOW_ALPHA-0.1
+**Status:** ACTIVE RESEARCH / PENDING FRESH AUTHENTIC DATA
+
+**Scope:** BTCUSDT USD-M perpetual only.
+
+**Horizons:** 250ms, 500ms, 1s, 2s, 5s, 10s, 30s, 60s.
+
+**Features:** signed trade-flow imbalance, L2 book imbalance, microprice displacement, depth depletion/replenishment, trade intensity, short-horizon volatility, and flow-volatility interactions.
+
+**Economic gate:** gross edge >5.4 bps, based on 3.4 bps round-trip taker cost plus 2.0 bps safety buffer. This is a preregistered gate, not a claimed result.
+
+**Validation:** three fresh authentic captures; first development-only, second and third untouched OOS; no look-ahead; reject invalid sequence/reconnect/bootstrap captures; require positive OOS net economics after execution costs.
+
+**Current result:** NO RESULT YET. The first GitHub-hosted acquisition attempt failed at Binance Futures REST depth with HTTP 451. The collector was changed to use the Futures WebSocket API for the depth snapshot and current /public and /market stream routing.
+
+**Deployment:** NOT CERTIFIED / BLOCKED / NO_DEPLOY
