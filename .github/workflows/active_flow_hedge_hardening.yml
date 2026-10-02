@@ -30,7 +30,11 @@ jobs:
             scripts/capture_btcusdt_perp.py \
             scripts/validate_afh01_btcusdt_perp.py
       - name: Run hardening tests
+        env:
+          PYTHONPATH: .
         run: pytest -q tests/test_production_hardening.py
       - name: Verify live authorization is fail-closed
+        env:
+          PYTHONPATH: .
         run: |
           python scripts/production_preflight.py

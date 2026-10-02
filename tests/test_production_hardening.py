@@ -127,7 +127,7 @@ def test_position_limit_is_blocked():
 def test_candidate_parameters_remain_frozen():
     root = Path(__file__).resolve().parents[1]
     data = json.loads(
-        (root / "mm" / "config_v21_active_flow_hedge_01bps.json").read_text()
+        (root / "app" / "mm" / "config_v21_active_flow_hedge_01bps.json").read_text()
     )
     assert data["live_order_submission"] is False
     assert data["flow_quote_bias_bps"] == 1.0

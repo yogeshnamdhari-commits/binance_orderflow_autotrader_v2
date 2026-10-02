@@ -1,0 +1,55 @@
+name: ORDERFLOW_ALPHA-0.1 Fresh BTCUSDT Scan
+
+concurrency:
+  group: orderflow-alpha-0.1-{{'{'} github.head_ref || github.ref {'}'}{'}'}
+  cancel-in-progress: true
+
+on:
+  pull_request:
+    branches:
+      - production/active-flow-hedge-0.1-hardening
+  workflow_dispatch:
+
+jobs:
+  alpha_scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install research dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Capture fresh session 1
+        id: cap1
+        run: |
+          python scripts/capture_btcusdt_perp.py --duration 600 > cap1.txt
+          cat cap1.txt
+      - name: Capture fresh session 2
+        id: cap2
+        run: |
+          python scripts/capture_btcusdt_perp.py --duration 600 > cap2.txt
+          cat cap2.txt
+      - name: Capture fresh session 3
+        id: cap3
+        run: |
+          python scripts/capture_btcusdt_perp.py --duration 600 > cap3.txt
+          cat cap3.txt
+      - name: Run preregistered alpha scan
+        run: |
+          C1=$(tail -n 1 cap1.txt)
+          C2=$(tail -n 1 cap2.txt)
+          C3=$(tail -n 1 cap3.txt)
+          python scripts/orderflow_alpha_scan.py             --capture "$C1"             --capture "$C2"             --capture "$C3"             --output data/research/orderflow_alpha_01_scan.json
+      - name: Publish scan artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: orderflow-alpha-01-results
+          path: |
+            data/research/orderflow_alpha_01_scan.json
+            cap1.txt
+            cap2.txt
+            cap3.txt

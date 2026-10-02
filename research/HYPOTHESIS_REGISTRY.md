@@ -147,3 +147,62 @@ D. **Instrument selection**: Test whether the same signal appears on other liqui
 
 This is a statistically and economically valid negative result for the current
 information set.
+
+
+---
+
+## HISTORICAL PHASE 2 REGISTRY — 2026-10-02
+
+### Frozen 100ms Flow-Execution Family
+| ID | Execution | Result | Status |
+|---|---|---:|---|
+| ACTIVE_FLOW_HEDGE-0.1 | Passive MM | 1 fill | FROZEN / NOT CERTIFIED |
+| DIRECTIONAL_TAKER-0.1 | Taker/Taker | -2.85 bps net | FROZEN / NOT CERTIFIED |
+| DIRECTIONAL_TAKER-0.2 | Taker/Maker | -1.99 bps net | FROZEN / NOT CERTIFIED |
+| MAKER_QUEUE-0.1 | Maker/Maker + queue | -99.23 bps net | FROZEN / NOT CERTIFIED |
+
+### ORDERFLOW_ALPHA-0.1 — HISTORICAL REGISTRATION
+**Status:** CLOSED / REJECTED (final closure recorded 2026-10-03)
+
+**Scope:** BTCUSDT USD-M perpetual only.
+
+**Horizons:** 250ms, 500ms, 1s, 2s, 5s, 10s, 30s, 60s.
+
+**Features:** signed trade-flow imbalance, L2 book imbalance, microprice displacement, depth depletion/replenishment, trade intensity, short-horizon volatility, and flow-volatility interactions.
+
+**Economic gate:** gross edge >5.4 bps, based on 3.4 bps round-trip taker cost plus 2.0 bps safety buffer. This is a preregistered gate, not a claimed result.
+
+**Validation:** three fresh authentic captures; first development-only, second and third untouched OOS; no look-ahead; reject invalid sequence/reconnect/bootstrap captures; require positive OOS net economics after execution costs.
+
+**Final result:** Best pooled OOS candidate was book_imbalance_10 at 30 seconds: +1.2194154631 bps gross, -2.1805845369 bps net after the preregistered 3.4 bps round-trip cost; 720 pooled OOS observations. No candidate cleared the >5.4 bps gross-edge gate.
+
+**Deployment:** NOT CERTIFIED / BLOCKED / NO_DEPLOY
+
+
+---
+
+## ORDERFLOW_ALPHA-0.1 — FINAL CLOSURE — 2026-10-03
+
+**Status:** CLOSED / REJECTED
+
+**Scope:** BTCUSDT USD-M perpetual only.
+
+**Preregistered search:** 240 development candidates across the registered 250ms-60s horizons and feature/rule family.
+
+**Data integrity:** 3 fresh captures; 0 sequence gaps; 0 reconnects; BRIDGED bootstrap on all three.
+
+**Economic gate:** gross edge >5.4 bps and positive OOS net after 3.4 bps round-trip cost.
+
+**Best pooled OOS result:**
+- Feature: `book_imbalance_10`
+- Horizon: 30 seconds
+- OOS observations: 720
+- Gross: +1.2194154631 bps
+- Net: -2.1805845369 bps
+- Economic candidate: FALSE
+
+**Conclusion:** No tested candidate cleared the preregistered economic gate. ORDERFLOW_ALPHA-0.1 is therefore closed without certification or deployment.
+
+**Research boundary:** This is a negative result for the tested information set and assumptions, not a claim that every possible BTCUSDT order-flow strategy is impossible.
+
+**Next-state:** Any new research requires a new hypothesis registration. Frozen Phase 1 candidates remain immutable. Production execution hardening remains infrastructure only; deployment stays NO_DEPLOY.

@@ -70,10 +70,8 @@ Total: 16 experiments, all REJECTED. Terminal state: NO_DEPLOYABLE_EDGE.
 16. EXP-016: Cross-Market/Derivatives Context (funding rate + hourly returns) — NO incremental value. Funding: -0.07 bps incremental. Hourly returns: 0.0 bps incremental. Full model: -0.07 bps. Signal consistent across funding regimes. Bootstrap CI excludes zero. Net remains negative.
 
 ## NEXT_ACTION
-Terminal state. Research tree fully exhausted (11/11 branches tested).
-EXP-016 (cross-market/derivatives context) also rejected.
-Total: 16 experiments, all REJECTED. 
-Report NO_DEPLOYABLE_EDGE with current information set.
+Complete the preregistered ORDERFLOW_ALPHA-0.1 fresh-data capture and alpha/horizon scan.
+No frozen candidate changes. No live execution.
 
 ## BLOCKERS
 1. Cost-to-signal ratio: 40-200x at short horizons; max return (3.54 bps) < taker cost (4.0 bps)
@@ -159,3 +157,129 @@ EXP-018: Cross-market derivatives analysis COMPLETE — REJECTED, no incremental
 ## DEPLOYMENT_STATUS
 DEPLOYABLE_EDGE = FALSE
 LIVE_TRADING = HARD_BLOCKED
+
+
+---
+
+## CURRENT RESEARCH STATE — 2026-10-03
+
+### CURRENT_PHASE
+PHASE_2_ALPHA_DISCOVERY_CLOSED
+
+### FROZEN_CANDIDATES
+- ACTIVE_FLOW_HEDGE-0.1 — FROZEN / NOT CERTIFIED
+- DIRECTIONAL_TAKER-0.1 — FROZEN / NOT CERTIFIED
+- DIRECTIONAL_TAKER-0.2 — FROZEN / NOT CERTIFIED
+- MAKER_QUEUE-0.1 — FROZEN / NOT CERTIFIED
+
+These four candidates are immutable research records. Phase 2 does not modify or retroactively reclassify them.
+
+### CURRENT_HYPOTHESIS
+ORDERFLOW_ALPHA-0.1 — CLOSED / REJECTED
+
+Search 250ms, 500ms, 1s, 2s, 5s, 10s, 30s and 60s horizons using expanded BTCUSDT USD-M perpetual order-flow features: trade-flow imbalance, L2 imbalance, microprice displacement, depth depletion/replenishment, trade intensity, volatility and flow-volatility interactions.
+
+### ECONOMIC_GATE
+One-way taker cost basis: 1.7 bps
+Round-trip cost: 3.4 bps
+Safety buffer: 2.0 bps
+Gross-edge gate: >5.4 bps
+
+The 5.4 bps figure is a preregistered research gate, not an observed alpha result.
+
+### VALIDATION_DESIGN
+Three fresh authentic BTCUSDT USD-M perpetual captures: capture 1 development, captures 2-3 untouched OOS. Reject any capture with sequence gaps, reconnects or invalid bootstrap. Require positive OOS net economics after the 3.4 bps round-trip cost.
+
+### DATA_ACQUISITION_STATUS
+The initial GitHub-hosted capture attempt stopped at the Binance Futures REST depth snapshot with HTTP 451. This is an acquisition-environment failure, not economic evidence. The collector now uses the Binance Futures WebSocket API depth snapshot and the current USD-M /public and /market stream paths.
+
+### CURRENT_RESULT
+ORDERFLOW_ALPHA-0.1 = CLOSED / REJECTED — best pooled OOS gross +1.2194154631 bps, net -2.1805845369 bps at 30s on book_imbalance_10; no economic candidate
+
+### DEPLOYMENT_STATUS
+ECONOMIC_CERTIFICATION = NOT_CERTIFIED
+LIVE_AUTHORIZATION = BLOCKED
+DEPLOYMENT = NO_DEPLOY
+
+### NEXT_ACTION
+Register a new hypothesis before any further alpha research. Preserve all frozen candidates and the completed ORDERFLOW_ALPHA-0.1 evidence. No live execution.
+
+
+---
+
+## RESEARCH LEDGER FINALIZED — 2026-10-03
+
+### EXECUTION_LAYER_STATUS
+The existing ACTIVE_FLOW_HEDGE-0.1 execution layer has been hardened for live-operation readiness on BTCUSDT USDⓈ-M perpetuals.
+
+Hardening includes:
+- live Binance USD-M market and user-data WebSocket routing;
+- authenticated user-stream health gating;
+- BTCUSDT trade-stream freshness gating;
+- order-book synchronization and sequence-gap fail-closed behavior;
+- REST position/open-order reconciliation;
+- exchange rule, price, quantity, notional and post-only validation;
+- ambiguous-order fail-closed handling;
+- explicit operational live-arm gate separate from the frozen strategy configuration.
+
+Execution hardening does not constitute economic certification and does not alter the research candidate.
+
+### CURRENT_ALGORITHM_STATUS
+ACTIVE_FLOW_HEDGE-0.1 = FROZEN / NOT CERTIFIED
+
+### ECONOMIC_CERTIFICATION
+NOT CERTIFIED
+
+### LIVE_AUTHORIZATION
+BLOCKED
+
+### DEPLOYMENT
+NO_DEPLOY
+
+### RESEARCH_PHASE
+Phase 1 remains CLOSED and immutable.
+Phase 2 ORDERFLOW_ALPHA-0.1 is CLOSED / REJECTED. Any further research requires a new preregistered hypothesis.
+
+The execution-layer hardening is an infrastructure state transition only. It does not create, imply, or retroactively establish trading edge.
+
+Frozen Phase 1 candidates remain unchanged and cannot be modified or reclassified through execution hardening.
+
+
+---
+
+## RESEARCH LEDGER FINALIZED — 2026-10-03 (PHASE 2 CLOSURE)
+
+### PHASE_STATUS
+- Phase 1 — CLOSED / FROZEN / NOT CERTIFIED.
+- Phase 2 ORDERFLOW_ALPHA-0.1 — CLOSED / REJECTED on the preregistered economic gate.
+- Further alpha discovery requires a separately preregistered new hypothesis.
+
+### ORDERFLOW_ALPHA-0.1_RESULT
+Fresh authentic BTCUSDT USD-M perpetual data integrity:
+- 3 captures completed.
+- Sequence gaps: 0 across all captures.
+- Reconnects: 0 across all captures.
+- Bootstrap: BRIDGED across all captures.
+- Development candidates tested: 240.
+
+Best pooled OOS candidate:
+- Feature: book_imbalance_10
+- Horizon: 30 seconds
+- OOS observations: 720
+- Gross edge: +1.2194154631 bps
+- Net edge: -2.1805845369 bps after 3.4 bps round-trip cost
+- Preregistered gross-edge gate: >5.4 bps
+- Economic candidate: FALSE
+
+### CERTIFICATION_AND_DEPLOYMENT
+ECONOMIC_CERTIFICATION = NOT_CERTIFIED
+LIVE_AUTHORIZATION = BLOCKED
+DEPLOYMENT = NO_DEPLOY
+
+### EXECUTION_LAYER
+The ACTIVE_FLOW_HEDGE-0.1 execution layer remains hardened, but hardening is an infrastructure state and does not constitute economic certification.
+
+### IMPORTANT_RESEARCH_BOUNDARY
+The Phase 2 preregistered scan is exhausted and closed. This does not prove that all conceivable BTCUSDT order-flow strategies are unprofitable; it establishes a negative result for the tested information set, rule family, data window and execution-cost assumptions.
+
+Any future investigation must be separately preregistered. Frozen candidates and their research records remain immutable.
