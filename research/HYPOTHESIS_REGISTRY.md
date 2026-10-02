@@ -1,6 +1,32 @@
 # Hypothesis Registry
 
-## Rejected Hypotheses (Do Not Re-test)
+### Current Preregistered Research — Phase 3
+
+### ORDERFLOW_STATE_TRANSITION-0.1
+
+| Field | Registration |
+|---|---|
+| Status | **PREREGISTERED — AMENDED A-001 BEFORE CAPTURE 1** |
+| Instrument | BTCUSDT |
+| Venue | Binance USD-M Futures |
+| Contract | Perpetual |
+| Signal object | Transition into persistent, aligned multi-level OFI state |
+| Primary horizon | 5 seconds |
+| Sessions | Capture 1 development; Captures 2 and 3 untouched OOS |
+| Live orders | **FALSE** |
+| Economic benchmark | 100 USDT reference taker/taker execution |
+| Base fee assumption | 5.0 bps per side / 10.0 bps round trip |
+| Spread / depth impact | Measured from reconstructed book VWAP at entry and exit |
+| Funding | Included only when the modeled 5-second hold crosses a settlement |
+| Safety buffer | 2.0 bps |
+| Statistical inference | 10,000-resample, 5-second block bootstrap; seed 20261003 |
+| OOS pass | Mean net > 2.0 bps; 95% CI lower bound > 0; both OOS session means > 0; minimum signal floors |
+| Deployment | **NOT_CERTIFIED / BLOCKED / NO_DEPLOY** |
+| Branch | `research/orderflow-state-transition-01` |
+
+This is a new preregistered hypothesis. It does not alter, retune, or reopen the frozen Phase 1/Phase 2 candidates or rejected experiments below.
+
+# Rejected Hypotheses (Do Not Re-test)
 
 | ID | Hypothesis | Reason for Rejection | Key Finding |
 |----|-----------|---------------------|-------------|
