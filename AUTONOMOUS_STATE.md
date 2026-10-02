@@ -70,10 +70,8 @@ Total: 16 experiments, all REJECTED. Terminal state: NO_DEPLOYABLE_EDGE.
 16. EXP-016: Cross-Market/Derivatives Context (funding rate + hourly returns) — NO incremental value. Funding: -0.07 bps incremental. Hourly returns: 0.0 bps incremental. Full model: -0.07 bps. Signal consistent across funding regimes. Bootstrap CI excludes zero. Net remains negative.
 
 ## NEXT_ACTION
-Terminal state. Research tree fully exhausted (11/11 branches tested).
-EXP-016 (cross-market/derivatives context) also rejected.
-Total: 16 experiments, all REJECTED. 
-Report NO_DEPLOYABLE_EDGE with current information set.
+Complete the preregistered ORDERFLOW_ALPHA-0.1 fresh-data capture and alpha/horizon scan.
+No frozen candidate changes. No live execution.
 
 ## BLOCKERS
 1. Cost-to-signal ratio: 40-200x at short horizons; max return (3.54 bps) < taker cost (4.0 bps)
