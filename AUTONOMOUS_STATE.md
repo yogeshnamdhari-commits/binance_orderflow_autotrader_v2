@@ -203,3 +203,43 @@ DEPLOYMENT = NO_DEPLOY
 
 ### NEXT_ACTION
 Complete the preregistered fresh-data capture and alpha/horizon scan. No live execution. No frozen-candidate changes.
+
+
+---
+
+## RESEARCH LEDGER FINALIZED — 2026-10-03
+
+### EXECUTION_LAYER_STATUS
+The existing ACTIVE_FLOW_HEDGE-0.1 execution layer has been hardened for live-operation readiness on BTCUSDT USDⓈ-M perpetuals.
+
+Hardening includes:
+- live Binance USD-M market and user-data WebSocket routing;
+- authenticated user-stream health gating;
+- BTCUSDT trade-stream freshness gating;
+- order-book synchronization and sequence-gap fail-closed behavior;
+- REST position/open-order reconciliation;
+- exchange rule, price, quantity, notional and post-only validation;
+- ambiguous-order fail-closed handling;
+- explicit operational live-arm gate separate from the frozen strategy configuration.
+
+Execution hardening does not constitute economic certification and does not alter the research candidate.
+
+### CURRENT_ALGORITHM_STATUS
+ACTIVE_FLOW_HEDGE-0.1 = FROZEN / NOT CERTIFIED
+
+### ECONOMIC_CERTIFICATION
+NOT CERTIFIED
+
+### LIVE_AUTHORIZATION
+BLOCKED
+
+### DEPLOYMENT
+NO_DEPLOY
+
+### RESEARCH_PHASE
+Phase 1 remains CLOSED and immutable.
+Phase 2 remains ACTIVE with ORDERFLOW_ALPHA-0.1 as the current alpha-discovery hypothesis.
+
+The execution-layer hardening is an infrastructure state transition only. It does not create, imply, or retroactively establish trading edge.
+
+Frozen Phase 1 candidates remain unchanged and cannot be modified or reclassified through execution hardening.
