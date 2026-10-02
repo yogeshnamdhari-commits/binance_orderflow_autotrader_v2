@@ -70,7 +70,12 @@ def make_guard(fake, manifest_path):
     guard.state.authorized = True
     guard.state.book_synchronized = True
     guard.state.user_stream_healthy = True
+    guard.state.trade_stream_healthy = True
     guard.state.reconciliation_ok = True
+    now_ms = 1_000_000
+    guard.state.last_market_event_ms = now_ms
+    guard.state.last_user_event_ms = now_ms
+    guard.state.last_trade_event_ms = now_ms
     return guard
 
 
@@ -127,7 +132,7 @@ def test_position_limit_is_blocked():
 def test_candidate_parameters_remain_frozen():
     root = Path(__file__).resolve().parents[1]
     data = json.loads(
-        (root / "mm" / "config_v21_active_flow_hedge_01bps.json").read_text()
+        (root / "app" / "mm" / "config_v21_active_flow_hedge_01bps.json").read_text()
     )
     assert data["live_order_submission"] is False
     assert data["flow_quote_bias_bps"] == 1.0
@@ -178,4 +183,30 @@ def test_live_runner_bootstraps_feeds_before_authorization():
 def test_private_user_stream_uses_routed_endpoint():
     root = Path(__file__).resolve().parents[1]
     source = (root / "app" / "mm" / "production_execution.py").read_text()
+    assert "wss://fstream.binance.com/private/ws/{listen_key}" in source
+
+
+def test_trade_stream_failure_revokes_authorization():
+    fake = FakeREST()
+    with tempfile.TemporaryDirectory() as td:
+        guard = make_guard(fake, Path(td) / "manifest.json")
+        guard.state.trade_stream_healthy = False
+        guard.state.last_trade_event_ms = 0
+        with pytest.raises(ProductionSafetyError, match="trade stream stale"):
+            guard.validate_quote(
+                side="BUY",
+                price=82999.90,
+                qty=0.001,
+                best_bid=82999.80,
+                best_ask=83000.10,
+            )
+        assert guard.state.authorized is False
+        assert guard.state.kill_switch is True
+
+
+def test_live_runner_uses_current_routed_usdm_websockets():
+    root = Path(__file__).resolve().parents[1]
+    source = (root / "scripts" / "active_flow_hedge_live.py").read_text()
+    assert "wss://fstream.binance.com/public/ws/" in source
+    assert "wss://fstream.binance.com/market/stream?streams=" in source
     assert "wss://fstream.binance.com/private/ws/{listen_key}" in source
