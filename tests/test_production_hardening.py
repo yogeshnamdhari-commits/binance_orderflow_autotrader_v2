@@ -175,10 +175,12 @@ def test_live_runner_bootstraps_feeds_before_authorization():
     root = Path(__file__).resolve().parents[1]
     source = (root / "scripts" / "active_flow_hedge_live.py").read_text()
     start_user = source.index("        self.user_stream.start()")
-    start_market = source.index("        self.market_thread.start()")
+    start_depth = source.index("        self.depth_thread.start()")
+    start_trade = source.index("        self.trade_thread.start()")
     start_auth = source.index("        self.guard.authorize()")
     assert start_user < start_auth
-    assert start_market < start_auth
+    assert start_depth < start_auth
+    assert start_trade < start_auth
 
 
 def test_private_user_stream_uses_routed_endpoint():
@@ -193,16 +195,10 @@ def test_trade_stream_failure_revokes_authorization():
         guard = make_guard(fake, Path(td) / "manifest.json")
         guard.state.trade_stream_healthy = False
         guard.state.last_trade_event_ms = 0
-        with pytest.raises(ProductionSafetyError, match="trade stream stale"):
-            guard.validate_quote(
-                side="BUY",
-                price=82999.90,
-                qty=0.001,
-                best_bid=82999.80,
-                best_ask=83000.10,
-            )
+        guard.health_check()
         assert guard.state.authorized is False
         assert guard.state.kill_switch is True
+        assert "trade stream stale" in guard.state.kill_reason
 
 
 def test_live_runner_uses_current_routed_usdm_websockets():
