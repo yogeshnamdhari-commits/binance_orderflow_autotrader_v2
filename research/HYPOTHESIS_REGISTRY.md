@@ -6,7 +6,7 @@
 
 | Field | Registration |
 |---|---|
-| Status | **PREREGISTERED — AMENDED A-001 BEFORE CAPTURE 1** |
+| Status | **PREREGISTERED — AMENDED A-002 BEFORE CAPTURE 1** |
 | Instrument | BTCUSDT |
 | Venue | Binance USD-M Futures |
 | Contract | Perpetual |
