@@ -211,3 +211,35 @@ def test_live_runner_uses_current_routed_usdm_websockets():
     assert "wss://fstream.binance.com/public/ws/" in source
     assert "wss://fstream.binance.com/market/stream?streams=" in source
     assert "wss://fstream.binance.com/private/ws/{listen_key}" in source
+
+
+def test_live_authorization_requires_explicit_arming_gate(monkeypatch):
+    fake = FakeREST()
+    with tempfile.TemporaryDirectory() as td:
+        manifest = Path(td) / "manifest.json"
+        write_manifest(manifest, "abc")
+        guard = ProductionExecutionGuard(
+            rest=fake,
+            symbol="BTCUSDT",
+            max_position_notional_usd=5000,
+            candidate_config_sha256="abc",
+            research_reference_commit="a06e8f590634777bbd5ade86ef3b2563194ca2ed",
+            manifest_path=manifest,
+        )
+        guard.state.book_synchronized = True
+        guard.state.user_stream_healthy = True
+        guard.state.trade_stream_healthy = True
+        now_ms = int(time.time() * 1000)
+        guard.state.last_market_event_ms = now_ms
+        guard.state.last_user_event_ms = now_ms
+        guard.state.last_trade_event_ms = now_ms
+        guard.state.reconciliation_ok = True
+
+        monkeypatch.delenv("AFH_LIVE_ORDERS", raising=False)
+        with pytest.raises(ProductionSafetyError, match="AFH_LIVE_ORDERS=ARMED"):
+            guard.authorize()
+
+        monkeypatch.setenv("AFH_LIVE_ORDERS", "ARMED")
+        guard.state.kill_switch = False
+        guard.authorize()
+        assert guard.state.authorized is True
