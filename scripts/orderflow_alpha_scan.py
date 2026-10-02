@@ -57,12 +57,21 @@ class Book:
         self.bids = {float(p): float(q) for p, q in snapshot["bids"]}
         self.asks = {float(p): float(q) for p, q in snapshot["asks"]}
         self.last = int(snapshot["lastUpdateId"])
+        self.bridged = False
 
     def apply(self, d: Depth) -> None:
         if d.u <= self.last:
             return
-        if d.pu != self.last:
-            raise ValueError(f"sequence gap while scanning: expected pu={self.last}, got {d.pu}")
+        if not self.bridged:
+            if not ((d.U <= self.last <= d.u) or (d.pu == self.last)):
+                raise ValueError(
+                    "invalid depth bootstrap: first event does not span snapshot lastUpdateId"
+                )
+            self.bridged = True
+        elif d.pu != self.last:
+            raise ValueError(
+                f"sequence gap while scanning: expected pu={self.last}, got {d.pu}"
+            )
         for p, q in d.bids:
             if q == 0:
                 self.bids.pop(p, None)
