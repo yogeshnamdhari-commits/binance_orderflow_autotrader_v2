@@ -169,98 +169,102 @@ The first valid mid-price at or after the target timestamp is used. If the horiz
 
 They **cannot** be used to choose parameters, alter the rule, or overturn the primary 5 s economic decision.
 
-## 8. Economic gate — Amendment A-001
+## 8. Economic gate — Amendment A-002
 
-The original **3.4 bps** round-trip assumption is superseded because the current Binance USDⓈ-M Futures fee schedule lists the regular-user USDT-margined maker/taker rates at **2.0 / 5.0 bps per side**. The research benchmark therefore uses the conservative regular-user **taker/taker** case, with no BNB discount, VIP discount, Taker Program discount, maker rebate, or promotional rate.
+The current benchmark uses the regular-user BTCUSDT USDⓈ-M Futures taker fee of **5.0 bps per side**, with no discount assumed. Binance's published USDⓈ-M Futures schedule currently lists **0.0200% maker / 0.0500% taker** for regular USDT-margined futures users. citeturn251206search0
 
-Authoritative fee references:
-- Binance USDⓈ-M Futures fee schedule: https://www.binance.com/en-BH/fee/futureFee
-- Binance Futures fee FAQ: https://www.binance.com/en/support/faq/detail/98488a516eb84e3eb34605683dffd554
+### 8.1 Fixed cost components
 
-Fixed fee model:
 - Entry taker fee: **5.0 bps**
 - Exit taker fee: **5.0 bps**
-- Round-trip commission: **10.0 bps**
+- Round-trip trading fees: **10.0 bps**
 - Safety buffer: **2.0 bps**
-- No fixed 5.4 bps gross hurdle remains authoritative.
+- Funding: included only if the modeled 5-second holding interval actually crosses a funding settlement; otherwise zero. Binance documents funding as a payment between position holders at the applicable settlement time. citeturn428443search1turn428443search5
 
-### 8.1 Executable reference trade
+No fixed 1.0 bps spread, 1.0 bps slippage, or 2.0 bps adverse-selection haircut is assumed ex ante. Those values would be arbitrary point estimates for this preregistration.
 
-The economic test is no longer based only on mid-price-to-mid-price return.
+### 8.2 Deterministic executable benchmark
 
-Fixed reference notional: **100 USDT per signal**.
+Reference notional: **100 USDT per signal**.
 
-For a LONG signal:
-1. Entry is the first valid reconstructed-book snapshot **strictly after the signal timestamp**.
-2. Entry execution price is the VWAP required to buy 100 USDT from the displayed ask levels.
-3. Exit is the first valid reconstructed-book snapshot **at or after signal timestamp + 5 seconds**.
-4. Exit execution price is the VWAP required to sell the 100 USDT position into the displayed bid levels.
+For each scored signal, construct both a mid-to-mid diagnostic and an executable book benchmark from the captured reconstructed top-10 book:
 
-For a SHORT signal, bid/ask sides are reversed.
+1. **Signal timestamp:** the third consecutive confirming depth event.
+2. **Entry snapshot:** the first valid reconstructed book snapshot strictly after the signal timestamp.
+3. **Entry execution:** consume displayed ask depth for LONG or bid depth for SHORT until exactly 100 USDT notional is filled; calculate VWAP from the captured levels.
+4. **Exit snapshot:** the first valid reconstructed book snapshot at or after signal timestamp + 5 seconds.
+5. **Exit execution:** consume displayed bid depth for LONG or ask depth for SHORT until the same 100 USDT notional is closed; calculate VWAP.
+6. If either leg cannot fill the complete 100 USDT notional from available captured depth, mark the outcome unresolved and exclude it from economic scoring; record the exclusion.
 
-This deterministic execution model therefore includes the observed spread and displayed-depth price impact for the fixed notional. It does not assume a zero-latency fill at the mid-price.
+This executable benchmark therefore incorporates the observed spread and displayed-depth price impact. It does not assume zero spread, zero slippage, or instantaneous mid-price execution.
 
-If displayed depth is insufficient to execute the full 100 USDT reference notional at either leg, the observation is **unresolved and excluded**, with the exclusion recorded. No synthetic fill or price-imputation is permitted.
+### 8.3 Adverse selection treatment
 
-### 8.2 Funding
+Adverse selection is **measured diagnostically, not subtracted as a fixed haircut**.
 
-Funding is charged/credited only when the modeled 5-second holding interval actually crosses a Binance funding settlement timestamp. If no settlement occurs during the hold, funding cost is zero.
+Define an adverse-selection diagnostic as the subsequent 5-second directional mid-price movement from the executable entry reference. This diagnostic is reported separately so that adverse selection is not double-counted inside the executable return and again as an arbitrary cost.
 
-When a settlement is crossed, use the funding rate recorded in the mark-price/funding stream immediately before that settlement. LONG and SHORT funding signs follow Binance's documented convention. No future funding information may enter the signal features.
+A separate passive-maker hypothesis would require its own preregistration because maker-fill selection and queue position are materially different from the present taker benchmark.
 
-Funding reference:
-https://www.binance.com/en/support/faq/detail/360033525031
+### 8.4 Net economics
 
-Define:
+Definitions:
 
-```
-gross_exec_bps = directional return from executable entry/exit prices
-fee_bps        = 10.0
-funding_bps    = realized funding debit/credit over the modeled hold
-
-net_bps        = gross_exec_bps - fee_bps - funding_bps
-buffered_net   = net_bps - 2.0
-```
-
-The 2.0 bps safety buffer is a separate hurdle; it is not double-counted as spread or slippage.
-
-### 8.3 Primary economic pass
-
-The hypothesis is economically promising only when **pooled untouched OOS** satisfies all of:
-
-```
-mean(net_bps) > 2.0 bps
-95% CI lower bound of mean(net_bps) > 0
-both untouched OOS session means > 0
-pooled OOS signals >= 100
-each untouched OOS session signals >= 30
+```text
+gross_bps             = directional mid-to-mid return over 5 s
+executable_gross_bps = directional return from executable entry/exit VWAPs
+fee_bps               = 10.0
+funding_bps           = realized funding debit/credit over the modeled hold
+safety_buffer_bps     = 2.0
+net_bps               = executable_gross_bps - fee_bps - funding_bps - safety_buffer_bps
 ```
 
-The signal-count thresholds are minimum evidence floors, **not a claim of formal power sufficiency**.
+The safety buffer is included directly in `net_bps` so the pass criterion can use a single net-edge definition.
 
-A positive mid-to-mid predictive result that fails this executable economic gate is **not an economic pass**.
+### 8.5 Primary economic pass
 
-## 9. Statistical procedure — Amendment A-001
+All conditions must pass:
+
+```text
+1. 95% block-bootstrap CI lower bound of pooled OOS mean net_bps > 0
+2. Mean net_bps > 0 in OOS session 2
+3. Mean net_bps > 0 in OOS session 3
+4. Mean net_bps > 0 in OOS session 4
+5. At least 30 scored signals in each OOS session
+6. At least 90 scored signals pooled across the three OOS sessions
+```
+
+These signal-count floors are minimum evidence requirements, not a formal claim of statistical power.
+
+## 9. Statistical procedure — Amendment A-002
 
 Primary inference remains the **5-second horizon**.
 
-The 5-second cooldown prevents overlapping primary signal windows under the registered rule. OOS outcomes are nevertheless dependent in market time, so use a deterministic block bootstrap.
+Use a **clock-time block bootstrap**, not event-count blocks, because information arrival is irregular.
 
-- Unit: chronological OOS signal outcomes
-- Block length: **5 seconds**
+- OOS evidence: sessions 2, 3, and 4 only
+- Block construction: contiguous **300-second clock-time blocks**
 - Resamples: **10,000**
 - Seed: **20261003**
 - Confidence interval: **two-sided 95% percentile bootstrap CI**
-- Primary CI target: pooled OOS mean `net_bps`
+- Primary statistic: pooled OOS mean `net_bps`
+- Also report per-session means and counts
 
-No normal/IID t-statistic is used as the primary significance procedure.
+Do not use an IID t-statistic as the primary inference.
 
-Capture 1 is development-only and cannot be used to select OOS thresholds, alter the state rule, choose the cost model, or decide the economic result.
-- Report 95% confidence intervals for pooled OOS gross and net edge.
-- Preserve signal order within bootstrap blocks.
+Capture 1 remains development-only. It cannot select thresholds, alter the signal rule, choose the cost model, or determine the OOS decision.
 
-No alternative bootstrap configuration may be selected after seeing the result.
+### 9.1 Results table contract
 
+| Metric | Definition |
+|---|---|
+| `gross_bps` | Directional mid-to-mid 5-second return |
+| `executable_gross_bps` | Directional 5-second return using captured-book VWAP entry/exit |
+| `fee_bps` | Fixed 10.0 bps taker/taker commission benchmark |
+| `funding_bps` | Funding debit/credit actually crossing settlement, if any |
+| `net_bps` | Executable gross minus fees, funding, and 2.0 bps safety buffer |
+| `net_bps_lower_95` | Lower endpoint of pooled 95% clock-block bootstrap CI |
+| `adverse_selection_bps` | Separate diagnostic; not an additional fixed haircut |
 ## 10. Controls and leakage prevention
 
 The following are prohibited:
@@ -316,7 +320,7 @@ The implementation must produce, at minimum:
 PREREGISTER
    |
    v
-3 fresh sessions
+4 fresh sessions (1 development + 3 untouched OOS)
    |
    +--> integrity failure --------------------> INVALID / STOP
    |
@@ -324,13 +328,11 @@ PREREGISTER
 Frozen rule applied
    |
    v
-Untouched OOS (captures 2+3)
+Untouched OOS (captures 2+3+4)
    |
-   +--> pooled mean net <= 2.0 bps ----------> CLOSED / REJECTED
+   +--> pooled 95% CI lower bound(net) <= 0 -> CLOSED / REJECTED
    |
-   +--> 95% CI lower bound of net <= 0 -----> CLOSED / REJECTED
-   |
-   +--> either OOS session mean net <= 0 ----> CLOSED / REJECTED
+   +--> any OOS session mean net <= 0 --------> CLOSED / REJECTED
    |
    +--> insufficient OOS signal count --------> CLOSED / REJECTED
    |
@@ -384,3 +386,12 @@ Reason for amendment: the original 3.4 bps round-trip execution assumption did n
 The amendment is based on Binance's current published USDⓈ-M Futures fee schedule and funding documentation as checked on **2026-10-03**.
 
 This amendment **supersedes Sections 8 and 9** wherever they conflict with this document's earlier text. All other preregistered rules remain unchanged.
+## 17. Amendment A-002 — execution-cost and statistical clarification
+
+**Amendment status:** Registered before Capture 1 data collection.
+
+Reason for amendment: the prior specification used a 3.4 bps round-trip fee assumption and point-estimate economic tests. This amendment replaces that assumption with the current regular-user taker/taker benchmark, measures spread and displayed-depth impact directly from the captured book, treats adverse selection as a separate diagnostic rather than an arbitrary additive haircut, adds a three-session untouched OOS requirement, and changes the bootstrap construction to 300-second clock-time blocks.
+
+Because the original three-session design contained only two untouched OOS sessions, Capture 4 is now required so that the amended requirement of three independent OOS sessions is internally consistent.
+
+This amendment does not change the registered signal features, thresholds, persistence rule, cooldown, primary 5-second horizon, required market feeds, or no-live-order constraint.
