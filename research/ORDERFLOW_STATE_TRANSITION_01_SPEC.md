@@ -1,6 +1,6 @@
 # ORDERFLOW_STATE_TRANSITION-0.1 — Preregistration
 
-**Status:** PREREGISTERED — AMENDED A-001 BEFORE DATA COLLECTION  
+**Status:** PREREGISTERED — AMENDED A-002 BEFORE DATA COLLECTION  
 **Registration date:** 2026-10-03  
 **Instrument:** BTCUSDT  
 **Market:** Binance USD-M Futures  
@@ -44,19 +44,20 @@ The repository's production data contract already requires exchange-traceable ob
 
 ## 3. Session design
 
-Three new sessions are required:
+Four new sessions are required:
 
 | Capture | Purpose | Use |
 |---|---|---|
 | 1 | Development / pipeline verification | May be inspected for implementation correctness only |
 | 2 | Untouched OOS | Economic/statistical evaluation |
 | 3 | Untouched OOS | Economic/statistical evaluation |
+| 4 | Untouched OOS | Economic/statistical evaluation |
 
 Target duration: **60 minutes per session**.
 
 Sessions must be non-overlapping and must begin after this preregistration commit. The exact clock times are recorded in UTC in the evidence manifest.
 
-No parameter may be selected from captures 2 or 3.
+No parameter may be selected from captures 2, 3, or 4.
 
 ## 4. Event reconstruction
 
@@ -252,7 +253,7 @@ Use a **clock-time block bootstrap**, not event-count blocks, because informatio
 
 Do not use an IID t-statistic as the primary inference.
 
-Capture 1 remains development-only. It cannot select thresholds, alter the signal rule, choose the cost model, or determine the OOS decision.
+Capture 1 remains development-only. It cannot select thresholds, alter the signal rule, choose the cost model, or determine the OOS decision. Captures 2, 3, and 4 remain untouched OOS.
 
 ### 9.1 Results table contract
 
@@ -377,7 +378,7 @@ DEPLOYMENT              = NO_DEPLOY
 
 This document is the fixed preregistration. Any change to a registered parameter or rule requires a new hypothesis ID and a new branch.
 
-## 16. Amendment A-001 — Economic and statistical clarification
+## 16. Amendment A-001 — Superseded economic clarification
 
 **Amendment status:** Registered before Capture 1 data collection.
 
@@ -385,7 +386,7 @@ Reason for amendment: the original 3.4 bps round-trip execution assumption did n
 
 The amendment is based on Binance's current published USDⓈ-M Futures fee schedule and funding documentation as checked on **2026-10-03**.
 
-This amendment **supersedes Sections 8 and 9** wherever they conflict with this document's earlier text. All other preregistered rules remain unchanged.
+This amendment is **superseded by Amendment A-002** below. It is retained for audit history only.
 ## 17. Amendment A-002 — execution-cost and statistical clarification
 
 **Amendment status:** Registered before Capture 1 data collection.
