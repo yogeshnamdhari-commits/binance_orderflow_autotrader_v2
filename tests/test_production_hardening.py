@@ -4,6 +4,7 @@ from decimal import Decimal
 import json
 from pathlib import Path
 import tempfile
+import time
 
 import pytest
 
@@ -72,7 +73,7 @@ def make_guard(fake, manifest_path):
     guard.state.user_stream_healthy = True
     guard.state.trade_stream_healthy = True
     guard.state.reconciliation_ok = True
-    now_ms = 1_000_000
+    now_ms = int(time.time() * 1000)
     guard.state.last_market_event_ms = now_ms
     guard.state.last_user_event_ms = now_ms
     guard.state.last_trade_event_ms = now_ms
