@@ -407,10 +407,13 @@ def score_capture(capture_dir: Path) -> tuple[dict[str, Any], list[Outcome]]:
     trade_window: deque[tuple[int, float]] = deque()
     trade_sum = 0.0
 
-    # Each entry is (timestamp, OFI1, OFI5, OFI10). Sorted arrays provide
-    # deterministic trailing median/MAD windows.
-    ofi_windows = [deque(), deque(), deque()]
-    ofi_sorted = [[], [], []]
+    # Raw per-depth-event OFI is aggregated over the registered 500 ms window.
+    # Robust z-scores are then computed on those 500 ms rolling sums using only
+    # strictly prior 60 s observations.
+    raw_ofi_windows = [deque(), deque(), deque()]
+    raw_ofi_sums = [0.0, 0.0, 0.0]
+    ofi_agg_windows = [deque(), deque(), deque()]
+    ofi_agg_sorted = [[], [], []]
 
     signal_outcomes: list[Outcome] = []
     states: deque[tuple[int, str | None]] = deque()
@@ -418,17 +421,30 @@ def score_capture(capture_dir: Path) -> tuple[dict[str, Any], list[Outcome]]:
     run_length = 0
     last_signal_time: int | None = None
 
-    def add_prior(series: int, ts: int, value: float) -> None:
-        ofi_windows[series].append((ts, value))
-        bisect.insort(ofi_sorted[series], value)
+    def add_raw_ofi(series: int, ts: int, value: float) -> None:
+        raw_ofi_windows[series].append((ts, value))
+        raw_ofi_sums[series] += value
 
-    def prune_prior(series: int, ts: int) -> None:
+    def prune_raw_ofi(series: int, ts: int) -> None:
+        cutoff = ts - OFI_WINDOW_MS
+        while raw_ofi_windows[series] and raw_ofi_windows[series][0][0] < cutoff:
+            _, value = raw_ofi_windows[series].popleft()
+            raw_ofi_sums[series] -= value
+
+    def add_prior_aggregate(series: int, ts: int, value: float) -> None:
+        ofi_agg_windows[series].append((ts, value))
+        bisect.insort(ofi_agg_sorted[series], value)
+
+    def prune_prior_aggregate(series: int, ts: int) -> None:
         cutoff = ts - Z_WINDOW_MS
-        while ofi_windows[series] and ofi_windows[series][0][0] < cutoff:
-            _, value = ofi_windows[series].popleft()
-            pos = bisect.bisect_left(ofi_sorted[series], value)
-            require(pos < len(ofi_sorted[series]), "internal robust-window removal failure")
-            ofi_sorted[series].pop(pos)
+        while ofi_agg_windows[series] and ofi_agg_windows[series][0][0] < cutoff:
+            _, value = ofi_agg_windows[series].popleft()
+            pos = bisect.bisect_left(ofi_agg_sorted[series], value)
+            require(
+                pos < len(ofi_agg_sorted[series]),
+                "internal robust-window removal failure",
+            )
+            ofi_agg_sorted[series].pop(pos)
 
     def add_trade(ts: int, signed_qty: float) -> None:
         nonlocal trade_sum
@@ -442,8 +458,6 @@ def score_capture(capture_dir: Path) -> tuple[dict[str, Any], list[Outcome]]:
             _, value = trade_window.popleft()
             trade_sum -= value
 
-    trade_events_ts = [t.ts for t in trades]
-
     for i in range(1, len(books)):
         prev = books[i - 1]
         cur = books[i]
@@ -456,9 +470,8 @@ def score_capture(capture_dir: Path) -> tuple[dict[str, Any], list[Outcome]]:
             trade_idx += 1
         prune_trades(ts)
 
-        den = sum(t.qty for t in trades[max(0, trade_idx - 1000):trade_idx])
-        # The exact rolling denominator is computed from the active trade window
-        # to avoid dependence on an arbitrary event count.
+        # The exact rolling denominator is computed from the active 500 ms
+        # trade window to avoid dependence on an arbitrary event count.
         buy_qty = sum(q for _, q in trade_window if q > 0)
         sell_qty = -sum(q for _, q in trade_window if q < 0)
         total_qty = buy_qty + sell_qty
@@ -469,18 +482,26 @@ def score_capture(capture_dir: Path) -> tuple[dict[str, Any], list[Outcome]]:
         )
 
         levels = level_ofi(prev.bids, prev.asks, cur.bids, cur.asks)
-        ofi_values = (
+        event_ofi_values = (
             sum(levels[:1]),
             sum(levels[:5]),
             sum(levels[:10]),
         )
 
-        # Strictly prior robust window: compute z before inserting current OFI.
+        # Registered feature = trailing 500 ms sum of depth-event OFI.
+        # Compute the current aggregate first, then score it against strictly
+        # prior 60 s observations of the same aggregate.
         for s in range(3):
-            prune_prior(s, ts)
+            prune_raw_ofi(s, ts)
+            add_raw_ofi(s, ts, event_ofi_values[s])
+
+        ofi_values = tuple(raw_ofi_sums)
+
+        for s in range(3):
+            prune_prior_aggregate(s, ts)
 
         zs = tuple(
-            robust_z(ofi_values[s], ofi_sorted[s])
+            robust_z(ofi_values[s], ofi_agg_sorted[s])
             for s in range(3)
         )
 
@@ -513,9 +534,10 @@ def score_capture(capture_dir: Path) -> tuple[dict[str, Any], list[Outcome]]:
 
         states.append((ts, direction))
 
-        # Insert current observations after z computation.
+        # Insert current 500 ms aggregate only after robust z computation,
+        # preserving the strictly-prior normalization window.
         for s in range(3):
-            add_prior(s, ts, ofi_values[s])
+            add_prior_aggregate(s, ts, ofi_values[s])
 
         if not is_transition:
             continue
