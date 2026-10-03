@@ -320,6 +320,16 @@ Do not repair an invalid session by guessing or backfilling synthetic values.
 
 Before Capture 1 is collected, run `research/test_orderflow_state_transition_math.py` on the research branch. This synthetic audit checks deterministic VWAP construction, fixed-quantity exit handling, LONG/SHORT symmetry, taker-fee normalization, funding as a separate cost component, and fail-closed behavior on insufficient displayed depth. It uses no research captures or external market data and does not affect the preregistered research result.
 
+
+
+## 11.6 Development Capture 1 transport failure and correction
+
+The first development Capture 1 was **INVALID / NOT RESEARCH EVIDENCE**. Depth transport completed with a valid bridge and no sequence gaps, but the captured session reported **zero aggTrade events and zero markPrice@1s events**, causing `capture_valid=false`. No OOS decision or parameter choice was based on that capture.
+
+The implementation was corrected before any OOS capture by replacing the single combined market-data WebSocket with **three independent raw WebSocket connections**, one each for `depth@100ms`, `aggTrade`, and `markPrice@1s`. Binance documents raw market-data streams at `/ws/<streamName>` and combined streams at `/stream?streams=...`; the raw-stream design is used here as a fail-closed transport isolation measure after the observed combined-stream failure. citeturn327793search0
+
+A short non-research diagnostic `research/diagnose_orderflow_streams.py` must pass with at least one valid event from **each** required feed before Capture 1 is rerun. The diagnostic writes no research capture and does not alter the hypothesis.
+
 ## 12. Required evidence outputs
 
 The implementation must produce, at minimum:
