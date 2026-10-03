@@ -314,6 +314,16 @@ def vwap_for_quantity(
     raise ValueError("INSUFFICIENT_DEPTH")
 
 
+
+def rolling_sum_at(
+    observations: list[tuple[int, float]],
+    current_ts: int,
+    window_ms: int,
+) -> float:
+    """Return the inclusive trailing time-window sum at current_ts."""
+    cutoff = current_ts - window_ms
+    return sum(value for ts, value in observations if cutoff <= ts <= current_ts)
+
 def robust_z(
     current: float,
     prior_sorted: list[float],
