@@ -60,7 +60,7 @@ FEED_URLS = {
     "markPrice": MARK_WS_URL,
 }
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 OUT_ROOT = ROOT / "research" / "captures" / "ORDERFLOW_STATE_TRANSITION_01"
 
 
