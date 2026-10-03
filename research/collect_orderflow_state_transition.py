@@ -119,6 +119,7 @@ class Integrity:
     first_message_ms: int = 0
     stopped_at_ms: int = 0
     reconnects: int = 0
+    transport_errors: int = 0
     sequence_gaps: int = 0
     malformed_events: int = 0
     missing_feed_events: int = 0
@@ -233,8 +234,16 @@ async def feed_reader(
     except asyncio.CancelledError:
         raise
     except Exception as exc:
-        integrity.reconnects += 1
-        integrity.feed_errors[feed] = f"{type(exc).__name__}: {exc}"
+        # Intentional shutdown/cancellation is not a transport error.
+        if stop_event.is_set():
+            return
+
+        integrity.transport_errors += 1
+        integrity.feed_errors[feed] = {
+            "error_type": type(exc).__name__,
+            "error": str(exc),
+            "at_ms": int(time.time() * 1000),
+        }
         stop_event.set()
 
 
@@ -423,6 +432,7 @@ async def capture(capture_no: int) -> int:
         "started_wall_ms": started_wall_ms,
         "stopped_wall_ms": integrity.stopped_at_ms,
         "websocket_transport": "three_independent_raw_streams",
+        "reconnect_policy": "fail_closed_no_retry",
         "feed_urls": FEED_URLS,
         "rest_url": REST_URL,
         "required_feeds": [
@@ -463,6 +473,7 @@ async def capture(capture_no: int) -> int:
         integrity.bridged
         and integrity.sequence_gaps == 0
         and integrity.reconnects == 0
+        and integrity.transport_errors == 0
         and integrity.malformed_events == 0
         and integrity.depth_events > 0
         and integrity.trade_events > 0
