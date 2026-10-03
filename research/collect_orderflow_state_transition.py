@@ -48,9 +48,9 @@ DURATION_SEC = 60 * 60
 DEPTH_LEVELS = 10
 REST_LIMIT = 1000
 
-DEPTH_WS_URL = "wss://fstream.binance.com/ws/btcusdt@depth@100ms"
-TRADE_WS_URL = "wss://fstream.binance.com/ws/btcusdt@aggTrade"
-MARK_WS_URL = "wss://fstream.binance.com/ws/btcusdt@markPrice@1s"
+DEPTH_WS_URL = "wss://fstream.binance.com/public/ws/btcusdt@depth@100ms"
+TRADE_WS_URL = "wss://fstream.binance.com/market/ws/btcusdt@aggTrade"
+MARK_WS_URL = "wss://fstream.binance.com/market/ws/btcusdt@markPrice@1s"
 
 REST_URL = "https://fapi.binance.com/fapi/v1/depth"
 
