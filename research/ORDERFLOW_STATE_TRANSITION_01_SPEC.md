@@ -316,6 +316,13 @@ Stop and classify the capture as invalid if any of the following occurs:
 
 Do not repair an invalid session by guessing or backfilling synthetic values.
 
+## 11.1 Transport-error accounting
+
+The collector does not perform automatic reconnects during a scored capture. Therefore, a nonzero `reconnects` value must not be inferred merely because a WebSocket raises an exception during normal scheduled shutdown. The implementation records an actual in-interval feed transport failure separately as `transport_errors`, with the feed, exception type, message, and timestamp. A capture is invalid when an actual transport error occurs during the scored interval.
+
+The development Capture 1 that reported `reconnects=3` after a full-duration run is retained as invalid evidence because the recorded manifest is immutable. The collector has since been corrected so that intentional shutdown is not misclassified as a reconnect/transport failure.
+
+
 ## 11.5 Pre-capture synthetic measurement audit
 
 Before Capture 1 is collected, run `research/test_orderflow_state_transition_math.py` on the research branch. This synthetic audit checks deterministic VWAP construction, fixed-quantity exit handling, LONG/SHORT symmetry, taker-fee normalization, funding as a separate cost component, and fail-closed behavior on insufficient displayed depth. It uses no research captures or external market data and does not affect the preregistered research result.
