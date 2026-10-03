@@ -337,6 +337,18 @@ The implementation was corrected before any OOS capture by migrating to Binance'
 
 A short non-research diagnostic `research/diagnose_orderflow_streams.py` must pass with at least one valid event from **each** required feed before Capture 1 is rerun. The diagnostic writes no research capture and does not alter the hypothesis.
 
+## 11.7 Frozen scoring implementation
+
+The frozen scoring implementation is `research/score_orderflow_state_transition.py`.
+
+It verifies the capture manifest and both evidence-file SHA-256 fingerprints **before reading them**. Book state is read exclusively from `book_snapshots.jsonl`; the scorer never reconstructs the book from `events.jsonl` for signal-time execution. `events.jsonl` is used only for the required `aggTrade` aggressive-flow feature and `markPrice@1s` funding records.
+
+The multi-level OFI calculation is the repository's existing definition in `app/v7_true_features.py` (`compute_multi_level_ofi`): per-level changes are derived from consecutive book snapshots and net OFI is bid change minus ask change. The Phase 3 scorer uses the first 1, 5, and 10 per-level values as the registered `OFI_1`, `OFI_5`, and `OFI_10` inputs to the rolling sums.
+
+Synthetic scorer tests are in `research/test_orderflow_state_transition_scorer.py`.
+
+Scoring Capture 1 is permitted only for implementation validation. Economic results from Capture 1 must not be used to modify the hypothesis. OOS scoring is performed only after Captures 2, 3, and 4 have all passed manifest integrity checks and are frozen.
+
 ## 12. Required evidence outputs
 
 The implementation must produce, at minimum:
