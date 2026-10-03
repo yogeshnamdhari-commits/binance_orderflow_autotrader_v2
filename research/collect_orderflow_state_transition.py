@@ -132,7 +132,7 @@ class Integrity:
     mark_events: int = 0
     feed_connected_at_ms: dict[str, int] = field(default_factory=dict)
     feed_first_message_ms: dict[str, int] = field(default_factory=dict)
-    feed_errors: dict[str, str] = field(default_factory=dict)
+    feed_errors: dict[str, Any] = field(default_factory=dict)
 
 
 class JsonlWriter:
@@ -243,6 +243,7 @@ async def feed_reader(
             "error_type": type(exc).__name__,
             "error": str(exc),
             "at_ms": int(time.time() * 1000),
+            "during_capture": True,
         }
         stop_event.set()
 
