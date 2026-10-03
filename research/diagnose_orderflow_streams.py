@@ -17,9 +17,9 @@ import websockets
 
 DURATION_SEC = 20
 STREAMS = {
-    "depth": "wss://fstream.binance.com/ws/btcusdt@depth@100ms",
-    "aggTrade": "wss://fstream.binance.com/ws/btcusdt@aggTrade",
-    "markPrice": "wss://fstream.binance.com/ws/btcusdt@markPrice@1s",
+    "depth": "wss://fstream.binance.com/public/ws/btcusdt@depth@100ms",
+    "aggTrade": "wss://fstream.binance.com/market/ws/btcusdt@aggTrade",
+    "markPrice": "wss://fstream.binance.com/market/ws/btcusdt@markPrice@1s",
 }
 
 
