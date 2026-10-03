@@ -326,7 +326,7 @@ Before Capture 1 is collected, run `research/test_orderflow_state_transition_mat
 
 The first development Capture 1 was **INVALID / NOT RESEARCH EVIDENCE**. Depth transport completed with a valid bridge and no sequence gaps, but the captured session reported **zero aggTrade events and zero markPrice@1s events**, causing `capture_valid=false`. No OOS decision or parameter choice was based on that capture.
 
-The implementation was corrected before any OOS capture by replacing the single combined market-data WebSocket with **three independent raw WebSocket connections**, one each for `depth@100ms`, `aggTrade`, and `markPrice@1s`. Binance documents raw market-data streams at `/ws/<streamName>` and combined streams at `/stream?streams=...`; the raw-stream design is used here as a fail-closed transport isolation measure after the observed combined-stream failure. citeturn327793search0
+The implementation was corrected before any OOS capture by migrating to Binance's current USDⓈ-M category-specific WebSocket endpoints: high-frequency public data such as `depth@100ms` uses `wss://fstream.binance.com/public/ws/...`, while regular market data such as `aggTrade` and `markPrice@1s` uses `wss://fstream.binance.com/market/ws/...`. Binance announced this base-URL split and the retirement of legacy WebSocket paths for USDⓈ-M Futures. citeturn403631search0turn520081search0
 
 A short non-research diagnostic `research/diagnose_orderflow_streams.py` must pass with at least one valid event from **each** required feed before Capture 1 is rerun. The diagnostic writes no research capture and does not alter the hypothesis.
 
