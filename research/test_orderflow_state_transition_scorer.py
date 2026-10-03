@@ -11,6 +11,7 @@ from score_orderflow_state_transition import (
     SAFETY_BUFFER_BPS,
     directional_return_bps,
     level_ofi,
+    rolling_sum_at,
     vwap_for_notional,
     vwap_for_quantity,
 )
@@ -44,6 +45,17 @@ def test_multi_level_ofi_matches_repository_definition() -> None:
     assert isinstance(got[1], float)
 
 
+def test_registered_rolling_500ms_ofi_window() -> None:
+    observations = [
+        (400, 1.0),
+        (500, 2.0),
+        (900, 4.0),
+        (901, 8.0),
+    ]
+    assert abs(rolling_sum_at(observations, 900, 500) - 7.0) < 1e-12
+    assert abs(rolling_sum_at(observations, 901, 500) - 12.0) < 1e-12
+
+
 def test_registered_constants() -> None:
     assert BOOTSTRAP_SEED == 20261003
     assert SAFETY_BUFFER_BPS == 2.0
@@ -59,6 +71,7 @@ if __name__ == "__main__":
         test_long_short_signs,
         test_vwap_same_base_quantity,
         test_multi_level_ofi_matches_repository_definition,
+        test_registered_rolling_500ms_ofi_window,
         test_registered_constants,
         test_temp_workspace_available,
     ]
