@@ -337,6 +337,14 @@ The implementation was corrected before any OOS capture by migrating to Binance'
 
 A short non-research diagnostic `research/diagnose_orderflow_streams.py` must pass with at least one valid event from **each** required feed before Capture 1 is rerun. The diagnostic writes no research capture and does not alter the hypothesis.
 
+## 11.7.1 Capture 1 scorer audit correction
+
+The initial Capture 1 scoring run exposed a specification-to-code discrepancy: the scorer standardized the per-depth-event OFI values directly, whereas the preregistration requires 500 ms rolling OFI sums (OFI_1, OFI_5, OFI_10) to be normalized using the strictly prior 60-second median/MAD window.
+
+The Capture 1 scoring output of 86 signals is therefore **pipeline diagnostic output only and is not valid evidence of the registered state-transition rule**. The immutable raw Capture 1 remains valid development data.
+
+The scorer was corrected before any OOS scoring. Synthetic tests now include an explicit 500 ms time-window aggregation test. No OOS capture has been scored or used to tune the correction.
+
 ## 11.7 Frozen scoring implementation
 
 The frozen scoring implementation is `research/score_orderflow_state_transition.py`.
