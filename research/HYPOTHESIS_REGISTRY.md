@@ -26,6 +26,10 @@
 
 This is a new preregistered hypothesis. It does not alter, retune, or reopen the frozen Phase 1/Phase 2 candidates or rejected experiments below.
 
+### Capture 1 transport incident
+
+The first development Capture 1 was invalid: depth delivered and bridged, but `aggTrade` and `markPrice@1s` delivered zero events. This was traced to the legacy USDⓈ-M WebSocket base-path migration. Before any OOS capture, the collector and transport diagnostic were migrated to the current `/public` and `/market` endpoint categories documented by Binance. No OOS evidence or economic decision used the invalid capture.
+
 # Rejected Hypotheses (Do Not Re-test)
 
 | ID | Hypothesis | Reason for Rejection | Key Finding |
