@@ -596,22 +596,29 @@ def score_capture(capture_dir: Path) -> tuple[dict[str, Any], list[Outcome]]:
         funding_bps = 0.0
         funding_missing = False
 
-        for mark in marks:
-            if not (ts < mark.funding_time <= exit_book.ts):
-                continue
-            if mark.ts > mark.funding_time:
-                continue
-            # Find the latest mark record before the settlement for this T.
+        # A 5-second hold can cross at most one scheduled funding time in the
+        # registered model. Deduplicate by funding timestamp so the same rate
+        # is never charged repeatedly for multiple markPrice messages.
+        funding_times = sorted({
+            mark.funding_time
+            for mark in marks
+            if ts < mark.funding_time <= exit_book.ts
+        })
+        for funding_time in funding_times:
             candidates = [
                 m for m in marks
-                if m.funding_time == mark.funding_time and m.ts <= mark.funding_time
+                if m.funding_time == funding_time and m.ts <= funding_time
             ]
             if not candidates:
                 funding_missing = True
                 break
-            latest = candidates[-1]
+            latest = max(candidates, key=lambda m: m.ts)
             rate = latest.funding_rate
-            funding_bps += rate * 10_000.0 if direction == "LONG" else -rate * 10_000.0
+            funding_bps += (
+                rate * 10_000.0
+                if direction == "LONG"
+                else -rate * 10_000.0
+            )
 
         if funding_missing:
             signal_outcomes.append(
