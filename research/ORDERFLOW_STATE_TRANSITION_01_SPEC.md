@@ -63,13 +63,37 @@ No parameter may be selected from captures 2, 3, or 4.
 
 All features are evaluated at the timestamp of a valid depth event.
 
+### 4.0 Window boundary conventions (frozen)
+
+Two deliberately different boundary treatments are registered:
+
+1. **500 ms OFI feature aggregation window (INCLUSIVE of the current event):**
+   `OFI_window = [t - 500 ms, t]`
+   The current depth event is counted in its own 500 ms OFI sum.
+
+2. **60 s robust-normalization history (STRICTLY PRIOR):**
+   `z_history = [t - 60,000 ms, t)`
+   The current 500 ms OFI aggregate is excluded from its own MAD/median history.
+
+This asymmetry ensures the current event contributes to its own feature sum but does not contaminate its own normalization denominator.
+
+Concrete boundary behavior:
+
+| Timestamp | OFI window inclusion | Normalization history inclusion |
+|---|---|---|
+| t - 501 ms | excluded | excluded |
+| t - 500 ms | included | included |
+| t - 499 ms | included | included |
+| t - 1 ms | included | included |
+| t - 0 ms (current) | included | excluded |
+
 ### 4.1 Multi-level order-flow imbalance
 
 Reconstruct the top 10 book levels from the depth stream.
 
 For each level and depth event, compute signed queue-flow changes from the previous reconstructed book. For bid liquidity, additions/improvements are positive and removals/worsening are negative. For ask liquidity, the sign is reversed so that positive values represent net demand-side pressure.
 
-Compute rolling 500 ms sums:
+Compute rolling 500 ms sums (inclusive window, per section 4.0):
 - `OFI_1`
 - `OFI_5`
 - `OFI_10`

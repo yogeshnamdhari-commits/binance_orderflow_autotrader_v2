@@ -1,6 +1,18 @@
 #!/usr/bin/env python3
 """Frozen scorer for ORDERFLOW_STATE_TRANSITION-0.1 A-002.
 
+Frozen window-boundary conventions (explicitly registered):
+
+1. 500 ms OFI aggregation window (INCLUSIVE of the current event):
+   OFI_window = [t - 500 ms, t]
+
+2. 60 s robust-normalization history (EXCLUSIVE of the current event):
+   z_history = [t - 60,000 ms, t)
+
+This deliberate asymmetry ensures that:
+- The current depth event is counted in its own 500 ms OFI sum.
+- The current OFI aggregate is excluded from its own MAD/median history.
+
 The scorer:
 - verifies capture manifest/file SHA-256 fingerprints before reading evidence
 - reads reconstructed books only from book_snapshots.jsonl
