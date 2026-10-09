@@ -576,7 +576,7 @@ def score_capture(capture_dir: Path) -> tuple[dict[str, Any], list[Outcome]]:
                 Outcome(
                     capture_no, ts, 0, 0, 0, 0, direction,
                     None, None, None, None, None, None, SAFETY_BUFFER_BPS,
-                    None, None, None, False, "MISSING_ENTRY_SNAPSHOT",
+                    None, None, False, "MISSING_ENTRY_SNAPSHOT",
                 )
             )
             continue
@@ -592,7 +592,7 @@ def score_capture(capture_dir: Path) -> tuple[dict[str, Any], list[Outcome]]:
                 Outcome(
                     capture_no, ts, ts - cur.ts, entry.ts - ts, 0, 0, direction,
                     None, None, None, None, None, None, SAFETY_BUFFER_BPS,
-                    None, None, None, False, "MISSING_EXIT_SNAPSHOT",
+                    None, None, False, "MISSING_EXIT_SNAPSHOT",
                 )
             )
             continue
@@ -613,7 +613,7 @@ def score_capture(capture_dir: Path) -> tuple[dict[str, Any], list[Outcome]]:
                     capture_no, ts, ts - cur.ts, entry.ts - ts,
                     exit_book.ts - ts, exit_book.ts - target_exit, direction,
                     None, None, gross, None, None, None, SAFETY_BUFFER_BPS,
-                    None, None, None, False, "INSUFFICIENT_DEPTH",
+                    None, None, False, "INSUFFICIENT_DEPTH",
                 )
             )
             continue
@@ -627,7 +627,7 @@ def score_capture(capture_dir: Path) -> tuple[dict[str, Any], list[Outcome]]:
                     capture_no, ts, ts - cur.ts, entry.ts - ts,
                     exit_book.ts - ts, exit_book.ts - target_exit, direction,
                     entry_vwap, None, gross, None, None, None, SAFETY_BUFFER_BPS,
-                    None, None, None, False, "INSUFFICIENT_DEPTH",
+                    None, None, False, "INSUFFICIENT_DEPTH",
                 )
             )
             continue
